@@ -1,0 +1,348 @@
+[
+  {
+    "id": "builtin-meeting-minutes",
+    "recipe": "meeting-minutes",
+    "kind": "file",
+    "name": "周五发布会 · 从回看到行动",
+    "description": "带时间戳的会议素材，分支成决策、待办、风险、团队消息和复盘页。",
+    "tag": "办公协作",
+    "en": {
+      "name": "Friday launch · review to action",
+      "description": "Timestamped meeting material branches into decisions, ownership, risks, follow-up copy and a review page.",
+      "tag": "Work"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/meeting-zh-CN.svg",
+      "en": "/examples/art/meeting-en.svg"
+    }
+  },
+  {
+    "id": "builtin-weekly-review",
+    "recipe": "weekly-review",
+    "kind": "file",
+    "name": "周报与下周计划",
+    "description": "汇总工作记录，对照目标生成周报和下周安排。",
+    "tag": "办公协作",
+    "en": {
+      "name": "Weekly update and next steps",
+      "description": "Compare progress against goals and prepare a weekly update.",
+      "tag": "Work"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/weekly-review-zh-CN.svg",
+      "en": "/examples/previews/weekly-review-en.svg"
+    }
+  },
+  {
+    "id": "builtin-project-proposal",
+    "recipe": "project-proposal",
+    "kind": "file",
+    "name": "项目方案书",
+    "description": "从项目简报梳理目标、范围、里程碑和交付物。",
+    "tag": "办公协作",
+    "en": {
+      "name": "Project proposal",
+      "description": "Develop a brief into scope, milestones and deliverables.",
+      "tag": "Work"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/project-proposal-zh-CN.svg",
+      "en": "/examples/previews/project-proposal-en.svg"
+    }
+  },
+  {
+    "id": "builtin-interview-guide",
+    "recipe": "interview-guide",
+    "kind": "file",
+    "name": "用户访谈提纲",
+    "description": "围绕研究目标准备中立问题、追问和记录表。",
+    "tag": "办公协作",
+    "en": {
+      "name": "User interview guide",
+      "description": "Prepare neutral questions, follow-ups and an interview worksheet.",
+      "tag": "Work"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/interview-guide-zh-CN.svg",
+      "en": "/examples/previews/interview-guide-en.svg"
+    }
+  },
+  {
+    "id": "builtin-product-prd",
+    "recipe": "product-prd",
+    "kind": "file",
+    "name": "Flow · 从用户访谈到产品原型",
+    "description": "三份访谈原话，提炼问题与范围，再分支成 PRD、流程图、可交互原型和验收清单。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Flow · interviews to a prototype",
+      "description": "Three interview excerpts become evidence-backed insights, a PRD, user flow, working prototype and acceptance checks.",
+      "tag": "Product"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/flow-zh-CN.svg",
+      "en": "/examples/art/flow-en.svg"
+    }
+  },
+  {
+    "id": "builtin-user-journey",
+    "recipe": "user-journey",
+    "kind": "chart",
+    "name": "用户旅程与改进机会",
+    "description": "梳理用户各阶段的目标、阻碍和可验证的改进点。",
+    "tag": "产品设计",
+    "en": {
+      "name": "User journey and opportunities",
+      "description": "Map goals and friction across a journey and identify testable improvements.",
+      "tag": "Product"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/user-journey-zh-CN.svg",
+      "en": "/examples/previews/user-journey-en.svg"
+    }
+  },
+  {
+    "id": "builtin-landing-page",
+    "recipe": "landing-page",
+    "kind": "website",
+    "name": "山野周末 · 活动上线工作台",
+    "description": "把行程、受众与活动规则，变成招募文案、海报、落地页和发布检查。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Weekend Club · launch an experience",
+      "description": "Turn a real itinerary and practical constraints into recruitment copy, a poster, a landing page and launch checks.",
+      "tag": "Product"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/weekend-zh-CN.svg",
+      "en": "/examples/art/weekend-en.svg"
+    }
+  },
+  {
+    "id": "builtin-dashboard-prototype",
+    "recipe": "dashboard-prototype",
+    "kind": "website",
+    "name": "数据看板原型",
+    "description": "用示例指标生成带筛选和空状态的可交互原型。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Dashboard prototype",
+      "description": "Create an interactive dashboard with sample metrics, filters and empty states.",
+      "tag": "Product"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/dashboard-prototype-zh-CN.svg",
+      "en": "/examples/previews/dashboard-prototype-en.svg"
+    }
+  },
+  {
+    "id": "builtin-study-notes",
+    "recipe": "study-notes",
+    "kind": "chart",
+    "name": "看懂城市热岛 · 一份研究工作台",
+    "description": "用原始材料、教学数据和研究问题，连起证据、图解、文章、知识图谱和练习。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Why cities hold heat · a research desk",
+      "description": "Connect source notes, illustrative data and research questions to an explainer, visual, knowledge map and exercises.",
+      "tag": "Learning"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/heat-zh-CN.svg",
+      "en": "/examples/art/heat-en.svg"
+    }
+  },
+  {
+    "id": "builtin-learning-plan",
+    "recipe": "learning-plan",
+    "kind": "file",
+    "name": "四周学习计划",
+    "description": "根据起点、目标与可用时间安排练习和复盘。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Four-week learning plan",
+      "description": "Plan practice and reviews around your starting point and available time.",
+      "tag": "Learning"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/learning-plan-zh-CN.svg",
+      "en": "/examples/previews/learning-plan-en.svg"
+    }
+  },
+  {
+    "id": "builtin-lesson-quiz",
+    "recipe": "lesson-quiz",
+    "kind": "website",
+    "name": "课程自测练习",
+    "description": "依据课程材料生成题目和可操作的自测页面。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Interactive lesson quiz",
+      "description": "Turn lesson material into questions and a working quiz page.",
+      "tag": "Learning"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/lesson-quiz-zh-CN.svg",
+      "en": "/examples/previews/lesson-quiz-en.svg"
+    }
+  },
+  {
+    "id": "builtin-reading-outline",
+    "recipe": "reading-outline",
+    "kind": "chart",
+    "name": "阅读提纲与思考问题",
+    "description": "拆解文章结构，保留原文论点与值得追问的问题。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Reading outline and questions",
+      "description": "Map an article’s structure, claims and questions worth asking.",
+      "tag": "Learning"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/reading-outline-zh-CN.svg",
+      "en": "/examples/previews/reading-outline-en.svg"
+    }
+  },
+  {
+    "id": "builtin-article-draft",
+    "recipe": "article-draft",
+    "kind": "writing",
+    "name": "文章提纲到初稿",
+    "description": "先确定文章结构，再按读者与语气写出初稿。",
+    "tag": "内容创作",
+    "en": {
+      "name": "Outline to article draft",
+      "description": "Build an outline, then draft for a specific reader and tone.",
+      "tag": "Writing"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/article-draft-zh-CN.svg",
+      "en": "/examples/previews/article-draft-en.svg"
+    }
+  },
+  {
+    "id": "builtin-social-posts",
+    "recipe": "social-posts",
+    "kind": "writing",
+    "name": "多平台内容改写",
+    "description": "将同一份素材改写成不同长度和用途的文案。",
+    "tag": "内容创作",
+    "en": {
+      "name": "Multi-channel content pack",
+      "description": "Adapt one source into copy for different formats and lengths.",
+      "tag": "Writing"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/social-posts-zh-CN.svg",
+      "en": "/examples/previews/social-posts-en.svg"
+    }
+  },
+  {
+    "id": "builtin-customer-email",
+    "recipe": "customer-email",
+    "kind": "writing",
+    "name": "客户邮件回复",
+    "description": "结合来信和处理边界，起草礼貌清楚的回复。",
+    "tag": "内容创作",
+    "en": {
+      "name": "Customer email reply",
+      "description": "Draft a clear, polite reply grounded in the message and response limits.",
+      "tag": "Writing"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/customer-email-zh-CN.svg",
+      "en": "/examples/previews/customer-email-en.svg"
+    }
+  },
+  {
+    "id": "builtin-release-notes",
+    "recipe": "release-notes",
+    "kind": "file",
+    "name": "更新日志与迁移说明",
+    "description": "把变更记录整理成用户能理解的更新说明。",
+    "tag": "内容创作",
+    "en": {
+      "name": "Release notes and upgrade notes",
+      "description": "Translate change records into clear user-facing release and upgrade notes.",
+      "tag": "Writing"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/release-notes-zh-CN.svg",
+      "en": "/examples/previews/release-notes-en.svg"
+    }
+  },
+  {
+    "id": "builtin-campaign-poster",
+    "recipe": "campaign-poster",
+    "kind": "image",
+    "name": "松间咖啡 · 春日品牌提案",
+    "description": "从产品资料与受众出发，完成品牌策略、两版海报、上新网页和发布计划。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Pine Coffee · a spring launch",
+      "description": "A complete launch, from product and audience to positioning, two posters, a website and a release plan.",
+      "tag": "Visual creation"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/coffee-zh-CN.svg",
+      "en": "/examples/art/coffee-en.svg"
+    }
+  },
+  {
+    "id": "builtin-product-scene",
+    "recipe": "product-scene",
+    "kind": "image",
+    "name": "产品场景图",
+    "description": "根据产品描述和画面要求生成一张场景主视觉。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Product scene image",
+      "description": "Generate a product scene from its description and visual requirements.",
+      "tag": "Visual creation"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/product-scene-zh-CN.svg",
+      "en": "/examples/previews/product-scene-en.svg"
+    }
+  },
+  {
+    "id": "builtin-storyboard",
+    "recipe": "storyboard",
+    "kind": "image",
+    "name": "灯塔来信 · 三幕故事工坊",
+    "description": "角色、世界观与冲突汇成三幕故事，分别延展插画，再合成完整作品。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Lighthouse Letters · a story studio",
+      "description": "Characters, setting and conflict become a three-act story with matching illustrations and a complete reading edition.",
+      "tag": "Visual creation"
+    },
+    "showcase": true,
+    "cover": {
+      "zhCN": "/examples/art/lighthouse1-zh-CN.svg",
+      "en": "/examples/art/lighthouse1-en.svg"
+    }
+  },
+  {
+    "id": "builtin-short-podcast",
+    "recipe": "short-podcast",
+    "kind": "speech",
+    "name": "两分钟口播稿与配音",
+    "description": "将要点整理成口语稿，再生成可回听的语音。",
+    "tag": "声音创作",
+    "en": {
+      "name": "Two-minute narration and audio",
+      "description": "Turn key points into a natural script and playable narration.",
+      "tag": "Audio"
+    },
+    "cover": {
+      "zhCN": "/examples/previews/short-podcast-zh-CN.svg",
+      "en": "/examples/previews/short-podcast-en.svg"
+    }
+  }
+]

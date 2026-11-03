@@ -1,0 +1,15 @@
+name: 使用建议
+description: 描述你要完成的任务与遇到的阻碍
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 你想完成什么？
+    validations:
+      required: true
+  - type: textarea
+    id: obstacle
+    attributes:
+      label: 现有流程在哪里受阻？
+    validations:
+      required: true

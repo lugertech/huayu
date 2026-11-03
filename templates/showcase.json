@@ -1,0 +1,1195 @@
+[
+  {
+    "id": "builtin-meeting-minutes",
+    "recipe": "meeting-minutes",
+    "kind": "file",
+    "name": "周五发布会 · 从回看到行动",
+    "description": "带时间戳的会议素材，分支成决策、待办、风险、团队消息和复盘页。",
+    "tag": "办公协作",
+    "en": {
+      "name": "Friday launch · review to action",
+      "description": "Timestamped meeting material branches into decisions, ownership, risks, follow-up copy and a review page.",
+      "tag": "Work"
+    },
+    "showcase": {
+      "accent": "#65816a",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22700%22%20viewBox%3D%220%200%20800%20700%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22700%22%20fill%3D%22%23f0f2ee%22%2F%3E%3Crect%20x%3D%2245%22%20y%3D%2246%22%20width%3D%22710%22%20height%3D%22608%22%20rx%3D%2212%22%20fill%3D%22%23fff%22%20stroke%3D%22%23d8ded4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%2270%22%20width%3D%22662%22%20height%3D%22250%22%20rx%3D%228%22%20fill%3D%22%23253c35%22%2F%3E%3Ccircle%20cx%3D%22136%22%20cy%3D%22128%22%20r%3D%2223%22%20fill%3D%22%23c6d4ba%22%2F%3E%3Cpath%20d%3D%22M128%20117%20L148%20128%20L128%20139Z%22%20fill%3D%22%23253c35%22%2F%3E%3Ctext%20x%3D%22179%22%20y%3D%22120%22%20fill%3D%22%23f5f5eb%22%20font-size%3D%2220%22%3E%E5%91%A8%E4%BA%94%E5%8F%91%E5%B8%83%E4%BC%9A%20%C2%B7%20%E5%9B%9E%E7%9C%8B%E4%B8%8E%E8%A1%8C%E5%8A%A8%3C%2Ftext%3E%3Ctext%20x%3D%22179%22%20y%3D%22150%22%20fill%3D%22%23b4c6b8%22%20font-size%3D%2213%22%3E18%3A42%20%2F%2026%3A10%3C%2Ftext%3E%3Cpath%20d%3D%22M96%20275%20H705%22%20stroke%3D%22%23648071%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M96%20275%20H525%22%20stroke%3D%22%23d6dfb9%22%20stroke-width%3D%223%22%2F%3E%3Ctext%20x%3D%2291%22%20y%3D%22371%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E02%3A14%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22371%22%20fill%3D%22%2343533e%22%20font-size%3D%2217%22%3E%E5%85%88%E8%AE%A9%E6%96%B0%E5%90%8C%E4%BA%8B%E4%B8%8D%E7%94%A8%E9%97%AE%E4%BA%BA%E5%B0%B1%E8%83%BD%E5%88%9B%E5%BB%BA%E9%A1%B9%E7%9B%AE%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2291%22%20y%3D%22439%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E08%3A36%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22439%22%20fill%3D%22%2343533e%22%20font-size%3D%2217%22%3E%E5%91%A8%E5%9B%9B%E5%AE%8C%E6%88%90%E7%A9%BA%E7%8A%B6%E6%80%81%E6%96%87%E6%A1%88%EF%BC%8C%E6%9E%97%E8%B4%9F%E8%B4%A3%E3%80%82%3C%2Ftext%3E%3Crect%20x%3D%2269%22%20y%3D%22480%22%20width%3D%22662%22%20height%3D%2254%22%20rx%3D%226%22%20fill%3D%22%23e7eedf%22%2F%3E%3Ctext%20x%3D%2291%22%20y%3D%22507%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E18%3A42%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22507%22%20fill%3D%22%2343533e%22%20font-size%3D%2217%22%3E%E5%BD%95%E5%B1%8F%E9%87%8C%E5%87%BA%E7%8E%B0%E4%BA%86%E4%B8%A4%E6%AC%A1%E8%BF%9E%E6%8E%A5%E7%8A%B6%E6%80%81%E8%AF%AF%E8%AF%BB%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2291%22%20y%3D%22575%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E23%3A18%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22575%22%20fill%3D%22%2343533e%22%20font-size%3D%2217%22%3E%E5%85%88%E8%A7%A3%E5%86%B3%E9%98%BB%E5%A1%9E%EF%BC%8C%E5%86%8D%E5%81%9A%E8%A7%86%E8%A7%89%E7%BB%86%E8%8A%82%E3%80%82%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "focus": "review-page",
+      "description": "看得见原话，也看得见下一步。时间戳、负责人和未决事项都有归处。",
+      "stages": ["原话与背景", "决策与行动", "跟进与复盘"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22700%22%20viewBox%3D%220%200%20800%20700%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22700%22%20fill%3D%22%23f0f2ee%22%2F%3E%3Crect%20x%3D%2245%22%20y%3D%2246%22%20width%3D%22710%22%20height%3D%22608%22%20rx%3D%2212%22%20fill%3D%22%23fff%22%20stroke%3D%22%23d8ded4%22%2F%3E%3Crect%20x%3D%2269%22%20y%3D%2270%22%20width%3D%22662%22%20height%3D%22250%22%20rx%3D%228%22%20fill%3D%22%23253c35%22%2F%3E%3Ccircle%20cx%3D%22136%22%20cy%3D%22128%22%20r%3D%2223%22%20fill%3D%22%23c6d4ba%22%2F%3E%3Cpath%20d%3D%22M128%20117%20L148%20128%20L128%20139Z%22%20fill%3D%22%23253c35%22%2F%3E%3Ctext%20x%3D%22179%22%20y%3D%22120%22%20fill%3D%22%23f5f5eb%22%20font-size%3D%2220%22%3EFriday%20launch%20review%3C%2Ftext%3E%3Ctext%20x%3D%22179%22%20y%3D%22150%22%20fill%3D%22%23b4c6b8%22%20font-size%3D%2213%22%3E18%3A42%20%2F%2026%3A10%3C%2Ftext%3E%3Cpath%20d%3D%22M96%20275%20H705%22%20stroke%3D%22%23648071%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M96%20275%20H525%22%20stroke%3D%22%23d6dfb9%22%20stroke-width%3D%223%22%2F%3E%3Ctext%20x%3D%2291%22%20y%3D%22371%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E02%3A14%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22371%22%20fill%3D%22%2343533e%22%20font-size%3D%2214%22%3EMake%20the%20first%20project%20self-explanatory.%3C%2Ftext%3E%3Ctext%20x%3D%2291%22%20y%3D%22439%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E08%3A36%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22439%22%20fill%3D%22%2343533e%22%20font-size%3D%2214%22%3ELin%20owns%20empty-state%20copy%2C%20due%20Thursday.%3C%2Ftext%3E%3Crect%20x%3D%2269%22%20y%3D%22480%22%20width%3D%22662%22%20height%3D%2254%22%20rx%3D%226%22%20fill%3D%22%23e7eedf%22%2F%3E%3Ctext%20x%3D%2291%22%20y%3D%22507%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E18%3A42%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22507%22%20fill%3D%22%2343533e%22%20font-size%3D%2214%22%3EThe%20recording%20shows%20two%20connection-state%20issues.%3C%2Ftext%3E%3Ctext%20x%3D%2291%22%20y%3D%22575%22%20fill%3D%22%236a8569%22%20font-size%3D%2213%22%3E23%3A18%3C%2Ftext%3E%3Ctext%20x%3D%22167%22%20y%3D%22575%22%20fill%3D%22%2343533e%22%20font-size%3D%2214%22%3EResolve%20blockers%20before%20visual%20polish.%3C%2Ftext%3E%3C%2Fsvg%3E",
+        "description": "Keep the original words and the next action together, with timestamps, ownership and open questions in place.",
+        "stages": [
+          "Words & context",
+          "Decisions & actions",
+          "Follow up & review"
+        ]
+      },
+      "artwork": "meeting"
+    },
+    "nodes": [
+      {
+        "id": "transcript",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "会议转写 · 保留原话",
+        "en": {
+          "name": "Transcript · keep the words"
+        },
+        "preview": {
+          "text": "示例转写 / 周五发布准备会\n02:14 林：先让新同事不用问人就能创建项目。\n05:20 陈：现在最容易误读的是模型连接状态。\n08:36 林：我在周四前完成空状态文案。\n12:05 周：我会检查安装说明，发现问题当天反馈。\n18:42 陈：录屏里出现了两次连接状态误读，我周四重录。\n23:18 周：先解决阻塞，再做视觉细节。\n25:10 林：发布日期还要",
+          "en": "Sample transcript / Friday launch review\n02:14 Lin: New teammates should create a project without asking someone.\n05:20 Chen: Connection status is easiest to misread.\n08:36 Lin: I "
+        }
+      },
+      {
+        "id": "context",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "发布范围与读者",
+        "en": {
+          "name": "Scope and audience"
+        },
+        "preview": {
+          "text": "发布范围：首次创建项目、模型连接提示和安装文档。读者：文案、前端与文档协作者。需要明确决策、负责人、截止时间和原文位置。没有承诺的日期标为待确认，不要把建议写成决定。",
+          "en": "Scope: first project creation, connection guidance and installation docs. Readers: copy, frontend and documentation collaborators. Preserve decisions, owner, deadline and source ti"
+        }
+      },
+      {
+        "id": "handoff",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "交接需要什么",
+        "en": {
+          "name": "What the handoff needs"
+        },
+        "preview": {
+          "text": "目标：会后不再翻聊天找谁负责什么。交付：一页会议纪要、按负责人分组的待办、未决问题、可直接复制的跟进消息和发布前检查清单。所有内容回到同一份原始转写。",
+          "en": "Goal: stop searching chat to find who owns what. Deliver a one-page recap, actions grouped by owner, open questions, ready-to-copy follow-up and pre-launch checks. Keep everything "
+        }
+      },
+      {
+        "id": "decisions",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "确认过的决定",
+        "en": {
+          "name": "Confirmed decisions"
+        },
+        "preview": {
+          "text": " 已确认\n\n- 02:14 首次创建项目要能独立完成。\n- 23:18 优先处理阻塞，再做视觉细节。\n\n 仍未决定\n\n- 25:10 发布日期取决于最后走查。\n- 模型连接提示的具体改法，需要结合录屏再次核对。",
+          "en": " Confirmed\n\n- 02:14: first project creation should be self-explanatory.\n- 23:18: address blockers before visual polish.\n\n Still open\n\n- 25:10: launch date depends on the final revi"
+        }
+      },
+      {
+        "id": "actions",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "按负责人跟进",
+        "en": {
+          "name": "Actions by owner"
+        },
+        "preview": {
+          "text": " 负责人  任务  截止  原话位置 \n ---  ---  ---  --- \n 林  完成空状态文案  周四前  08:36 \n 陈  重录连接状态演示  周四  18:42 \n 周  检查安装说明并反馈  当天反馈问题  12:05 \n\n未指定负责人或期限的事项，保留为待确认，不代替团队承诺。",
+          "en": " Owner  Action  Due  Source \n ---  ---  ---  --- \n Lin  Finish empty-state copy  Before Thursday  08:36 \n Chen  Re-record connection walkthrough  Thursday  18:42 \n Zhou  Check inst"
+        }
+      },
+      {
+        "id": "risks",
+        "type": "instruction",
+        "column": 1,
+        "row": 2,
+        "name": "未决与阻塞",
+        "en": {
+          "name": "Open questions and blockers"
+        },
+        "preview": {
+          "text": " 需要先处理\n\n1. 连接状态在示例录屏里被误读两次（18:42）。\n2. 首次创建项目是否足够清楚，需要重新走查（02:14）。\n\n 待确认\n\n- 发布日期。\n- 文案修改后的验证人。\n- 重录前是否需要补一次提示状态评审。",
+          "en": " Address first\n\n1. Two connection-status misunderstandings in the sample recording (18:42).\n2. Recheck whether first project creation is clear (02:14).\n\n Confirm\n\n- Launch date.\n- "
+        }
+      },
+      {
+        "id": "recap",
+        "type": "instruction",
+        "column": 2,
+        "row": 0,
+        "name": "一页会议纪要",
+        "en": {
+          "name": "A one-page recap"
+        },
+        "preview": {
+          "text": " 周五发布准备会\n\n目标：新同事不用问人，也能创建第一个项目。\n\n优先级：先修复阻塞，再打磨视觉（23:18）。\n\n本周交付：林完成空状态文案；陈重录演示；周检查安装说明。\n\n发布条件：首次流程、连接提示和安装说明走查完成。\n\n还未确定：正式发布日期与最终验证人。\n\n原始转写保留在左侧，可沿连线回查。",
+          "en": " Friday launch review\n\nGoal: a new teammate can create their first project without asking for help.\n\nPriority: resolve blockers, then polish visuals (23:18).\n\nThis week: Lin finish"
+        }
+      },
+      {
+        "id": "followup",
+        "type": "instruction",
+        "column": 2,
+        "row": 1,
+        "name": "可以直接复制的团队消息",
+        "en": {
+          "name": "A ready-to-copy follow-up"
+        },
+        "preview": {
+          "text": "今天确认：优先把首次创建和连接提示里的阻塞解决，再做视觉细节。\n\n林：周四前完成空状态文案。\n陈：周四重录演示，重点检查连接状态。\n周：走查安装说明，问题当天反馈。\n\n发布日暂不确定。文案与重录完成后，还需要确认谁做最后一轮走查。请大家补充遗漏。",
+          "en": "Confirmed today: address first-use and connection-guidance blockers before visual polish.\n\nLin: empty-state copy before Thursday.\nChen: re-record Thursday, focusing on connection s"
+        }
+      },
+      {
+        "id": "plan",
+        "type": "chart",
+        "column": 2,
+        "row": 2,
+        "name": "发布准备，连起来看",
+        "en": {
+          "name": "The launch readiness map"
+        },
+        "preview": {
+          "text": "把发布范围和行动分组，保持未决日期明确。",
+          "en": "Group launch scope and actions, keeping the date explicitly open."
+        }
+      },
+      {
+        "id": "review-page",
+        "type": "website",
+        "column": 3,
+        "row": 0,
+        "name": "会后复盘页",
+        "en": {
+          "name": "The shared recap page"
+        },
+        "preview": {
+          "text": "把纪要、行动与未决问题排成便于团队阅读的一页。",
+          "en": "Create a readable one-page team recap of decisions, actions and open questions."
+        }
+      },
+      {
+        "id": "check",
+        "type": "instruction",
+        "column": 3,
+        "row": 1,
+        "name": "有没有误读原话？",
+        "en": {
+          "name": "A source fidelity check"
+        },
+        "preview": {
+          "text": " 对照结果\n\n- 行动项都能回到原始时间戳。\n- “周四前”与“周四”分别保留，没有强行统一。\n- “当天反馈问题”没有被改写为“当天完成全部检查”。\n- 发布日期保留为待确认。\n\n仍需人工确认：实际会议日期、参与人全名与后续变更。",
+          "en": " Source check\n\n- Every action traces to a timestamp.\n- “Before Thursday” and “Thursday” remain distinct.\n- “Report issues the same day” is not rewritten as “finish every check that"
+        }
+      }
+    ],
+    "edges": [
+      ["transcript", "decisions"],
+      ["context", "decisions"],
+      ["transcript", "actions"],
+      ["transcript", "risks"],
+      ["decisions", "recap"],
+      ["actions", "recap"],
+      ["risks", "recap"],
+      ["handoff", "recap"],
+      ["actions", "followup"],
+      ["decisions", "followup"],
+      ["risks", "followup"],
+      ["actions", "plan"],
+      ["context", "plan"],
+      ["recap", "review-page"],
+      ["plan", "review-page"],
+      ["transcript", "check"],
+      ["recap", "check"]
+    ]
+  },
+  {
+    "id": "builtin-product-prd",
+    "recipe": "product-prd",
+    "kind": "file",
+    "name": "Flow · 从用户访谈到产品原型",
+    "description": "三份访谈原话，提炼问题与范围，再分支成 PRD、流程图、可交互原型和验收清单。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Flow · interviews to a prototype",
+      "description": "Three interview excerpts become evidence-backed insights, a PRD, user flow, working prototype and acceptance checks.",
+      "tag": "Product"
+    },
+    "showcase": {
+      "accent": "#81709c",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22640%22%20viewBox%3D%220%200%20800%20640%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22640%22%20fill%3D%22%23ececf1%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2242%22%20width%3D%22730%22%20height%3D%22556%22%20rx%3D%2215%22%20fill%3D%22%23fff%22%20stroke%3D%22%23d3d3e0%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2242%22%20width%3D%22156%22%20height%3D%22556%22%20rx%3D%2215%22%20fill%3D%22%23f8f8fa%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2292%22%20fill%3D%22%23373357%22%20font-size%3D%2225%22%20font-weight%3D%22650%22%3Eflow.%3C%2Ftext%3E%3Cpath%20d%3D%22M60%20131%20H166%20M60%20166%20H139%20M60%20201%20H155%22%20stroke%3D%22%23b2b1c3%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%22231%22%20width%3D%22131%22%20height%3D%2235%22%20rx%3D%226%22%20fill%3D%22%23e4def7%22%2F%3E%3Ctext%20x%3D%2259%22%20y%3D%22253%22%20fill%3D%22%2364508d%22%20font-size%3D%2212%22%3EProduct%20launch%3C%2Ftext%3E%3Ctext%20x%3D%22220%22%20y%3D%2294%22%20fill%3D%22%23343248%22%20font-size%3D%2222%22%20font-weight%3D%22600%22%3EProduct%20launch%3C%2Ftext%3E%3Ctext%20x%3D%22220%22%20y%3D%22124%22%20fill%3D%22%238b899d%22%20font-size%3D%2212%22%3EOne%20clear%20place%20for%20what%20happens%20next.%3C%2Ftext%3E%3Crect%20x%3D%22222%22%20y%3D%22152%22%20width%3D%22515%22%20height%3D%221%22%20fill%3D%22%23e6e4eb%22%2F%3E%3Ccircle%20cx%3D%22225%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%239982be%22%2F%3E%3Ctext%20x%3D%22238%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3ETO%20DO%3C%2Ftext%3E%3Crect%20x%3D%22220%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EInterview%20notes%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20274%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ESuccess%20criteria%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20382%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22430%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22442%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22477%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EFirst-run%20copy%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20490%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22508%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ccircle%20cx%3D%22399%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%236d91a8%22%2F%3E%3Ctext%20x%3D%22412%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3EIN%20PROGRESS%3C%2Ftext%3E%3Crect%20x%3D%22394%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22406%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ctext%20x%3D%22406%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ECreate%20a%20project%3C%2Ftext%3E%3Cpath%20d%3D%22M406%20274%20H505%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22416%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Crect%20x%3D%22394%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22406%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ctext%20x%3D%22406%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EInvite%20a%20teammate%3C%2Ftext%3E%3Cpath%20d%3D%22M406%20382%20H505%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22416%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%23719b7c%22%2F%3E%3Ctext%20x%3D%22586%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3EREADY%3C%2Ftext%3E%3Crect%20x%3D%22568%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ENavigation%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20274%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3Crect%20x%3D%22568%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EEmpty%20states%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20382%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3Crect%20x%3D%22568%22%20y%3D%22430%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22442%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22477%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EExport%20preview%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20490%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22508%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3C%2Fsvg%3E",
+      "focus": "prototype",
+      "description": "从原话到界面，每一个设计决定都有来处。附可添加、切换状态的看板。",
+      "stages": ["访谈与边界", "需求与流程", "原型与验收"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22640%22%20viewBox%3D%220%200%20800%20640%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22640%22%20fill%3D%22%23ececf1%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2242%22%20width%3D%22730%22%20height%3D%22556%22%20rx%3D%2215%22%20fill%3D%22%23fff%22%20stroke%3D%22%23d3d3e0%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2242%22%20width%3D%22156%22%20height%3D%22556%22%20rx%3D%2215%22%20fill%3D%22%23f8f8fa%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2292%22%20fill%3D%22%23373357%22%20font-size%3D%2225%22%20font-weight%3D%22650%22%3Eflow.%3C%2Ftext%3E%3Cpath%20d%3D%22M60%20131%20H166%20M60%20166%20H139%20M60%20201%20H155%22%20stroke%3D%22%23b2b1c3%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%22231%22%20width%3D%22131%22%20height%3D%2235%22%20rx%3D%226%22%20fill%3D%22%23e4def7%22%2F%3E%3Ctext%20x%3D%2259%22%20y%3D%22253%22%20fill%3D%22%2364508d%22%20font-size%3D%2212%22%3EProduct%20launch%3C%2Ftext%3E%3Ctext%20x%3D%22220%22%20y%3D%2294%22%20fill%3D%22%23343248%22%20font-size%3D%2222%22%20font-weight%3D%22600%22%3EProduct%20launch%3C%2Ftext%3E%3Ctext%20x%3D%22220%22%20y%3D%22124%22%20fill%3D%22%238b899d%22%20font-size%3D%2212%22%3EOne%20clear%20place%20for%20what%20happens%20next.%3C%2Ftext%3E%3Crect%20x%3D%22222%22%20y%3D%22152%22%20width%3D%22515%22%20height%3D%221%22%20fill%3D%22%23e6e4eb%22%2F%3E%3Ccircle%20cx%3D%22225%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%239982be%22%2F%3E%3Ctext%20x%3D%22238%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3ETO%20DO%3C%2Ftext%3E%3Crect%20x%3D%22220%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EInterview%20notes%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20274%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ESuccess%20criteria%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20382%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Crect%20x%3D%22220%22%20y%3D%22430%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22232%22%20y%3D%22442%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ctext%20x%3D%22232%22%20y%3D%22477%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EFirst-run%20copy%3C%2Ftext%3E%3Cpath%20d%3D%22M232%20490%20H331%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22242%22%20cy%3D%22508%22%20r%3D%228%22%20fill%3D%22%23edeaf5%22%2F%3E%3Ccircle%20cx%3D%22399%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%236d91a8%22%2F%3E%3Ctext%20x%3D%22412%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3EIN%20PROGRESS%3C%2Ftext%3E%3Crect%20x%3D%22394%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22406%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ctext%20x%3D%22406%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ECreate%20a%20project%3C%2Ftext%3E%3Cpath%20d%3D%22M406%20274%20H505%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22416%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Crect%20x%3D%22394%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22406%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ctext%20x%3D%22406%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EInvite%20a%20teammate%3C%2Ftext%3E%3Cpath%20d%3D%22M406%20382%20H505%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22416%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23e5ecf0%22%2F%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22185%22%20r%3D%224%22%20fill%3D%22%23719b7c%22%2F%3E%3Ctext%20x%3D%22586%22%20y%3D%22189%22%20fill%3D%22%23777587%22%20font-size%3D%2210%22%20letter-spacing%3D%221%22%3EREADY%3C%2Ftext%3E%3Crect%20x%3D%22568%22%20y%3D%22214%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22226%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22261%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3ENavigation%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20274%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22292%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3Crect%20x%3D%22568%22%20y%3D%22322%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22334%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22369%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EEmpty%20states%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20382%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22400%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3Crect%20x%3D%22568%22%20y%3D%22430%22%20width%3D%22158%22%20height%3D%2294%22%20rx%3D%228%22%20fill%3D%22%23fff%22%20stroke%3D%22%23e0dfe7%22%2F%3E%3Crect%20x%3D%22580%22%20y%3D%22442%22%20width%3D%2248%22%20height%3D%2215%22%20rx%3D%224%22%20fill%3D%22%23e4ede6%22%2F%3E%3Ctext%20x%3D%22580%22%20y%3D%22477%22%20fill%3D%22%234b495e%22%20font-size%3D%2212%22%3EExport%20preview%3C%2Ftext%3E%3Cpath%20d%3D%22M580%20490%20H679%22%20stroke%3D%22%23e3e1e8%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22590%22%20cy%3D%22508%22%20r%3D%228%22%20fill%3D%22%23e4ede6%22%2F%3E%3C%2Fsvg%3E",
+        "description": "Every design decision has a source, from interview quotes to a board you can actually add to and move through.",
+        "stages": ["Evidence & scope", "PRD & journey", "Prototype & checks"]
+      },
+      "artwork": "flow"
+    },
+    "nodes": [
+      {
+        "id": "interviews",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "三份访谈原话",
+        "en": {
+          "name": "Three interview excerpts"
+        },
+        "preview": {
+          "text": "访谈 A：我每天打开三个工具才知道今天先做什么。\n访谈 B：任务写了很多，还是不知道谁在等我回复。\n访谈 C：周会前还要重新把任务整理成一份汇报。\n\n样本只有三人，适合发现线索，不足以证明所有团队都存在相同问题。",
+          "en": "Interview A: I open three tools every morning just to decide what to do first.\nInterview B: There are many tasks, but I still cannot tell who is waiting for my reply.\nInterview C: "
+        }
+      },
+      {
+        "id": "scope",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "这一版，先解决什么",
+        "en": {
+          "name": "Scope for the first version"
+        },
+        "preview": {
+          "text": "Flow 是面向小团队的工作整理工具。本版只做：任务看板、负责人、待回复标记与每周回顾。暂不做工时、薪资、成员积分或复杂自动化。先让“今天该做什么”与“谁在等我”清楚。",
+          "en": "Flow is a small-team work organizer. First version: a task board, ownership, waiting-for-reply marks and weekly review. Exclude timesheets, payroll, points and complex automation. "
+        }
+      },
+      {
+        "id": "constraints",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "产品与设计约束",
+        "en": {
+          "name": "Product and design constraints"
+        },
+        "preview": {
+          "text": "桌面优先，但手机可查看任务。默认不出现空白大表格；首次进入有示例项目。重要状态用文字与图标同时表达。操作可撤销。不要用样本访谈推算市场规模或提升百分比。",
+          "en": "Desktop-first, with task reading on phones. Avoid an empty large table on first use; include a sample project. Use text and icons together for important states. Changes should be u"
+        }
+      },
+      {
+        "id": "insights",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "把原话变成可追溯的问题",
+        "en": {
+          "name": "From quotes to grounded problems"
+        },
+        "preview": {
+          "text": " 线索  对应原话  产品机会 \n ---  ---  --- \n 工作入口分散  打开三个工具  一个今日视图 \n 协作等待不清楚  谁在等我回复  显式待回复状态 \n 汇报重复整理  重新整理一份汇报  从已有任务生成回顾 \n\n限制：小样本，只能指导原型；需要更多访谈与可用性测试。",
+          "en": " Signal  Supporting quote  Opportunity \n ---  ---  --- \n Scattered starting points  Open three tools  One view for today \n Hidden collaboration waits  Who is waiting for my reply? "
+        }
+      },
+      {
+        "id": "opportunities",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "从问题到一条主路径",
+        "en": {
+          "name": "One coherent first path"
+        },
+        "preview": {
+          "text": " 先让一天开始得清楚\n\n进入项目 → 看今天 → 找到负责人 → 回复等待 → 周五回顾。\n\n这一版要做到：不重新录入任务，也能知道现在的重点。\n\n暂不做：复杂报表、多层审批、绩效排名。",
+          "en": " Start the day with clarity\n\nOpen a project → see today → find ownership → clear a waiting reply → review on Friday.\n\nThis version: understand the next priority without re-entering"
+        }
+      },
+      {
+        "id": "prd",
+        "type": "instruction",
+        "column": 1,
+        "row": 2,
+        "name": "一份可以讨论的 PRD",
+        "en": {
+          "name": "A PRD ready for discussion"
+        },
+        "preview": {
+          "text": " Flow / 第一版\n\n 目标\n让小团队在同一个项目里确认今日重点与待回复事项。\n\n 核心行为\n- 新建任务时填写标题，可补充负责人。\n- 看板分为待办、进行中与完成。\n- 可标记“等待我回复”，支持单独筛选。\n- 每周回顾从已完成任务开始整理。\n\n 空状态\n提供三张可以直接修改的示例任务，并解释如何新增。\n\n 验收\n修改任务后立即看到状态变化；当前页面内",
+          "en": " Flow / first version\n\n Goal\nHelp a small team identify today’s priorities and waiting replies inside one project.\n\n Core behaviors\n- Create a titled task with optional ownership.\n"
+        }
+      },
+      {
+        "id": "flow",
+        "type": "chart",
+        "column": 2,
+        "row": 0,
+        "name": "首次使用路径",
+        "en": {
+          "name": "First-use journey"
+        },
+        "preview": {
+          "text": "把 PRD 变成首次使用流程。",
+          "en": "Turn the PRD into a first-use journey."
+        }
+      },
+      {
+        "id": "prototype",
+        "type": "website",
+        "column": 2,
+        "row": 1,
+        "name": "任务看板 · 可编辑原型",
+        "en": {
+          "name": "The task board prototype"
+        },
+        "preview": {
+          "text": "依据 PRD 制作可交互看板：添加任务、切换状态、查看待回复，当前页面内保留修改。",
+          "en": "Create an interactive task board from the PRD: add tasks, change state and see waiting replies. Keep edits in the current page."
+        }
+      },
+      {
+        "id": "tests",
+        "type": "instruction",
+        "column": 2,
+        "row": 2,
+        "name": "把体验写成验收",
+        "en": {
+          "name": "Acceptance through real tasks"
+        },
+        "preview": {
+          "text": " 测试任务  预期 \n ---  --- \n 修改示例任务标题  立刻看见新标题 \n 将待办移到进行中  卡片只出现在目标列 \n 筛选待回复  可找到等待自己处理的任务 \n 关闭前检查原型  当前页面内编辑保留 \n\n真实团队测试尚未进行；不能把示例体验当作效率提升的证据。",
+          "en": " Task  Expected behavior \n ---  --- \n Rename a sample task  See the new title immediately \n Move To do to In progress  Card appears only in the destination \n Filter waiting replies"
+        }
+      },
+      {
+        "id": "review",
+        "type": "instruction",
+        "column": 3,
+        "row": 0,
+        "name": "设计评审，不靠形容词",
+        "en": {
+          "name": "A concrete design review"
+        },
+        "preview": {
+          "text": " 这版能看见什么\n\n任务状态与负责人同屏，首次进入有可改的内容。\n\n 还要验证什么\n\n- “待回复”能否被第一次使用的人正确理解？\n- 手机里任务很多时，筛选是否足够清楚？\n- 周报是否真的减少重复整理？\n\n下一轮：邀请小团队各自完成三个实际任务，记录卡住的位置。",
+          "en": " Visible in this version\n\nTask state and ownership share one screen. First-time users have something editable.\n\n Still to validate\n\n- Do new users understand “waiting for reply”?\n-"
+        }
+      }
+    ],
+    "edges": [
+      ["interviews", "insights"],
+      ["insights", "opportunities"],
+      ["scope", "opportunities"],
+      ["opportunities", "prd"],
+      ["constraints", "prd"],
+      ["prd", "flow"],
+      ["prd", "prototype"],
+      ["flow", "prototype"],
+      ["constraints", "prototype"],
+      ["prd", "tests"],
+      ["prototype", "tests"],
+      ["interviews", "review"],
+      ["prototype", "review"],
+      ["tests", "review"]
+    ]
+  },
+  {
+    "id": "builtin-landing-page",
+    "recipe": "landing-page",
+    "kind": "website",
+    "name": "山野周末 · 活动上线工作台",
+    "description": "把行程、受众与活动规则，变成招募文案、海报、落地页和发布检查。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Weekend Club · launch an experience",
+      "description": "Turn a real itinerary and practical constraints into recruitment copy, a poster, a landing page and launch checks.",
+      "tag": "Product"
+    },
+    "showcase": {
+      "accent": "#a1854e",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22940%22%20viewBox%3D%220%200%20800%20940%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22940%22%20fill%3D%22%23ede9dc%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%2290%22%20fill%3D%22%23274938%22%20font-size%3D%2222%22%20letter-spacing%3D%226%22%3EWEEKEND%20%2F%20CLUB%3C%2Ftext%3E%3Ccircle%20cx%3D%22620%22%20cy%3D%22250%22%20r%3D%2294%22%20fill%3D%22%23d9b364%22%2F%3E%3Cpath%20d%3D%22M0%20540%20L250%20180%20L450%20460%20L560%20298%20L800%20570%20V710%20H0Z%22%20fill%3D%22%23a4b09a%22%2F%3E%3Cpath%20d%3D%22M0%20645%20L320%20340%20L570%20610%20L700%20435%20L800%20570%20V800%20H0Z%22%20fill%3D%22%234f735b%22%2F%3E%3Cpath%20d%3D%22M0%20725%20L225%20570%20L435%20740%20L650%20555%20L800%20690%20V940%20H0Z%22%20fill%3D%22%23244d3b%22%2F%3E%3Cpath%20d%3D%22M303%20528%20Q400%20640%20362%20715%20Q339%20771%20451%20820%22%20fill%3D%22none%22%20stroke%3D%22%23dfc794%22%20stroke-width%3D%2213%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%22735%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2267%22%20font-weight%3D%22600%22%3E%E5%91%A8%E6%9C%AB%EF%BC%8C%E5%8E%BB%E5%B1%B1%E9%87%8E%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22867%22%20fill%3D%22%23d6dfcd%22%20font-size%3D%2219%22%3E%E8%BD%BB%E5%BE%92%E6%AD%A5%20%2F%20%E6%9E%97%E9%97%B4%E5%8D%88%E9%A4%90%20%2F%20%E4%B8%80%E8%B5%B7%E7%A6%BB%E7%BA%BF%E5%8D%8A%E5%A4%A9%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22908%22%20fill%3D%22%23bacab2%22%20font-size%3D%2215%22%3E%E5%91%A8%E5%85%AD%2009%3A00%E2%80%9416%3A30%20%C2%B7%2012%20%E4%BA%BA%E5%B0%8F%E9%98%9F%20%C2%B7%20%E5%85%A5%E9%97%A8%E8%B7%AF%E7%BA%BF%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "focus": "webpage",
+      "description": "从活动邀请到落地页，把“看起来不错”变成“我知道怎样参加”。",
+      "stages": ["行程与规则", "招募与主视觉", "页面与发布"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22940%22%20viewBox%3D%220%200%20800%20940%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22940%22%20fill%3D%22%23ede9dc%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%2290%22%20fill%3D%22%23274938%22%20font-size%3D%2222%22%20letter-spacing%3D%226%22%3EWEEKEND%20%2F%20CLUB%3C%2Ftext%3E%3Ccircle%20cx%3D%22620%22%20cy%3D%22250%22%20r%3D%2294%22%20fill%3D%22%23d9b364%22%2F%3E%3Cpath%20d%3D%22M0%20540%20L250%20180%20L450%20460%20L560%20298%20L800%20570%20V710%20H0Z%22%20fill%3D%22%23a4b09a%22%2F%3E%3Cpath%20d%3D%22M0%20645%20L320%20340%20L570%20610%20L700%20435%20L800%20570%20V800%20H0Z%22%20fill%3D%22%234f735b%22%2F%3E%3Cpath%20d%3D%22M0%20725%20L225%20570%20L435%20740%20L650%20555%20L800%20690%20V940%20H0Z%22%20fill%3D%22%23244d3b%22%2F%3E%3Cpath%20d%3D%22M303%20528%20Q400%20640%20362%20715%20Q339%20771%20451%20820%22%20fill%3D%22none%22%20stroke%3D%22%23dfc794%22%20stroke-width%3D%2213%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%22740%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2255%22%20font-weight%3D%22600%22%3ETAKE%20THE%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22805%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2255%22%20font-weight%3D%22600%22%3ESCENIC%20ROUTE.%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22867%22%20fill%3D%22%23d6dfcd%22%20font-size%3D%2219%22%3EA%20small%20group.%20A%20long%20lunch.%20No%20rush.%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22908%22%20fill%3D%22%23bacab2%22%20font-size%3D%2215%22%3ESAT%2009%3A00%E2%80%9416%3A30%20%C2%B7%20MAX%2012%20PEOPLE%3C%2Ftext%3E%3C%2Fsvg%3E",
+        "description": "From an invitation to a real page, with the practical details that turn interest into a clear next step.",
+        "stages": ["Itinerary & rules", "Copy & key visual", "Page & launch"]
+      },
+      "artwork": "weekend"
+    },
+    "nodes": [
+      {
+        "id": "itinerary",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "周末行程",
+        "en": {
+          "name": "The itinerary"
+        },
+        "preview": {
+          "text": "虚构活动：山野周末。周六 09:00 市区集合，10:00 抵达步道，12:00 林间午餐，14:00 小组观察与自由交流，16:30 返回集合点。入门路线，含休息段。最多 12 人，参与者自行准备饮水和舒适鞋履。",
+          "en": "Fictional event: Weekend Club. Saturday 09:00 meet in town; 10:00 reach the trail; 12:00 lunch in the woods; 14:00 observation and conversation; 16:30 return. An introductory route"
+        }
+      },
+      {
+        "id": "people",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "想邀请什么样的人",
+        "en": {
+          "name": "Who should join?"
+        },
+        "preview": {
+          "text": "邀请工作日很忙、想亲近自然又不追求速度的人。有人可能第一次参加陌生活动，需要知道集合方式、强度、午餐安排以及是否可以独自报名。不要使用“轻松无风险”一类绝对保证。",
+          "en": "Invite people with busy weekdays who want time outside without racing. Some will join a group for the first time and need meeting instructions, effort level, lunch details and reas"
+        }
+      },
+      {
+        "id": "rules",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "必须说清楚的规则",
+        "en": {
+          "name": "Practical details"
+        },
+        "preview": {
+          "text": "示例没有填写真实日期、费用与集合地址，发布前必须补全。天气不适合时延期并提前通知。不要破坏植物，不留下垃圾。需要特别协助的人请在报名时说明，由组织者判断路线是否合适。",
+          "en": "Actual date, fee and meeting address are not set in this example and must be added before publishing. Reschedule if weather is unsuitable and notify participants. Leave plants undi"
+        }
+      },
+      {
+        "id": "structure",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "先回答参与者的问题",
+        "en": {
+          "name": "Answer the useful questions"
+        },
+        "preview": {
+          "text": " 页面结构\n\n1. 一句邀请：周末，去山野。\n2. 适合谁：愿意慢下来、走一段路的人。\n3. 一天怎样过：把真实时间点完整列出。\n4. 需要准备：水、鞋、午餐与天气。\n5. 如何报名：补齐日期、价格、地址和联系入口。",
+          "en": " Page structure\n\n1. Invitation: Take the scenic route.\n2. Who it suits: people who want an unhurried day outside.\n3. The day: keep every supplied time point.\n4. Preparation: water,"
+        }
+      },
+      {
+        "id": "invitation",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "写一份有细节的邀请",
+        "en": {
+          "name": "Write an invitation with details"
+        },
+        "preview": {
+          "text": " 周末，去山野。\n\n不用走得很快，也不用有漂亮的装备。一起沿着树影走一段路，坐下来吃午餐，再把手机收进口袋一会儿。\n\n这一天：09:00 集合 → 10:00 步道 → 12:00 午餐 → 14:00 交流 → 16:30 返回。\n\n第一次来？ 可以独自报名，组织者会在出发前介绍同行者。\n\n要带什么？ 饮水、舒适鞋履与适合天气的衣物。\n\n日期、费用、集合地",
+          "en": " Take the scenic route.\n\nNo need to walk fast or own impressive gear. Follow the shade, share lunch and put your phone away for a while.\n\nThe day: 09:00 meet → 10:00 trail → 12:00 "
+        }
+      },
+      {
+        "id": "poster",
+        "type": "ai-image",
+        "column": 1,
+        "row": 2,
+        "name": "招募主视觉",
+        "en": {
+          "name": "The recruitment poster"
+        },
+        "preview": {
+          "text": "设计山野周末招募海报，使用层叠山形、森林绿与日光黄，不编造具体地点。",
+          "en": "Design a Weekend Club poster with layered mountains, forest green and sunlight yellow. Do not invent a location.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22940%22%20viewBox%3D%220%200%20800%20940%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22940%22%20fill%3D%22%23ede9dc%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%2290%22%20fill%3D%22%23274938%22%20font-size%3D%2222%22%20letter-spacing%3D%226%22%3EWEEKEND%20%2F%20CLUB%3C%2Ftext%3E%3Ccircle%20cx%3D%22620%22%20cy%3D%22250%22%20r%3D%2294%22%20fill%3D%22%23d9b364%22%2F%3E%3Cpath%20d%3D%22M0%20540%20L250%20180%20L450%20460%20L560%20298%20L800%20570%20V710%20H0Z%22%20fill%3D%22%23a4b09a%22%2F%3E%3Cpath%20d%3D%22M0%20645%20L320%20340%20L570%20610%20L700%20435%20L800%20570%20V800%20H0Z%22%20fill%3D%22%234f735b%22%2F%3E%3Cpath%20d%3D%22M0%20725%20L225%20570%20L435%20740%20L650%20555%20L800%20690%20V940%20H0Z%22%20fill%3D%22%23244d3b%22%2F%3E%3Cpath%20d%3D%22M303%20528%20Q400%20640%20362%20715%20Q339%20771%20451%20820%22%20fill%3D%22none%22%20stroke%3D%22%23dfc794%22%20stroke-width%3D%2213%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%22735%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2267%22%20font-weight%3D%22600%22%3E%E5%91%A8%E6%9C%AB%EF%BC%8C%E5%8E%BB%E5%B1%B1%E9%87%8E%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22867%22%20fill%3D%22%23d6dfcd%22%20font-size%3D%2219%22%3E%E8%BD%BB%E5%BE%92%E6%AD%A5%20%2F%20%E6%9E%97%E9%97%B4%E5%8D%88%E9%A4%90%20%2F%20%E4%B8%80%E8%B5%B7%E7%A6%BB%E7%BA%BF%E5%8D%8A%E5%A4%A9%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22908%22%20fill%3D%22%23bacab2%22%20font-size%3D%2215%22%3E%E5%91%A8%E5%85%AD%2009%3A00%E2%80%9416%3A30%20%C2%B7%2012%20%E4%BA%BA%E5%B0%8F%E9%98%9F%20%C2%B7%20%E5%85%A5%E9%97%A8%E8%B7%AF%E7%BA%BF%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22940%22%20viewBox%3D%220%200%20800%20940%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22940%22%20fill%3D%22%23ede9dc%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%2290%22%20fill%3D%22%23274938%22%20font-size%3D%2222%22%20letter-spacing%3D%226%22%3EWEEKEND%20%2F%20CLUB%3C%2Ftext%3E%3Ccircle%20cx%3D%22620%22%20cy%3D%22250%22%20r%3D%2294%22%20fill%3D%22%23d9b364%22%2F%3E%3Cpath%20d%3D%22M0%20540%20L250%20180%20L450%20460%20L560%20298%20L800%20570%20V710%20H0Z%22%20fill%3D%22%23a4b09a%22%2F%3E%3Cpath%20d%3D%22M0%20645%20L320%20340%20L570%20610%20L700%20435%20L800%20570%20V800%20H0Z%22%20fill%3D%22%234f735b%22%2F%3E%3Cpath%20d%3D%22M0%20725%20L225%20570%20L435%20740%20L650%20555%20L800%20690%20V940%20H0Z%22%20fill%3D%22%23244d3b%22%2F%3E%3Cpath%20d%3D%22M303%20528%20Q400%20640%20362%20715%20Q339%20771%20451%20820%22%20fill%3D%22none%22%20stroke%3D%22%23dfc794%22%20stroke-width%3D%2213%22%2F%3E%3Ctext%20x%3D%2255%22%20y%3D%22740%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2255%22%20font-weight%3D%22600%22%3ETAKE%20THE%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22805%22%20fill%3D%22%23faf6e9%22%20font-size%3D%2255%22%20font-weight%3D%22600%22%3ESCENIC%20ROUTE.%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22867%22%20fill%3D%22%23d6dfcd%22%20font-size%3D%2219%22%3EA%20small%20group.%20A%20long%20lunch.%20No%20rush.%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22908%22%20fill%3D%22%23bacab2%22%20font-size%3D%2215%22%3ESAT%2009%3A00%E2%80%9416%3A30%20%C2%B7%20MAX%2012%20PEOPLE%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "webpage",
+        "type": "website",
+        "column": 2,
+        "row": 0,
+        "name": "活动落地页",
+        "en": {
+          "name": "The event landing page"
+        },
+        "preview": {
+          "text": "将行程和邀请文案排成自适应活动页，清楚标出未确认信息。",
+          "en": "Create a responsive event page from the itinerary and invitation. Keep unconfirmed information explicit."
+        }
+      },
+      {
+        "id": "faq",
+        "type": "instruction",
+        "column": 2,
+        "row": 1,
+        "name": "让第一次参加的人放心",
+        "en": {
+          "name": "Useful first-time FAQs"
+        },
+        "preview": {
+          "text": " 可以一个人来吗？\n可以。我们会在开始前留出互相认识的时间。\n\n 需要徒步经验吗？\n这是入门路线；如有特殊需求，请先与组织者确认。\n\n 下雨怎么办？\n天气不适合时延期，提前告知。\n\n 为什么没有报名付款入口？\n这是一份活动示例，实际日期、费用和地址仍需补齐。",
+          "en": " Can I come alone?\nYes. There will be time to meet the group before starting.\n\n Do I need hiking experience?\nIt is an introductory route. Contact the organizer first if you have sp"
+        }
+      },
+      {
+        "id": "community",
+        "type": "instruction",
+        "column": 2,
+        "row": 2,
+        "name": "社群招募短帖",
+        "en": {
+          "name": "A short community invitation"
+        },
+        "preview": {
+          "text": "这周末，想和你去山里待半天。\n\n12 人小队，入门慢行，林间午餐，还有不用赶时间的聊天。可以独自参加。\n\n09:00 集合，16:30 回来。请带水和舒适的鞋。\n\n日期、费用和具体集合地址确认后，再开放正式报名。先把这份邀请留给想离线一会儿的你。",
+          "en": "A small invitation to spend a day outside.\n\nA group of up to twelve, an unhurried introductory walk, lunch among the trees and room to talk. Solo sign-ups are welcome.\n\nMeet at 09:"
+        }
+      },
+      {
+        "id": "check",
+        "type": "instruction",
+        "column": 3,
+        "row": 0,
+        "name": "正式发布前的清单",
+        "en": {
+          "name": "Before opening registration"
+        },
+        "preview": {
+          "text": " 必须补齐\n\n-   实际日期与天气预案通知方式\n-   费用、包含项目与取消规则\n-   准确集合地址与联系人\n-   路线强度及特殊需求沟通方式\n\n 体验检查\n\n-   手机上能快速找到集合时间\n-   页面、海报和招募帖信息一致\n-   报名动作与下一步说明清楚",
+          "en": " Essential details\n\n-   Actual date and weather notification method\n-   Fee, inclusions and cancellation terms\n-   Exact meeting point and organizer contact\n-   Route effort and ac"
+        }
+      }
+    ],
+    "edges": [
+      ["itinerary", "structure"],
+      ["people", "structure"],
+      ["rules", "structure"],
+      ["structure", "invitation"],
+      ["people", "poster"],
+      ["invitation", "poster"],
+      ["invitation", "webpage"],
+      ["poster", "webpage"],
+      ["rules", "webpage"],
+      ["rules", "faq"],
+      ["people", "faq"],
+      ["invitation", "community"],
+      ["faq", "community"],
+      ["webpage", "check"],
+      ["rules", "check"]
+    ]
+  },
+  {
+    "id": "builtin-study-notes",
+    "recipe": "study-notes",
+    "kind": "chart",
+    "name": "看懂城市热岛 · 一份研究工作台",
+    "description": "用原始材料、教学数据和研究问题，连起证据、图解、文章、知识图谱和练习。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Why cities hold heat · a research desk",
+      "description": "Connect source notes, illustrative data and research questions to an explainer, visual, knowledge map and exercises.",
+      "tag": "Learning"
+    },
+    "showcase": {
+      "accent": "#b77d58",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22900%22%20viewBox%3D%220%200%20800%20900%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22900%22%20fill%3D%22%23f5efe5%22%2F%3E%3Ctext%20x%3D%2258%22%20y%3D%2282%22%20fill%3D%22%236c4c3e%22%20font-size%3D%2216%22%20letter-spacing%3D%224%22%3ECITY%20%2F%20FIELD%20NOTES%2001%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22165%22%20fill%3D%22%23493e35%22%20font-size%3D%2265%22%20font-weight%3D%22650%22%3E%E5%9F%8E%E5%B8%82%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9B%B4%E7%83%AD%EF%BC%9F%3C%2Ftext%3E%3Cpath%20d%3D%22M0%20565%20Q180%20525%20400%20550%20T800%20540%20V900%20H0Z%22%20fill%3D%22%23e8d5bc%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%22%20fill%3D%22none%22%20stroke%3D%22%23bb7051%22%20stroke-width%3D%225%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%20V650%20H0Z%22%20fill%3D%22%23d88961%22%20opacity%3D%22.17%22%2F%3E%3Crect%20x%3D%2253%22%20y%3D%22557%22%20width%3D%2245%22%20height%3D%2268%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22123%22%20y%3D%22505%22%20width%3D%2248%22%20height%3D%22120%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22194%22%20y%3D%22449%22%20width%3D%2245%22%20height%3D%22176%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22269%22%20y%3D%22395%22%20width%3D%2263%22%20height%3D%22230%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22361%22%20y%3D%22432%22%20width%3D%2265%22%20height%3D%22193%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22455%22%20y%3D%22480%22%20width%3D%2253%22%20height%3D%22145%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22530%22%20y%3D%22521%22%20width%3D%2251%22%20height%3D%22104%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22616%22%20y%3D%22552%22%20width%3D%2260%22%20height%3D%2273%22%20fill%3D%22%23bb987d%22%2F%3E%3Cpath%20d%3D%22M25%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M690%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22690%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M735%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22735%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E01%20%2F%20%E6%A0%91%E5%86%A0%E8%A6%86%E7%9B%96%3C%2Ftext%3E%3Ctext%20x%3D%2257%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E9%81%AE%E9%98%B4%E4%B8%8E%E8%92%B8%E8%85%BE%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E02%20%2F%20%E4%B8%8D%E9%80%8F%E6%B0%B4%E5%9C%B0%E9%9D%A2%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E8%93%84%E7%83%AD%E6%9B%B4%E5%A4%9A%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E03%20%2F%20%E5%A4%9C%E9%97%B4%E6%94%BE%E7%83%AD%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E9%99%8D%E6%B8%A9%E6%9B%B4%E6%85%A2%3C%2Ftext%3E%3Cpath%20d%3D%22M57%20817%20H743%22%20stroke%3D%22%23d2bdab%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22854%22%20fill%3D%22%23866c5c%22%20font-size%3D%2214%22%3E%E5%AD%A6%E4%B9%A0%E7%A4%BA%E4%BE%8B%20%C2%B7%20%E5%AF%B9%E7%85%A7%E5%85%B7%E4%BD%93%E5%9C%BA%E6%99%AF%EF%BC%8C%E7%90%86%E8%A7%A3%E6%B0%94%E6%B8%A9%E8%83%8C%E5%90%8E%E7%9A%84%E5%9F%8E%E5%B8%82%E7%BB%93%E6%9E%84%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "focus": "exhibit",
+      "description": "资料不是粘贴完就结束：让每条线索都有解释、图像和可以检验理解的问题。",
+      "stages": ["材料与问题", "证据与机制", "解释与展览"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22900%22%20viewBox%3D%220%200%20800%20900%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22900%22%20fill%3D%22%23f5efe5%22%2F%3E%3Ctext%20x%3D%2258%22%20y%3D%2282%22%20fill%3D%22%236c4c3e%22%20font-size%3D%2216%22%20letter-spacing%3D%224%22%3ECITY%20%2F%20FIELD%20NOTES%2001%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22165%22%20fill%3D%22%23493e35%22%20font-size%3D%2249%22%20font-weight%3D%22650%22%3EWHY%20CITIES%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22223%22%20fill%3D%22%23493e35%22%20font-size%3D%2249%22%20font-weight%3D%22650%22%3EHOLD%20THE%20HEAT%3C%2Ftext%3E%3Cpath%20d%3D%22M0%20565%20Q180%20525%20400%20550%20T800%20540%20V900%20H0Z%22%20fill%3D%22%23e8d5bc%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%22%20fill%3D%22none%22%20stroke%3D%22%23bb7051%22%20stroke-width%3D%225%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%20V650%20H0Z%22%20fill%3D%22%23d88961%22%20opacity%3D%22.17%22%2F%3E%3Crect%20x%3D%2253%22%20y%3D%22557%22%20width%3D%2245%22%20height%3D%2268%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22123%22%20y%3D%22505%22%20width%3D%2248%22%20height%3D%22120%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22194%22%20y%3D%22449%22%20width%3D%2245%22%20height%3D%22176%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22269%22%20y%3D%22395%22%20width%3D%2263%22%20height%3D%22230%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22361%22%20y%3D%22432%22%20width%3D%2265%22%20height%3D%22193%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22455%22%20y%3D%22480%22%20width%3D%2253%22%20height%3D%22145%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22530%22%20y%3D%22521%22%20width%3D%2251%22%20height%3D%22104%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22616%22%20y%3D%22552%22%20width%3D%2260%22%20height%3D%2273%22%20fill%3D%22%23bb987d%22%2F%3E%3Cpath%20d%3D%22M25%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M690%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22690%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M735%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22735%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E01%20%2F%20Canopy%3C%2Ftext%3E%3Ctext%20x%3D%2257%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3ECooler%20shade%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E02%20%2F%20Surfaces%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3EHeat%20stored%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E03%20%2F%20Night%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3ESlow%20release%3C%2Ftext%3E%3Cpath%20d%3D%22M57%20817%20H743%22%20stroke%3D%22%23d2bdab%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22854%22%20fill%3D%22%23866c5c%22%20font-size%3D%2214%22%3EIllustrative%20learning%20material%20%C2%B7%20compare%20places%2C%20not%20just%20averages%3C%2Ftext%3E%3C%2Fsvg%3E",
+        "description": "Go beyond pasted notes: connect evidence to explanations, visuals and questions that test understanding.",
+        "stages": [
+          "Notes & questions",
+          "Evidence & mechanisms",
+          "Explain & exhibit"
+        ]
+      },
+      "artwork": "heat"
+    },
+    "nodes": [
+      {
+        "id": "notes",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "阅读摘录与概念",
+        "en": {
+          "name": "Reading notes and concepts"
+        },
+        "preview": {
+          "text": "城市热岛：在特定条件下，城市区域比周边地区更暖。可以从地表材料、树冠覆盖、城市形态和人为排热理解。白天的地表温度不等于人体感受到的气温。单次测量不能代表整座城市或整个季节。\n\n这是用于演示学习流程的整理材料，正式研究需要补充可核验文献。",
+          "en": "Urban heat islands describe urban areas being warmer than nearby surroundings under some conditions. Examine surface materials, tree cover, urban form and waste heat. Daytime surfa"
+        }
+      },
+      {
+        "id": "data",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "一组教学用观察",
+        "en": {
+          "name": "An illustrative observation set"
+        },
+        "preview": {
+          "text": "教学数据，非真实测站：\n公园：树冠较多，午后体感较凉。\n硬质广场：暴露日照，地表较热。\n狭窄街道：局部有阴影，但通风受建筑影响。\n夜间：硬质表面可能持续释放白天储存的热。\n不根据这些描述计算温差或相关系数。",
+          "en": "Illustrative observations, not actual measurements:\nPark: more tree canopy, feels cooler in the afternoon.\nPaved square: direct sun and a hot surface.\nNarrow street: some shade, bu"
+        }
+      },
+      {
+        "id": "questions",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "我们真正想弄懂什么",
+        "en": {
+          "name": "Questions worth answering"
+        },
+        "preview": {
+          "text": "为什么“种树降温”不是一句话能解释完的？\n白天与夜间，机制有什么不同？\n如果只看一个平均温度，可能漏掉什么？\n最后输出给中学生看的解释，先讲现象，再讲机制和限制。",
+          "en": "Why does “plant trees to cool a city” need a fuller explanation?\nHow do day and night mechanisms differ?\nWhat might an average temperature hide?\nExplain to secondary-school readers"
+        }
+      },
+      {
+        "id": "evidence",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "事实、解释与未知分开",
+        "en": {
+          "name": "Separate evidence from explanation"
+        },
+        "preview": {
+          "text": " 概念  材料能说明什么  不能据此认定 \n ---  ---  --- \n 树冠  遮阴与蒸腾影响热环境  所有树种都同样降温 \n 硬质表面  储热与放热影响昼夜变化  任意广场比公园高几度 \n 城市形态  遮阴、通风同时作用  只增加楼高就一定更凉 \n\n证据缺口：没有真实测量、采样时间和正式文献，适合概念学习。",
+          "en": " Concept  What the notes support  What they do not establish \n ---  ---  --- \n Tree canopy  Shade and evapotranspiration matter  Every tree species cools equally \n Hard surfaces  S"
+        }
+      },
+      {
+        "id": "comparison",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "白天与夜间，对照着看",
+        "en": {
+          "name": "Compare day with night"
+        },
+        "preview": {
+          "text": " 白天：热怎样进来？\n阳光到达表面；树荫改变直接照射，材料影响吸收与储存。\n\n 夜间：热怎样出去？\n白天储存的热逐渐释放，建筑形态与空气流动继续影响降温。\n\n 一个提醒\n“地表更热”“气温更高”“人感觉更热”是相关但不同的问题，不能直接替换。",
+          "en": " Day: how heat arrives\nSun reaches surfaces. Shade changes direct exposure; materials affect absorption and storage.\n\n Night: how heat leaves\nStored heat is released. Urban form an"
+        }
+      },
+      {
+        "id": "map",
+        "type": "chart",
+        "column": 1,
+        "row": 2,
+        "name": "城市热岛知识图谱",
+        "en": {
+          "name": "A map of urban heat"
+        },
+        "preview": {
+          "text": "把机制、场景与证据限制整理成知识图谱。",
+          "en": "Map mechanisms, places and evidence limits."
+        }
+      },
+      {
+        "id": "article",
+        "type": "instruction",
+        "column": 2,
+        "row": 0,
+        "name": "给中学生的解释稿",
+        "en": {
+          "name": "An accessible explainer"
+        },
+        "preview": {
+          "text": " 为什么走到树荫下，会觉得不一样？\n\n同一条街，树荫下和无遮阴的铺地，感觉可能很不同。它不只是“这里空气低几度”的问题：阳光是否直接照在身上、表面储存了多少热、风能不能穿过来，都在参与。\n\n白天，树冠提供遮阴，也通过蒸腾影响热环境。到了夜里，白天晒热的表面还会慢慢放热。\n\n因此，研究城市热岛要记录时间、地点、表面和测量方式。一个平均数，往往装不下整座城市。\n",
+          "en": " Why does the shade feel different?\n\nOn one street, a shaded path and exposed paving may feel very different. Air temperature alone does not explain it: direct sunlight, stored sur"
+        }
+      },
+      {
+        "id": "visual",
+        "type": "ai-image",
+        "column": 2,
+        "row": 1,
+        "name": "一张能看懂的机制图",
+        "en": {
+          "name": "The visual explainer"
+        },
+        "preview": {
+          "text": "把城市热岛机制做成信息图，展示树冠、城市表面与夜间放热，不加入虚构测量。",
+          "en": "Create an infographic about canopy, urban surfaces and nighttime heat release without fabricated measurements.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22900%22%20viewBox%3D%220%200%20800%20900%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22900%22%20fill%3D%22%23f5efe5%22%2F%3E%3Ctext%20x%3D%2258%22%20y%3D%2282%22%20fill%3D%22%236c4c3e%22%20font-size%3D%2216%22%20letter-spacing%3D%224%22%3ECITY%20%2F%20FIELD%20NOTES%2001%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22165%22%20fill%3D%22%23493e35%22%20font-size%3D%2265%22%20font-weight%3D%22650%22%3E%E5%9F%8E%E5%B8%82%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9B%B4%E7%83%AD%EF%BC%9F%3C%2Ftext%3E%3Cpath%20d%3D%22M0%20565%20Q180%20525%20400%20550%20T800%20540%20V900%20H0Z%22%20fill%3D%22%23e8d5bc%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%22%20fill%3D%22none%22%20stroke%3D%22%23bb7051%22%20stroke-width%3D%225%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%20V650%20H0Z%22%20fill%3D%22%23d88961%22%20opacity%3D%22.17%22%2F%3E%3Crect%20x%3D%2253%22%20y%3D%22557%22%20width%3D%2245%22%20height%3D%2268%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22123%22%20y%3D%22505%22%20width%3D%2248%22%20height%3D%22120%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22194%22%20y%3D%22449%22%20width%3D%2245%22%20height%3D%22176%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22269%22%20y%3D%22395%22%20width%3D%2263%22%20height%3D%22230%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22361%22%20y%3D%22432%22%20width%3D%2265%22%20height%3D%22193%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22455%22%20y%3D%22480%22%20width%3D%2253%22%20height%3D%22145%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22530%22%20y%3D%22521%22%20width%3D%2251%22%20height%3D%22104%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22616%22%20y%3D%22552%22%20width%3D%2260%22%20height%3D%2273%22%20fill%3D%22%23bb987d%22%2F%3E%3Cpath%20d%3D%22M25%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M690%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22690%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M735%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22735%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E01%20%2F%20%E6%A0%91%E5%86%A0%E8%A6%86%E7%9B%96%3C%2Ftext%3E%3Ctext%20x%3D%2257%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E9%81%AE%E9%98%B4%E4%B8%8E%E8%92%B8%E8%85%BE%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E02%20%2F%20%E4%B8%8D%E9%80%8F%E6%B0%B4%E5%9C%B0%E9%9D%A2%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E8%93%84%E7%83%AD%E6%9B%B4%E5%A4%9A%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E03%20%2F%20%E5%A4%9C%E9%97%B4%E6%94%BE%E7%83%AD%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3E%E9%99%8D%E6%B8%A9%E6%9B%B4%E6%85%A2%3C%2Ftext%3E%3Cpath%20d%3D%22M57%20817%20H743%22%20stroke%3D%22%23d2bdab%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22854%22%20fill%3D%22%23866c5c%22%20font-size%3D%2214%22%3E%E5%AD%A6%E4%B9%A0%E7%A4%BA%E4%BE%8B%20%C2%B7%20%E5%AF%B9%E7%85%A7%E5%85%B7%E4%BD%93%E5%9C%BA%E6%99%AF%EF%BC%8C%E7%90%86%E8%A7%A3%E6%B0%94%E6%B8%A9%E8%83%8C%E5%90%8E%E7%9A%84%E5%9F%8E%E5%B8%82%E7%BB%93%E6%9E%84%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22900%22%20viewBox%3D%220%200%20800%20900%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22900%22%20fill%3D%22%23f5efe5%22%2F%3E%3Ctext%20x%3D%2258%22%20y%3D%2282%22%20fill%3D%22%236c4c3e%22%20font-size%3D%2216%22%20letter-spacing%3D%224%22%3ECITY%20%2F%20FIELD%20NOTES%2001%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22165%22%20fill%3D%22%23493e35%22%20font-size%3D%2249%22%20font-weight%3D%22650%22%3EWHY%20CITIES%3C%2Ftext%3E%3Ctext%20x%3D%2255%22%20y%3D%22223%22%20fill%3D%22%23493e35%22%20font-size%3D%2249%22%20font-weight%3D%22650%22%3EHOLD%20THE%20HEAT%3C%2Ftext%3E%3Cpath%20d%3D%22M0%20565%20Q180%20525%20400%20550%20T800%20540%20V900%20H0Z%22%20fill%3D%22%23e8d5bc%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%22%20fill%3D%22none%22%20stroke%3D%22%23bb7051%22%20stroke-width%3D%225%22%2F%3E%3Cpath%20d%3D%22M0%20590%20Q260%20265%20495%20410%20T800%20550%20V650%20H0Z%22%20fill%3D%22%23d88961%22%20opacity%3D%22.17%22%2F%3E%3Crect%20x%3D%2253%22%20y%3D%22557%22%20width%3D%2245%22%20height%3D%2268%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22123%22%20y%3D%22505%22%20width%3D%2248%22%20height%3D%22120%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22194%22%20y%3D%22449%22%20width%3D%2245%22%20height%3D%22176%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22269%22%20y%3D%22395%22%20width%3D%2263%22%20height%3D%22230%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22361%22%20y%3D%22432%22%20width%3D%2265%22%20height%3D%22193%22%20fill%3D%22%23bb987d%22%2F%3E%3Crect%20x%3D%22455%22%20y%3D%22480%22%20width%3D%2253%22%20height%3D%22145%22%20fill%3D%22%238d7c6b%22%2F%3E%3Crect%20x%3D%22530%22%20y%3D%22521%22%20width%3D%2251%22%20height%3D%22104%22%20fill%3D%22%2382957a%22%2F%3E%3Crect%20x%3D%22616%22%20y%3D%22552%22%20width%3D%2260%22%20height%3D%2273%22%20fill%3D%22%23bb987d%22%2F%3E%3Cpath%20d%3D%22M25%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M690%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22690%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Cpath%20d%3D%22M735%20635%20V550%22%20stroke%3D%22%23486847%22%20stroke-width%3D%226%22%2F%3E%3Ccircle%20cx%3D%22735%22%20cy%3D%22548%22%20r%3D%2224%22%20fill%3D%22%2390a17b%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E01%20%2F%20Canopy%3C%2Ftext%3E%3Ctext%20x%3D%2257%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3ECooler%20shade%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E02%20%2F%20Surfaces%3C%2Ftext%3E%3Ctext%20x%3D%22300%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3EHeat%20stored%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22735%22%20fill%3D%22%23a96849%22%20font-size%3D%2214%22%3E03%20%2F%20Night%3C%2Ftext%3E%3Ctext%20x%3D%22543%22%20y%3D%22775%22%20fill%3D%22%23493e35%22%20font-size%3D%2220%22%3ESlow%20release%3C%2Ftext%3E%3Cpath%20d%3D%22M57%20817%20H743%22%20stroke%3D%22%23d2bdab%22%2F%3E%3Ctext%20x%3D%2257%22%20y%3D%22854%22%20fill%3D%22%23866c5c%22%20font-size%3D%2214%22%3EIllustrative%20learning%20material%20%C2%B7%20compare%20places%2C%20not%20just%20averages%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "quiz",
+        "type": "instruction",
+        "column": 2,
+        "row": 2,
+        "name": "用问题检查是否理解",
+        "en": {
+          "name": "Check understanding"
+        },
+        "preview": {
+          "text": "1. 地表温度高，能否直接等于气温高？ 不能，测量对象不同。\n2. 为什么傍晚离开广场后仍可能感觉热？ 表面可能继续释放白天储存的热。\n3. 只记录“公园较凉”够不够？ 不够，还要记录时间、遮阴、风与测量方式。\n4. 下一步如何研究？ 设计同一时段、可比较场景的测量，并保留方法与限制。",
+          "en": "1. Does a hot surface directly mean hotter air? No; they are different measurements.\n2. Why can a square still feel warm after sunset? Surfaces may release stored heat.\n3. Is “the "
+        }
+      },
+      {
+        "id": "exhibit",
+        "type": "website",
+        "column": 3,
+        "row": 0,
+        "name": "把研究变成一页展览",
+        "en": {
+          "name": "A one-page learning exhibit"
+        },
+        "preview": {
+          "text": "用解释稿、图解和证据限制制作学习展览页。",
+          "en": "Make a learning exhibit from the explainer, visual and evidence limits."
+        }
+      }
+    ],
+    "edges": [
+      ["notes", "evidence"],
+      ["data", "evidence"],
+      ["questions", "evidence"],
+      ["notes", "comparison"],
+      ["evidence", "map"],
+      ["comparison", "map"],
+      ["evidence", "article"],
+      ["comparison", "article"],
+      ["map", "visual"],
+      ["article", "visual"],
+      ["article", "quiz"],
+      ["questions", "quiz"],
+      ["article", "exhibit"],
+      ["visual", "exhibit"]
+    ]
+  },
+  {
+    "id": "builtin-campaign-poster",
+    "recipe": "campaign-poster",
+    "kind": "image",
+    "name": "松间咖啡 · 春日品牌提案",
+    "description": "从产品资料与受众出发，完成品牌策略、两版海报、上新网页和发布计划。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Pine Coffee · a spring launch",
+      "description": "A complete launch, from product and audience to positioning, two posters, a website and a release plan.",
+      "tag": "Visual creation"
+    },
+    "showcase": {
+      "accent": "#48745b",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%221040%22%20viewBox%3D%220%200%20800%201040%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%221040%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22970%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22650%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate%28238%20265%29%20rotate%28-8%20150%20190%29%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22835%22%20fill%3D%22%23204b3c%22%20font-size%3D%2246%22%20font-weight%3D%22650%22%3E%E6%8A%8A%E6%98%A5%E5%A4%A9%EF%BC%8C%E5%96%9D%E6%85%A2%E4%B8%80%E7%82%B9%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22887%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3E%E6%9F%91%E6%A9%98%20%2F%20%E8%9C%82%E8%9C%9C%20%2F%20%E8%8C%89%E8%8E%89%E8%8A%B1%E9%A6%99%20%C2%B7%20%E6%98%A5%E6%97%A5%E9%99%90%E5%AE%9A%E6%8B%BC%E9%85%8D%3C%2Ftext%3E%3Cpath%20d%3D%22M75%20935%20H725%22%20stroke%3D%22%23a1ae95%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22977%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3E250%20g%20%E5%92%96%E5%95%A1%E8%B1%86%20%C2%B7%20%E4%B8%AD%E6%B5%85%E7%83%98%E7%84%99%20%C2%B7%20%E5%BB%BA%E8%AE%AE%E6%89%8B%E5%86%B2%3C%2Ftext%3E%3Ctext%20x%3D%22725%22%20y%3D%22977%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3EPINE%2001%20%2F%2003%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "focus": "poster",
+      "description": "一个虚构咖啡品牌的完整上新：有依据、有风格，也有交付。",
+      "stages": ["品牌与受众", "文案与视觉", "成套发布"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%221040%22%20viewBox%3D%220%200%20800%201040%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%221040%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22970%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22650%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate%28238%20265%29%20rotate%28-8%20150%20190%29%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22835%22%20fill%3D%22%23204b3c%22%20font-size%3D%2240%22%20font-weight%3D%22650%22%3EA%20little%20spring.%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22887%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3ECitrus.%20Honey.%20A%20slower%20kind%20of%20morning.%3C%2Ftext%3E%3Cpath%20d%3D%22M75%20935%20H725%22%20stroke%3D%22%23a1ae95%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22977%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3E250%20g%20%C2%B7%20Whole%20beans%20%C2%B7%20Medium-light%20roast%3C%2Ftext%3E%3Ctext%20x%3D%22725%22%20y%3D%22977%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3EPINE%2001%20%2F%2003%3C%2Ftext%3E%3C%2Fsvg%3E",
+        "description": "A fictional coffee launch with a point of view, a visual system and a complete set of deliverables.",
+        "stages": ["Brand & audience", "Copy & direction", "Launch the set"]
+      },
+      "artwork": "coffee"
+    },
+    "nodes": [
+      {
+        "id": "brief",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "品牌与产品",
+        "en": {
+          "name": "The brand and the blend"
+        },
+        "preview": {
+          "text": "松间咖啡是一家社区咖啡店。春日拼配为 250 g 咖啡豆，中浅烘焙，风味是柑橘、蜂蜜与茉莉花。主要用于手冲，门店与自有网页同步介绍。品牌不强调参数竞赛，而强调每天可以享受的一杯好咖啡。",
+          "en": "Pine is a neighborhood coffee shop. The spring blend is a 250 g bag of medium-light roast beans, with citrus, honey and jasmine notes. It is designed for pour-over and introduced i"
+        }
+      },
+      {
+        "id": "audience",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "给谁的一杯春天",
+        "en": {
+          "name": "Who is this for?"
+        },
+        "preview": {
+          "text": "核心读者：25—35 岁、日常忙碌、周末愿意手冲的人。困扰：想尝试精品咖啡，却不想读复杂参数。希望：知道味道、怎么喝，以及这份小仪式怎样进入生活。语气要有画面、有人情味，不使用“顶级”“治愈一切”等夸张承诺。",
+          "en": "Readers are busy people in their late twenties and thirties who enjoy weekend pour-over. They want to try specialty coffee without a wall of technical information. Explain how it t"
+        }
+      },
+      {
+        "id": "direction",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "视觉方向与交付",
+        "en": {
+          "name": "Visual direction and deliverables"
+        },
+        "preview": {
+          "text": "视觉：森林绿、奶油白、淡柠檬色；纸质包装、植物影子、干净自然光。交付：竖版海报、方形社交卡片、可在手机阅读的产品页与三天发布计划。所有作品保持品牌名称、风味和包装信息一致。",
+          "en": "Forest green, cream and pale lemon. Paper packaging, botanical shadows and clean natural light. Deliver a portrait poster, square social card, mobile-friendly product page and a th"
+        }
+      },
+      {
+        "id": "positioning",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "先说清楚，为什么是它",
+        "en": {
+          "name": "Find the core idea"
+        },
+        "preview": {
+          "text": " 一杯春天，不必很复杂\n\n定位：把精品咖啡变成容易开始的日常仪式。\n\n核心信息：把春天，喝慢一点。\n\n- 先说能尝到的味道，再说专业信息。\n- 让包装与植物成为画面主角。\n- 每份物料只保留一个清楚的下一步。",
+          "en": " A little spring, without the complication\n\nPositioning: specialty coffee as an easy daily ritual.\n\nCore message: A little spring. A slower morning.\n\n- Lead with flavor, then pract"
+        }
+      },
+      {
+        "id": "copy",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "文案，不止一句口号",
+        "en": {
+          "name": "A small copy system"
+        },
+        "preview": {
+          "text": " 把春天，喝慢一点。\n\n柑橘的明亮，蜂蜜的圆润，最后是一点茉莉花香。\n\n产品介绍：一款适合手冲的春日拼配。中浅烘焙，让花香与甜感保留在每一杯里。250 g，留给接下来的几个清晨。\n\n社交配文：周末的第一件事，可以只是磨豆、烧水，然后坐下来。春日拼配已经准备好，慢慢喝。",
+          "en": " A little spring. A slower morning.\n\nBright citrus, rounded honey and a quiet jasmine finish.\n\nProduct: a spring blend made for pour-over. A medium-light roast keeps the floral not"
+        }
+      },
+      {
+        "id": "art-direction",
+        "type": "instruction",
+        "column": 1,
+        "row": 2,
+        "name": "让整组作品说同一种语言",
+        "en": {
+          "name": "An art direction that holds together"
+        },
+        "preview": {
+          "text": " 视觉语法\n\n- 主色：森林绿；辅以奶油白和浅柠檬色。\n- 画面：包装略微倾斜，植物从边缘进入，阴影落在下方。\n- 层级：品牌 → 产品主体 → 标题 → 风味与规格。\n- 竖版：留出标题与说明空间，适合门店与长图。\n- 方形：收紧构图，保留包装、标题和三种风味。",
+          "en": " Visual grammar\n\n- Palette: forest green, cream and pale lemon.\n- Composition: slightly tilted packaging, a botanical edge and a grounded shadow.\n- Hierarchy: brand → product → hea"
+        }
+      },
+      {
+        "id": "poster",
+        "type": "ai-image",
+        "column": 2,
+        "row": 0,
+        "name": "春日主视觉 · 竖版",
+        "en": {
+          "name": "Spring key visual · portrait"
+        },
+        "preview": {
+          "text": "根据文案和视觉方向设计春日咖啡竖版海报。保留真实产品信息，避免额外促销承诺。",
+          "en": "Create a portrait spring coffee poster using the supplied copy and art direction. Preserve product facts without adding promotions.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%221040%22%20viewBox%3D%220%200%20800%201040%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%221040%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22970%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22650%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate(238%20265)%20rotate(-8%20150%20190)%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22835%22%20fill%3D%22%23204b3c%22%20font-size%3D%2246%22%20font-weight%3D%22650%22%3E%E6%8A%8A%E6%98%A5%E5%A4%A9%EF%BC%8C%E5%96%9D%E6%85%A2%E4%B8%80%E7%82%B9%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22887%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3E%E6%9F%91%E6%A9%98%20%2F%20%E8%9C%82%E8%9C%9C%20%2F%20%E8%8C%89%E8%8E%89%E8%8A%B1%E9%A6%99%20%C2%B7%20%E6%98%A5%E6%97%A5%E9%99%90%E5%AE%9A%E6%8B%BC%E9%85%8D%3C%2Ftext%3E%3Cpath%20d%3D%22M75%20935%20H725%22%20stroke%3D%22%23a1ae95%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22977%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3E250%20g%20%E5%92%96%E5%95%A1%E8%B1%86%20%C2%B7%20%E4%B8%AD%E6%B5%85%E7%83%98%E7%84%99%20%C2%B7%20%E5%BB%BA%E8%AE%AE%E6%89%8B%E5%86%B2%3C%2Ftext%3E%3Ctext%20x%3D%22725%22%20y%3D%22977%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3EPINE%2001%20%2F%2003%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%221040%22%20viewBox%3D%220%200%20800%201040%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%221040%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22970%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22650%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate(238%20265)%20rotate(-8%20150%20190)%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22835%22%20fill%3D%22%23204b3c%22%20font-size%3D%2240%22%20font-weight%3D%22650%22%3EA%20little%20spring.%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22887%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3ECitrus.%20Honey.%20A%20slower%20kind%20of%20morning.%3C%2Ftext%3E%3Cpath%20d%3D%22M75%20935%20H725%22%20stroke%3D%22%23a1ae95%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22977%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3E250%20g%20%C2%B7%20Whole%20beans%20%C2%B7%20Medium-light%20roast%3C%2Ftext%3E%3Ctext%20x%3D%22725%22%20y%3D%22977%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2216%22%3EPINE%2001%20%2F%2003%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "social",
+        "type": "ai-image",
+        "column": 2,
+        "row": 1,
+        "name": "社交卡片 · 方形",
+        "en": {
+          "name": "Social card · square"
+        },
+        "preview": {
+          "text": "从主视觉延展方形社交海报，保持绿色包装和品牌文字体系。",
+          "en": "Adapt the key visual into a square social card, keeping the green packaging and brand type system.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22800%22%20viewBox%3D%220%200%20800%20800%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22800%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22730%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22570%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate(238%20185)%20rotate(-8%20150%20190)%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22720%22%20fill%3D%22%23204b3c%22%20font-size%3D%2246%22%20font-weight%3D%22650%22%3E%E6%8A%8A%E6%98%A5%E5%A4%A9%EF%BC%8C%E5%96%9D%E6%85%A2%E4%B8%80%E7%82%B9%E3%80%82%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22758%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3E%E6%9F%91%E6%A9%98%20%2F%20%E8%9C%82%E8%9C%9C%20%2F%20%E8%8C%89%E8%8E%89%E8%8A%B1%E9%A6%99%20%C2%B7%20%E6%98%A5%E6%97%A5%E9%99%90%E5%AE%9A%E6%8B%BC%E9%85%8D%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22800%22%20viewBox%3D%220%200%20800%20800%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22800%22%20fill%3D%22%23eee9dd%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%22730%22%20height%3D%22730%22%20fill%3D%22none%22%20stroke%3D%22%23204b3c%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2276%22%20y%3D%22100%22%20fill%3D%22%23204b3c%22%20font-size%3D%2222%22%20letter-spacing%3D%225%22%3EPINE%20%2F%20COFFEE%3C%2Ftext%3E%3Ctext%20x%3D%22724%22%20y%3D%2298%22%20text-anchor%3D%22end%22%20fill%3D%22%23204b3c%22%20font-size%3D%2215%22%3ESPRING%20EDITION%3C%2Ftext%3E%3Ccircle%20cx%3D%22573%22%20cy%3D%22340%22%20r%3D%22170%22%20fill%3D%22%23d4d7a6%22%2F%3E%3Cpath%20d%3D%22M95%20510%20Q210%20340%20326%20490%20Q500%20300%20735%20525%20L735%20680%20H65Z%22%20fill%3D%22%23b4bea3%22%2F%3E%3Cellipse%20cx%3D%22401%22%20cy%3D%22570%22%20rx%3D%22230%22%20ry%3D%2242%22%20fill%3D%22%23718773%22%20opacity%3D%22.15%22%2F%3E%3Cg%20transform%3D%22translate(238%20185)%20rotate(-8%20150%20190)%22%3E%3Cpath%20d%3D%22M20%2030%20Q150%2010%20280%2030%20L257%20365%20Q150%20400%2043%20365Z%22%20fill%3D%22%23204b3c%22%2F%3E%3Cpath%20d%3D%22M28%2030%20Q150%205%20272%2030%20L260%2076%20H40Z%22%20fill%3D%22%23e0dec9%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%22115%22%20width%3D%22195%22%20height%3D%22150%22%20rx%3D%222%22%20fill%3D%22%23f4f0df%22%2F%3E%3Cpath%20d%3D%22M150%20134%20L115%20205%20H138%20L112%20248%20H188%20L163%20205%20H185Z%22%20fill%3D%22%23446e45%22%2F%3E%3Ctext%20x%3D%22150%22%20y%3D%22295%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f4f0df%22%20font-size%3D%2219%22%20letter-spacing%3D%224%22%3ESPRING%20BLEND%3C%2Ftext%3E%3Ctext%20x%3D%22150%22%20y%3D%22324%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b7c8a7%22%20font-size%3D%2213%22%3ECITRUS%20%C2%B7%20HONEY%20%C2%B7%20JASMINE%3C%2Ftext%3E%3C%2Fg%3E%3Cpath%20d%3D%22M650%20585%20Q565%20430%20668%20242%20M625%20460%20Q570%20426%20578%20376%20M643%20392%20Q708%20370%20700%20320%20M655%20319%20Q606%20273%20624%20222%22%20fill%3D%22none%22%20stroke%3D%22%23446548%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2275%22%20y%3D%22720%22%20fill%3D%22%23204b3c%22%20font-size%3D%2240%22%20font-weight%3D%22650%22%3EA%20little%20spring.%3C%2Ftext%3E%3Ctext%20x%3D%2276%22%20y%3D%22758%22%20fill%3D%22%23536251%22%20font-size%3D%2218%22%3ECitrus.%20Honey.%20A%20slower%20kind%20of%20morning.%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "schedule",
+        "type": "instruction",
+        "column": 2,
+        "row": 2,
+        "name": "三天，讲完一个小故事",
+        "en": {
+          "name": "A three-day release"
+        },
+        "preview": {
+          "text": " 时间  内容  下一步 \n ---  ---  --- \n 上新前一天  包装与植物局部，介绍三个风味词  收藏产品介绍 \n 上新当天  完整海报与产品页，说明 250 g 与中浅烘焙  查看冲煮建议 \n 上新后一天  手冲过程与门店日常，回答常见疑问  分享自己的冲煮方式 ",
+          "en": " When  Story  Next step \n ---  ---  --- \n Day before  Packaging detail and three flavor notes  Save the product introduction \n Launch day  Full visual and product page; 250 g, medi"
+        }
+      },
+      {
+        "id": "launch-page",
+        "type": "website",
+        "column": 3,
+        "row": 0,
+        "name": "上新产品页",
+        "en": {
+          "name": "The product page"
+        },
+        "preview": {
+          "text": "结合文案、主视觉与产品规格制作自适应网页。",
+          "en": "Create a responsive page from the copy, key visual and product specifications."
+        }
+      },
+      {
+        "id": "check",
+        "type": "instruction",
+        "column": 3,
+        "row": 1,
+        "name": "上线前，看一遍细节",
+        "en": {
+          "name": "A final consistency check"
+        },
+        "preview": {
+          "text": " 可以确认\n\n- 产品名、250 g、中浅烘焙保持一致。\n- 竖版与方形都保留三种风味。\n- 网页和海报使用同一视觉语言。\n\n 发布前再确认\n\n- 以实际商品标签核对配料与生产信息。\n- 补上真实售价、库存与购买入口。\n- 在手机检查长标题和图片裁切。",
+          "en": " Consistent across the set\n\n- Product name, 250 g and roast level match.\n- Both formats keep the three flavor notes.\n- The page and posters share an art direction.\n\n Before publish"
+        }
+      }
+    ],
+    "edges": [
+      ["brief", "positioning"],
+      ["audience", "positioning"],
+      ["positioning", "copy"],
+      ["direction", "art-direction"],
+      ["positioning", "art-direction"],
+      ["copy", "poster"],
+      ["art-direction", "poster"],
+      ["poster", "social"],
+      ["copy", "social"],
+      ["copy", "schedule"],
+      ["poster", "launch-page"],
+      ["copy", "launch-page"],
+      ["brief", "launch-page"],
+      ["brief", "check"],
+      ["launch-page", "check"],
+      ["social", "check"]
+    ]
+  },
+  {
+    "id": "builtin-storyboard",
+    "recipe": "storyboard",
+    "kind": "image",
+    "name": "灯塔来信 · 三幕故事工坊",
+    "description": "角色、世界观与冲突汇成三幕故事，分别延展插画，再合成完整作品。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Lighthouse Letters · a story studio",
+      "description": "Characters, setting and conflict become a three-act story with matching illustrations and a complete reading edition.",
+      "tag": "Visual creation"
+    },
+    "showcase": {
+      "accent": "#567e9a",
+      "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23162b48%22%2F%3E%3Ccircle%20cx%3D%22610%22%20cy%3D%22135%22%20r%3D%2257%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M0%20400%20Q170%20340%20400%20410%20T800%20380%20V680%20H0Z%22%20fill%3D%22%233a6370%22%2F%3E%3Cpath%20d%3D%22M0%20460%20Q200%20410%20420%20470%20T800%20445%20V680%20H0Z%22%20fill%3D%22%23294f60%22%2F%3E%3Cpath%20d%3D%22M0%20540%20Q210%20488%20470%20546%20T800%20524%20V680%20H0Z%22%20fill%3D%22%23153a50%22%2F%3E%3Cpath%20d%3D%22M465%20680%20L492%20444%20L700%20430%20L800%20510%20V680Z%22%20fill%3D%22%23111f33%22%2F%3E%3Cpath%20d%3D%22M535%20450%20L555%20225%20H628%20L650%20450Z%22%20fill%3D%22%23e0d7be%22%2F%3E%3Cpath%20d%3D%22M547%20226%20L554%20177%20H629%20L638%20226Z%22%20fill%3D%22%23a75442%22%2F%3E%3Crect%20x%3D%22552%22%20y%3D%22185%22%20width%3D%2282%22%20height%3D%2235%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M546%20174%20L593%20140%20L641%20174Z%22%20fill%3D%22%23df9569%22%2F%3E%3Cpath%20d%3D%22M552%20194%20L290%2083%20L330%20285Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Cpath%20d%3D%22M634%20194%20L800%20126%20V265Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Crect%20x%3D%22578%22%20y%3D%22365%22%20width%3D%2227%22%20height%3D%2268%22%20rx%3D%2212%22%20fill%3D%22%23243b4c%22%2F%3E%3Cpath%20d%3D%22M245%20519%20Q263%20477%20289%20513%20L307%20574%20H233Z%22%20fill%3D%22%23d99565%22%2F%3E%3Ccircle%20cx%3D%22269%22%20cy%3D%22489%22%20r%3D%2213%22%20fill%3D%22%23f0ccb0%22%2F%3E%3Cpath%20d%3D%22M285%20533%20L322%20519%22%20stroke%3D%22%23d99565%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22318%22%20y%3D%22501%22%20width%3D%2225%22%20height%3D%2220%22%20rx%3D%222%22%20transform%3D%22rotate%28-18%20318%20501%29%22%20fill%3D%22%23ecdfbb%22%2F%3E%3Cpath%20d%3D%22M67%20118%20L72%20123%20M96%2090%20L100%2094%20M383%2064%20L387%2068%20M730%2055%20L733%2059%22%20stroke%3D%22%23e0d7be%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%22615%22%20fill%3D%22%23f0e4ca%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2001%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%22650%22%20fill%3D%22%23b3cbd0%22%20font-size%3D%2216%22%3E%E6%BD%AE%E6%B1%90%E9%80%81%E6%9D%A5%E7%9A%84%E4%BF%A1%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "focus": "story-page",
+      "description": "角色成长、连续章节与三张插画，汇成一个可以读完的故事。",
+      "stages": ["角色与世界", "三幕与插画", "完整故事"],
+      "en": {
+        "cover": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23162b48%22%2F%3E%3Ccircle%20cx%3D%22610%22%20cy%3D%22135%22%20r%3D%2257%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M0%20400%20Q170%20340%20400%20410%20T800%20380%20V680%20H0Z%22%20fill%3D%22%233a6370%22%2F%3E%3Cpath%20d%3D%22M0%20460%20Q200%20410%20420%20470%20T800%20445%20V680%20H0Z%22%20fill%3D%22%23294f60%22%2F%3E%3Cpath%20d%3D%22M0%20540%20Q210%20488%20470%20546%20T800%20524%20V680%20H0Z%22%20fill%3D%22%23153a50%22%2F%3E%3Cpath%20d%3D%22M465%20680%20L492%20444%20L700%20430%20L800%20510%20V680Z%22%20fill%3D%22%23111f33%22%2F%3E%3Cpath%20d%3D%22M535%20450%20L555%20225%20H628%20L650%20450Z%22%20fill%3D%22%23e0d7be%22%2F%3E%3Cpath%20d%3D%22M547%20226%20L554%20177%20H629%20L638%20226Z%22%20fill%3D%22%23a75442%22%2F%3E%3Crect%20x%3D%22552%22%20y%3D%22185%22%20width%3D%2282%22%20height%3D%2235%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M546%20174%20L593%20140%20L641%20174Z%22%20fill%3D%22%23df9569%22%2F%3E%3Cpath%20d%3D%22M552%20194%20L290%2083%20L330%20285Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Cpath%20d%3D%22M634%20194%20L800%20126%20V265Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Crect%20x%3D%22578%22%20y%3D%22365%22%20width%3D%2227%22%20height%3D%2268%22%20rx%3D%2212%22%20fill%3D%22%23243b4c%22%2F%3E%3Cpath%20d%3D%22M245%20519%20Q263%20477%20289%20513%20L307%20574%20H233Z%22%20fill%3D%22%23d99565%22%2F%3E%3Ccircle%20cx%3D%22269%22%20cy%3D%22489%22%20r%3D%2213%22%20fill%3D%22%23f0ccb0%22%2F%3E%3Cpath%20d%3D%22M285%20533%20L322%20519%22%20stroke%3D%22%23d99565%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22318%22%20y%3D%22501%22%20width%3D%2225%22%20height%3D%2220%22%20rx%3D%222%22%20transform%3D%22rotate%28-18%20318%20501%29%22%20fill%3D%22%23ecdfbb%22%2F%3E%3Cpath%20d%3D%22M67%20118%20L72%20123%20M96%2090%20L100%2094%20M383%2064%20L387%2068%20M730%2055%20L733%2059%22%20stroke%3D%22%23e0d7be%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%22615%22%20fill%3D%22%23f0e4ca%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2001%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%22650%22%20fill%3D%22%23b3cbd0%22%20font-size%3D%2216%22%3EA%20letter%20in%20the%20tide%3C%2Ftext%3E%3C%2Fsvg%3E",
+        "description": "A complete story in the making, with a character arc, connected chapters and a consistent illustration language.",
+        "stages": ["Cast & world", "Chapters & art", "Reading edition"]
+      },
+      "artwork": "lighthouse1"
+    },
+    "nodes": [
+      {
+        "id": "premise",
+        "type": "ai-text",
+        "column": 0,
+        "row": 0,
+        "name": "一个让人想追下去的开头",
+        "en": {
+          "name": "The premise"
+        },
+        "preview": {
+          "text": "故事名：灯塔来信。适合 8—12 岁读者。主角在退潮后的海滩捡到一封写给自己的旧信，落款却是“明天的你”。核心不是时间旅行的炫技，而是学会求助与照顾别人。三幕，每幕约 250 字，语言有画面但不故作深奥。",
+          "en": "The Lighthouse Letters, for readers aged 8–12. A child finds an old letter on a beach, addressed to them and signed “you, tomorrow.” The story is about asking for help and caring f"
+        }
+      },
+      {
+        "id": "characters",
+        "type": "ai-text",
+        "column": 0,
+        "row": 1,
+        "name": "阿澄与守灯人",
+        "en": {
+          "name": "The cast"
+        },
+        "preview": {
+          "text": "阿澄，11 岁，擅长观察，不愿承认自己害怕。奶奶过去是守灯人，现在视力不好。小狗栗子会叼走重要的东西，但也会把人带到正确的地方。阿澄需要从“独自证明自己”转向“和别人一起完成”。",
+          "en": "Ari is eleven, observant, and reluctant to admit fear. Their grandmother used to keep the lighthouse and now has poor eyesight. Chestnut the dog steals important things but often l"
+        }
+      },
+      {
+        "id": "world",
+        "type": "ai-text",
+        "column": 0,
+        "row": 2,
+        "name": "海湾小镇的规则",
+        "en": {
+          "name": "Rules of the bay"
+        },
+        "preview": {
+          "text": "小镇只有一座旧灯塔，暴风雨前总会起雾。旧信不是预测所有未来，而是上一代守灯人留下的提醒：潮汐会带回人们没说出口的话。视觉：深蓝的海、暖橙色灯光、奶油色信纸；插画采用平面纸雕质感。",
+          "en": "There is one old lighthouse. Fog arrives before storms. Letters do not predict every future; they preserve words people never said, carried back by the tide. Illustration direction"
+        }
+      },
+      {
+        "id": "outline",
+        "type": "instruction",
+        "column": 1,
+        "row": 0,
+        "name": "三幕，三次选择",
+        "en": {
+          "name": "Three acts, three choices"
+        },
+        "preview": {
+          "text": " 1 · 潮汐送来的信\n阿澄发现旧信，独自去灯塔找答案，却在雾里迷路。\n\n 2 · 守灯人的秘密\n奶奶坦白自己也曾害怕。两人发现灯塔不是一个人的工作。\n\n 3 · 给归途的一束光\n暴雨到来，阿澄叫来邻居分工，让海上的船找到回家的方向。",
+          "en": " 1 · A letter in the tide\nAri follows the letter alone, then loses the path in fog.\n\n 2 · The keeper of small lights\nGrandmother admits she was afraid too. Keeping a light was neve"
+        }
+      },
+      {
+        "id": "act-one",
+        "type": "instruction",
+        "column": 1,
+        "row": 1,
+        "name": "第一幕 · 潮汐送来的信",
+        "en": {
+          "name": "Act I · a letter in the tide"
+        },
+        "preview": {
+          "text": "退潮把海滩擦得很亮。阿澄在一只空贝壳下面发现了信，纸角像被海风啃过。\n\n“明天的你，别忘记那盏灯。”\n\n她把信塞进口袋，谁也没告诉。灯塔的石阶比想象中长，雾一层层叠上来，连脚下的白线也看不见了。她想证明自己不害怕，可喊出“小栗子”的时候，声音已经开始发抖。\n\n远处响起三下铃声。那是奶奶每天傍晚叫她回家的节奏。",
+          "en": "The tide had polished the beach. Beneath an empty shell, Ari found a letter with a salt-soft corner.\n\n“Tomorrow, remember the light.”\n\nAri told no one. The lighthouse steps were lo"
+        }
+      },
+      {
+        "id": "act-two",
+        "type": "instruction",
+        "column": 2,
+        "row": 0,
+        "name": "第二幕 · 守灯人的秘密",
+        "en": {
+          "name": "Act II · the keeper of small lights"
+        },
+        "preview": {
+          "text": "奶奶举着旧风灯，栗子蹲在她脚边。\n\n“你以前不怕吗？”阿澄问。\n\n“怕。所以我知道，灯不能只靠一个人守。”奶奶把钥匙放进她手心。铜钥匙暖暖的，像一小块被留住的夕阳。\n\n信纸背面还有一行字：如果看不清路，就叫别人的名字。阿澄终于明白，那不是明天的自己在命令她勇敢，而是曾经害怕的人，替下一次害怕的人留了个记号。",
+          "en": "Grandmother stood with the old lantern. Chestnut sat at her feet.\n\n“Were you never afraid?” Ari asked.\n\n“I was. That is how I learned that a light cannot be kept by one person.” Sh"
+        }
+      },
+      {
+        "id": "act-three",
+        "type": "instruction",
+        "column": 2,
+        "row": 1,
+        "name": "第三幕 · 给归途的一束光",
+        "en": {
+          "name": "Act III · a light for the way home"
+        },
+        "preview": {
+          "text": "暴雨提前到了。阿澄不再往灯塔独自跑，她敲开了面包店、修船铺和隔壁陈叔的门。有人搬电池，有人守铃，有人陪奶奶留在石阶旁。\n\n灯亮起来的时候，海上有三点微小的回应。\n\n阿澄写了一封新信：“明天的你，不必一个人。”她把它折好，放进灯塔门口的木盒。\n\n第二天退潮，栗子又从海边叼回一只空贝壳。这次，阿澄笑着等奶奶一起走。",
+          "en": "The storm came early. This time Ari did not run alone. They knocked at the bakery, the boat shed and their neighbor’s door. Someone carried batteries. Someone rang the bell. Someon"
+        }
+      },
+      {
+        "id": "image-one",
+        "type": "ai-image",
+        "column": 1,
+        "row": 2,
+        "name": "插画 01 · 海滩发现",
+        "en": {
+          "name": "Illustration 01 · discovery"
+        },
+        "preview": {
+          "text": "画出第一幕海滩与远处灯塔，使用统一的纸雕风格，蓝海与暖灯。",
+          "en": "Illustrate the beach discovery, with the lighthouse in the distance. Use the shared layered-paper style, blue sea and warm light.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23162b48%22%2F%3E%3Ccircle%20cx%3D%22610%22%20cy%3D%22135%22%20r%3D%2257%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M0%20400%20Q170%20340%20400%20410%20T800%20380%20V680%20H0Z%22%20fill%3D%22%233a6370%22%2F%3E%3Cpath%20d%3D%22M0%20460%20Q200%20410%20420%20470%20T800%20445%20V680%20H0Z%22%20fill%3D%22%23294f60%22%2F%3E%3Cpath%20d%3D%22M0%20540%20Q210%20488%20470%20546%20T800%20524%20V680%20H0Z%22%20fill%3D%22%23153a50%22%2F%3E%3Cpath%20d%3D%22M465%20680%20L492%20444%20L700%20430%20L800%20510%20V680Z%22%20fill%3D%22%23111f33%22%2F%3E%3Cpath%20d%3D%22M535%20450%20L555%20225%20H628%20L650%20450Z%22%20fill%3D%22%23e0d7be%22%2F%3E%3Cpath%20d%3D%22M547%20226%20L554%20177%20H629%20L638%20226Z%22%20fill%3D%22%23a75442%22%2F%3E%3Crect%20x%3D%22552%22%20y%3D%22185%22%20width%3D%2282%22%20height%3D%2235%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M546%20174%20L593%20140%20L641%20174Z%22%20fill%3D%22%23df9569%22%2F%3E%3Cpath%20d%3D%22M552%20194%20L290%2083%20L330%20285Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Cpath%20d%3D%22M634%20194%20L800%20126%20V265Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Crect%20x%3D%22578%22%20y%3D%22365%22%20width%3D%2227%22%20height%3D%2268%22%20rx%3D%2212%22%20fill%3D%22%23243b4c%22%2F%3E%3Cpath%20d%3D%22M245%20519%20Q263%20477%20289%20513%20L307%20574%20H233Z%22%20fill%3D%22%23d99565%22%2F%3E%3Ccircle%20cx%3D%22269%22%20cy%3D%22489%22%20r%3D%2213%22%20fill%3D%22%23f0ccb0%22%2F%3E%3Cpath%20d%3D%22M285%20533%20L322%20519%22%20stroke%3D%22%23d99565%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22318%22%20y%3D%22501%22%20width%3D%2225%22%20height%3D%2220%22%20rx%3D%222%22%20transform%3D%22rotate(-18%20318%20501)%22%20fill%3D%22%23ecdfbb%22%2F%3E%3Cpath%20d%3D%22M67%20118%20L72%20123%20M96%2090%20L100%2094%20M383%2064%20L387%2068%20M730%2055%20L733%2059%22%20stroke%3D%22%23e0d7be%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%22615%22%20fill%3D%22%23f0e4ca%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2001%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%22650%22%20fill%3D%22%23b3cbd0%22%20font-size%3D%2216%22%3E%E6%BD%AE%E6%B1%90%E9%80%81%E6%9D%A5%E7%9A%84%E4%BF%A1%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23162b48%22%2F%3E%3Ccircle%20cx%3D%22610%22%20cy%3D%22135%22%20r%3D%2257%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M0%20400%20Q170%20340%20400%20410%20T800%20380%20V680%20H0Z%22%20fill%3D%22%233a6370%22%2F%3E%3Cpath%20d%3D%22M0%20460%20Q200%20410%20420%20470%20T800%20445%20V680%20H0Z%22%20fill%3D%22%23294f60%22%2F%3E%3Cpath%20d%3D%22M0%20540%20Q210%20488%20470%20546%20T800%20524%20V680%20H0Z%22%20fill%3D%22%23153a50%22%2F%3E%3Cpath%20d%3D%22M465%20680%20L492%20444%20L700%20430%20L800%20510%20V680Z%22%20fill%3D%22%23111f33%22%2F%3E%3Cpath%20d%3D%22M535%20450%20L555%20225%20H628%20L650%20450Z%22%20fill%3D%22%23e0d7be%22%2F%3E%3Cpath%20d%3D%22M547%20226%20L554%20177%20H629%20L638%20226Z%22%20fill%3D%22%23a75442%22%2F%3E%3Crect%20x%3D%22552%22%20y%3D%22185%22%20width%3D%2282%22%20height%3D%2235%22%20fill%3D%22%23f4cb81%22%2F%3E%3Cpath%20d%3D%22M546%20174%20L593%20140%20L641%20174Z%22%20fill%3D%22%23df9569%22%2F%3E%3Cpath%20d%3D%22M552%20194%20L290%2083%20L330%20285Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Cpath%20d%3D%22M634%20194%20L800%20126%20V265Z%22%20fill%3D%22%23f4cb81%22%20opacity%3D%22.13%22%2F%3E%3Crect%20x%3D%22578%22%20y%3D%22365%22%20width%3D%2227%22%20height%3D%2268%22%20rx%3D%2212%22%20fill%3D%22%23243b4c%22%2F%3E%3Cpath%20d%3D%22M245%20519%20Q263%20477%20289%20513%20L307%20574%20H233Z%22%20fill%3D%22%23d99565%22%2F%3E%3Ccircle%20cx%3D%22269%22%20cy%3D%22489%22%20r%3D%2213%22%20fill%3D%22%23f0ccb0%22%2F%3E%3Cpath%20d%3D%22M285%20533%20L322%20519%22%20stroke%3D%22%23d99565%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22318%22%20y%3D%22501%22%20width%3D%2225%22%20height%3D%2220%22%20rx%3D%222%22%20transform%3D%22rotate(-18%20318%20501)%22%20fill%3D%22%23ecdfbb%22%2F%3E%3Cpath%20d%3D%22M67%20118%20L72%20123%20M96%2090%20L100%2094%20M383%2064%20L387%2068%20M730%2055%20L733%2059%22%20stroke%3D%22%23e0d7be%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%22615%22%20fill%3D%22%23f0e4ca%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2001%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%22650%22%20fill%3D%22%23b3cbd0%22%20font-size%3D%2216%22%3EA%20letter%20in%20the%20tide%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "image-two",
+        "type": "ai-image",
+        "column": 2,
+        "row": 2,
+        "name": "插画 02 · 旧风灯",
+        "en": {
+          "name": "Illustration 02 · the old lantern"
+        },
+        "preview": {
+          "text": "延续第一张插画，表现雾里的灯塔与一封信，保持角色和色彩一致。",
+          "en": "Continue the first illustration with a foggy lighthouse and a letter. Preserve the character and color language.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23caad81%22%2F%3E%3Crect%20x%3D%2266%22%20y%3D%2265%22%20width%3D%22668%22%20height%3D%22472%22%20fill%3D%22%23dcc99f%22%2F%3E%3Crect%20x%3D%22475%22%20y%3D%2290%22%20width%3D%22210%22%20height%3D%22278%22%20rx%3D%2295%22%20fill%3D%22%23244752%22%2F%3E%3Cpath%20d%3D%22M474%20270%20Q560%20224%20684%20276%20V369%20H474Z%22%20fill%3D%22%233c6871%22%2F%3E%3Cpath%20d%3D%22M581%2091%20V367%20M476%20218%20H685%22%20stroke%3D%22%23ab875c%22%20stroke-width%3D%2212%22%2F%3E%3Cpath%20d%3D%22M35%20523%20L800%20460%20V680%20H0Z%22%20fill%3D%22%238e6249%22%2F%3E%3Cpath%20d%3D%22M80%20555%20L620%20515%20L743%20680%20H143Z%22%20fill%3D%22%23a77952%22%2F%3E%3Cellipse%20cx%3D%22430%22%20cy%3D%22492%22%20rx%3D%22110%22%20ry%3D%2222%22%20fill%3D%22%23674d3e%22%20opacity%3D%22.3%22%2F%3E%3Cpath%20d%3D%22M379%20284%20H469%20L489%20478%20H358Z%22%20fill%3D%22%23b77d44%22%2F%3E%3Crect%20x%3D%22380%22%20y%3D%22325%22%20width%3D%2286%22%20height%3D%22125%22%20rx%3D%2218%22%20fill%3D%22%23f4d885%22%2F%3E%3Cpath%20d%3D%22M380%20286%20Q423%20220%20468%20286%22%20fill%3D%22none%22%20stroke%3D%22%23715333%22%20stroke-width%3D%2212%22%2F%3E%3Cpath%20d%3D%22M380%20314%20H466%20M371%20463%20H480%22%20stroke%3D%22%236d4c32%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22225%22%20cy%3D%22271%22%20r%3D%2241%22%20fill%3D%22%23e7bc8b%22%2F%3E%3Cpath%20d%3D%22M182%20249%20Q230%20196%20263%20251%22%20fill%3D%22%2355574f%22%2F%3E%3Cpath%20d%3D%22M183%20315%20Q230%20287%20272%20323%20L302%20496%20H156Z%22%20fill%3D%22%23516c60%22%2F%3E%3Cpath%20d%3D%22M245%20373%20L345%20431%22%20stroke%3D%22%23e7bc8b%22%20stroke-width%3D%2222%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22604%22%20cy%3D%22353%22%20r%3D%2230%22%20fill%3D%22%23e7bc8b%22%2F%3E%3Cpath%20d%3D%22M574%20338%20Q604%20303%20634%20339%22%20fill%3D%22%23403e37%22%2F%3E%3Cpath%20d%3D%22M574%20388%20Q606%20370%20636%20396%20L664%20503%20H548Z%22%20fill%3D%22%23ba6b49%22%2F%3E%3Cpath%20d%3D%22M575%20416%20L495%20443%22%20stroke%3D%22%23e7bc8b%22%20stroke-width%3D%2216%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M321%20492%20L421%20478%20L446%20526%20L343%20543Z%22%20fill%3D%22%23f2e7bd%22%2F%3E%3Cpath%20d%3D%22M350%20505%20L409%20497%20M359%20519%20L420%20509%22%20stroke%3D%22%23a58d62%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2249%22%20y%3D%22600%22%20fill%3D%22%23f2e7d2%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2002%3C%2Ftext%3E%3Ctext%20x%3D%2249%22%20y%3D%22644%22%20fill%3D%22%23e2ceb0%22%20font-size%3D%2219%22%3E%E5%AE%88%E7%81%AF%E4%BA%BA%E7%9A%84%E7%A7%98%E5%AF%86%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23caad81%22%2F%3E%3Crect%20x%3D%2266%22%20y%3D%2265%22%20width%3D%22668%22%20height%3D%22472%22%20fill%3D%22%23dcc99f%22%2F%3E%3Crect%20x%3D%22475%22%20y%3D%2290%22%20width%3D%22210%22%20height%3D%22278%22%20rx%3D%2295%22%20fill%3D%22%23244752%22%2F%3E%3Cpath%20d%3D%22M474%20270%20Q560%20224%20684%20276%20V369%20H474Z%22%20fill%3D%22%233c6871%22%2F%3E%3Cpath%20d%3D%22M581%2091%20V367%20M476%20218%20H685%22%20stroke%3D%22%23ab875c%22%20stroke-width%3D%2212%22%2F%3E%3Cpath%20d%3D%22M35%20523%20L800%20460%20V680%20H0Z%22%20fill%3D%22%238e6249%22%2F%3E%3Cpath%20d%3D%22M80%20555%20L620%20515%20L743%20680%20H143Z%22%20fill%3D%22%23a77952%22%2F%3E%3Cellipse%20cx%3D%22430%22%20cy%3D%22492%22%20rx%3D%22110%22%20ry%3D%2222%22%20fill%3D%22%23674d3e%22%20opacity%3D%22.3%22%2F%3E%3Cpath%20d%3D%22M379%20284%20H469%20L489%20478%20H358Z%22%20fill%3D%22%23b77d44%22%2F%3E%3Crect%20x%3D%22380%22%20y%3D%22325%22%20width%3D%2286%22%20height%3D%22125%22%20rx%3D%2218%22%20fill%3D%22%23f4d885%22%2F%3E%3Cpath%20d%3D%22M380%20286%20Q423%20220%20468%20286%22%20fill%3D%22none%22%20stroke%3D%22%23715333%22%20stroke-width%3D%2212%22%2F%3E%3Cpath%20d%3D%22M380%20314%20H466%20M371%20463%20H480%22%20stroke%3D%22%236d4c32%22%20stroke-width%3D%2210%22%2F%3E%3Ccircle%20cx%3D%22225%22%20cy%3D%22271%22%20r%3D%2241%22%20fill%3D%22%23e7bc8b%22%2F%3E%3Cpath%20d%3D%22M182%20249%20Q230%20196%20263%20251%22%20fill%3D%22%2355574f%22%2F%3E%3Cpath%20d%3D%22M183%20315%20Q230%20287%20272%20323%20L302%20496%20H156Z%22%20fill%3D%22%23516c60%22%2F%3E%3Cpath%20d%3D%22M245%20373%20L345%20431%22%20stroke%3D%22%23e7bc8b%22%20stroke-width%3D%2222%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22604%22%20cy%3D%22353%22%20r%3D%2230%22%20fill%3D%22%23e7bc8b%22%2F%3E%3Cpath%20d%3D%22M574%20338%20Q604%20303%20634%20339%22%20fill%3D%22%23403e37%22%2F%3E%3Cpath%20d%3D%22M574%20388%20Q606%20370%20636%20396%20L664%20503%20H548Z%22%20fill%3D%22%23ba6b49%22%2F%3E%3Cpath%20d%3D%22M575%20416%20L495%20443%22%20stroke%3D%22%23e7bc8b%22%20stroke-width%3D%2216%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M321%20492%20L421%20478%20L446%20526%20L343%20543Z%22%20fill%3D%22%23f2e7bd%22%2F%3E%3Cpath%20d%3D%22M350%20505%20L409%20497%20M359%20519%20L420%20509%22%20stroke%3D%22%23a58d62%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2249%22%20y%3D%22600%22%20fill%3D%22%23f2e7d2%22%20font-size%3D%2218%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2002%3C%2Ftext%3E%3Ctext%20x%3D%2249%22%20y%3D%22644%22%20fill%3D%22%23e2ceb0%22%20font-size%3D%2219%22%3EThe%20keeper%20of%20small%20lights%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "image-three",
+        "type": "ai-image",
+        "column": 3,
+        "row": 2,
+        "name": "插画 03 · 归途",
+        "en": {
+          "name": "Illustration 03 · coming home"
+        },
+        "preview": {
+          "text": "表现雨后归途，用灯光完成故事的情绪收束。",
+          "en": "Illustrate the way home after the storm, using the light to resolve the story’s emotional arc.",
+          "image": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23b9cbd0%22%2F%3E%3Ccircle%20cx%3D%22606%22%20cy%3D%22153%22%20r%3D%2267%22%20fill%3D%22%23eacb91%22%2F%3E%3Cpath%20d%3D%22M0%20250%20Q185%20170%20358%20270%20T800%20234%20V680%20H0Z%22%20fill%3D%22%23869da0%22%2F%3E%3Cpath%20d%3D%22M0%20365%20Q200%20305%20410%20357%20T800%20325%20V680%20H0Z%22%20fill%3D%22%234b7881%22%2F%3E%3Cpath%20d%3D%22M0%20482%20Q210%20411%20430%20463%20T800%20425%20V680%20H0Z%22%20fill%3D%22%23305d6c%22%2F%3E%3Cpath%20d%3D%22M0%20535%20L132%20433%20L328%20464%20L442%20680%20H0Z%22%20fill%3D%22%23284a50%22%2F%3E%3Cpath%20d%3D%22M96%20464%20L112%20224%20H184%20L205%20464Z%22%20fill%3D%22%23eee2c3%22%2F%3E%3Crect%20x%3D%22106%22%20y%3D%22186%22%20width%3D%2286%22%20height%3D%2246%22%20fill%3D%22%23f2d394%22%2F%3E%3Cpath%20d%3D%22M100%20186%20L149%20147%20L199%20186Z%22%20fill%3D%22%239c6553%22%2F%3E%3Cpath%20d%3D%22M184%20205%20L800%20310%20V378Z%22%20fill%3D%22%23f3d99b%22%20opacity%3D%22.16%22%2F%3E%3Cpath%20d%3D%22M337%20448%20H455%20L430%20475%20H363Z%20M540%20372%20H646%20L623%20396%20H562Z%20M651%20506%20H764%20L740%20532%20H677Z%22%20fill%3D%22%23162f3d%22%2F%3E%3Cpath%20d%3D%22M396%20445%20V363%20L442%20437Z%20M593%20369%20V301%20L627%20361Z%20M705%20503%20V428%20L741%20496Z%22%20fill%3D%22%23e0d8be%22%2F%3E%3Ccircle%20cx%3D%22395%22%20cy%3D%22357%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Ccircle%20cx%3D%22591%22%20cy%3D%22295%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Ccircle%20cx%3D%22704%22%20cy%3D%22422%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Cpath%20d%3D%22M299%20555%20Q342%20506%20387%20551%20L414%20609%20H277Z%22%20fill%3D%22%23b4764e%22%2F%3E%3Ccircle%20cx%3D%22341%22%20cy%3D%22525%22%20r%3D%2215%22%20fill%3D%22%23ebc59b%22%2F%3E%3Cpath%20d%3D%22M200%20548%20Q223%20507%20248%20544%20L268%20601%20H187Z%22%20fill%3D%22%2387957a%22%2F%3E%3Ccircle%20cx%3D%22222%22%20cy%3D%22524%22%20r%3D%2215%22%20fill%3D%22%23ebc59b%22%2F%3E%3Cpath%20d%3D%22M289%20559%20L258%20563%22%20stroke%3D%22%23ebc59b%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2247%22%20y%3D%22630%22%20fill%3D%22%23e6e1c7%22%20font-size%3D%2217%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2003%3C%2Ftext%3E%3Ctext%20x%3D%2247%22%20y%3D%22661%22%20fill%3D%22%23c5d6d1%22%20font-size%3D%2216%22%3E%E7%BB%99%E5%BD%92%E9%80%94%E7%9A%84%E4%B8%80%E6%9D%9F%E5%85%89%3C%2Ftext%3E%3C%2Fsvg%3E%0A",
+          "enImage": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22800%22%20height%3D%22680%22%20viewBox%3D%220%200%20800%20680%22%20font-family%3D%22system-ui%2C-apple-system%2Csans-serif%22%3E%3Crect%20width%3D%22800%22%20height%3D%22680%22%20fill%3D%22%23b9cbd0%22%2F%3E%3Ccircle%20cx%3D%22606%22%20cy%3D%22153%22%20r%3D%2267%22%20fill%3D%22%23eacb91%22%2F%3E%3Cpath%20d%3D%22M0%20250%20Q185%20170%20358%20270%20T800%20234%20V680%20H0Z%22%20fill%3D%22%23869da0%22%2F%3E%3Cpath%20d%3D%22M0%20365%20Q200%20305%20410%20357%20T800%20325%20V680%20H0Z%22%20fill%3D%22%234b7881%22%2F%3E%3Cpath%20d%3D%22M0%20482%20Q210%20411%20430%20463%20T800%20425%20V680%20H0Z%22%20fill%3D%22%23305d6c%22%2F%3E%3Cpath%20d%3D%22M0%20535%20L132%20433%20L328%20464%20L442%20680%20H0Z%22%20fill%3D%22%23284a50%22%2F%3E%3Cpath%20d%3D%22M96%20464%20L112%20224%20H184%20L205%20464Z%22%20fill%3D%22%23eee2c3%22%2F%3E%3Crect%20x%3D%22106%22%20y%3D%22186%22%20width%3D%2286%22%20height%3D%2246%22%20fill%3D%22%23f2d394%22%2F%3E%3Cpath%20d%3D%22M100%20186%20L149%20147%20L199%20186Z%22%20fill%3D%22%239c6553%22%2F%3E%3Cpath%20d%3D%22M184%20205%20L800%20310%20V378Z%22%20fill%3D%22%23f3d99b%22%20opacity%3D%22.16%22%2F%3E%3Cpath%20d%3D%22M337%20448%20H455%20L430%20475%20H363Z%20M540%20372%20H646%20L623%20396%20H562Z%20M651%20506%20H764%20L740%20532%20H677Z%22%20fill%3D%22%23162f3d%22%2F%3E%3Cpath%20d%3D%22M396%20445%20V363%20L442%20437Z%20M593%20369%20V301%20L627%20361Z%20M705%20503%20V428%20L741%20496Z%22%20fill%3D%22%23e0d8be%22%2F%3E%3Ccircle%20cx%3D%22395%22%20cy%3D%22357%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Ccircle%20cx%3D%22591%22%20cy%3D%22295%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Ccircle%20cx%3D%22704%22%20cy%3D%22422%22%20r%3D%225%22%20fill%3D%22%23f1c477%22%2F%3E%3Cpath%20d%3D%22M299%20555%20Q342%20506%20387%20551%20L414%20609%20H277Z%22%20fill%3D%22%23b4764e%22%2F%3E%3Ccircle%20cx%3D%22341%22%20cy%3D%22525%22%20r%3D%2215%22%20fill%3D%22%23ebc59b%22%2F%3E%3Cpath%20d%3D%22M200%20548%20Q223%20507%20248%20544%20L268%20601%20H187Z%22%20fill%3D%22%2387957a%22%2F%3E%3Ccircle%20cx%3D%22222%22%20cy%3D%22524%22%20r%3D%2215%22%20fill%3D%22%23ebc59b%22%2F%3E%3Cpath%20d%3D%22M289%20559%20L258%20563%22%20stroke%3D%22%23ebc59b%22%20stroke-width%3D%2210%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2247%22%20y%3D%22630%22%20fill%3D%22%23e6e1c7%22%20font-size%3D%2217%22%20letter-spacing%3D%224%22%3ETHE%20LIGHTHOUSE%20LETTERS%20%2F%2003%3C%2Ftext%3E%3Ctext%20x%3D%2247%22%20y%3D%22661%22%20fill%3D%22%23c5d6d1%22%20font-size%3D%2216%22%3EA%20light%20for%20the%20way%20home%3C%2Ftext%3E%3C%2Fsvg%3E%0A"
+        }
+      },
+      {
+        "id": "reading-edition",
+        "type": "instruction",
+        "column": 3,
+        "row": 0,
+        "name": "完整故事 · 阅读版",
+        "en": {
+          "name": "The complete reading edition"
+        },
+        "preview": {
+          "text": " 灯塔来信\n\n 第一幕 · 潮汐送来的信\n\n退潮把海滩擦得很亮。阿澄在一只空贝壳下面发现了信，纸角像被海风啃过。\n\n“明天的你，别忘记那盏灯。”\n\n她把信塞进口袋，谁也没告诉。灯塔的石阶比想象中长，雾一层层叠上来，连脚下的白线也看不见了。她想证明自己不害怕，可喊出“小栗子”的时候，声音已经开始发抖。\n\n远处响起三下铃声。那是奶奶每天傍晚叫她回家的节奏。\n\n ",
+          "en": " The Lighthouse Letters\n\n Act I · a letter in the tide\n\nThe tide had polished the beach. Beneath an empty shell, Ari found a letter with a salt-soft corner.\n\n“Tomorrow, remember th"
+        }
+      },
+      {
+        "id": "story-page",
+        "type": "website",
+        "column": 3,
+        "row": 1,
+        "name": "故事展览页",
+        "en": {
+          "name": "A page for the story"
+        },
+        "preview": {
+          "text": "把故事与三张插画做成可阅读的故事介绍页，不声称已经出版。",
+          "en": "Make a readable story introduction from the acts and illustrations. Do not imply it is a published book."
+        }
+      }
+    ],
+    "edges": [
+      ["premise", "outline"],
+      ["characters", "outline"],
+      ["world", "outline"],
+      ["outline", "act-one"],
+      ["act-one", "act-two"],
+      ["outline", "act-two"],
+      ["act-two", "act-three"],
+      ["act-one", "image-one"],
+      ["world", "image-one"],
+      ["act-two", "image-two"],
+      ["image-one", "image-two"],
+      ["act-three", "image-three"],
+      ["image-two", "image-three"],
+      ["act-one", "reading-edition"],
+      ["act-two", "reading-edition"],
+      ["act-three", "reading-edition"],
+      ["reading-edition", "story-page"],
+      ["image-one", "story-page"],
+      ["image-three", "story-page"]
+    ]
+  }
+]

@@ -1,0 +1,1269 @@
+import type { Message } from "../locale";
+import type { MessageKey } from "./zh-CN";
+
+export const en = {
+  "projects.templates.completeExample": "Complete example",
+  "canvas.components.hide": "Hide",
+  "canvas.components.expandPalette": "Show components",
+  "canvas.components.collapsePalette": "Hide components",
+  "assets.uploadShort": "Upload",
+  "assets.insertShort": "Insert",
+  "common.rename": "Rename",
+  "common.undo": "Undo",
+  "assets.title": "Asset library",
+  "assets.description":
+    "Keep useful images together, ready for your next idea.",
+  "assets.imageRequired": "Choose a readable image file",
+  "assets.newFolder": "New folder",
+  "assets.close": "Close asset library",
+  "assets.search": "Search assets",
+  "assets.clearSearch": "Clear search",
+  "assets.newest": "Newest first",
+  "assets.oldest": "Oldest first",
+  "assets.folders": "Asset folders",
+  "assets.all": "All assets",
+  "assets.folderActions": "Folder actions for {name}",
+  "assets.removeFolder": "Remove folder",
+  "assets.trash": "Trash",
+  "assets.noResults": "No matching assets",
+  "assets.trashEmpty": "Trash is empty",
+  "assets.empty": "A place for your inspiration",
+  "assets.searchHint": "Try another name or clear your search.",
+  "assets.trashHint": "Removed assets can be restored here.",
+  "assets.emptyHint": "Upload or drop images to use them on your canvas.",
+  "assets.upload": "Upload images",
+  "assets.list": "Assets",
+  "assets.selectAsset": "Select asset: {name}",
+  "assets.assetActions": "Asset actions for {name}",
+  "assets.preview": "Preview",
+  "assets.insert": "Insert on canvas",
+  "assets.move": "Move to folder",
+  "assets.download": "Download original",
+  "assets.restored": "Asset restored",
+  "assets.trashed": "Asset moved to trash",
+  "assets.restore": "Restore asset",
+  "assets.moveToTrash": "Move to trash",
+  "assets.importProgress": "Adding images: {done} / {total}",
+  "assets.count": "{count} assets",
+  "assets.shapeLibrary": "Shape library",
+  "assets.dropImages": "Drop to add images",
+  "assets.removeFolderHint":
+    "Images and subfolders will move to the parent folder. Existing canvases keep their images.",
+  "assets.chooseFolder": "Choose a destination folder",
+  "assets.nameHint": "Use a name that is easy to find.",
+  "assets.name": "Name",
+  "assets.noFolder": "Unfiled",
+  "assets.chooseCanvas": "Choose a canvas",
+  "assets.insertFailed": "Could not insert asset",
+  "assets.inserted": "Asset inserted on canvas",
+  "assets.imported": "Added {count} images",
+  "assets.manage": "Manage assets",
+  "api.audioTranscript": "[Audio transcript]\n{arg0}",
+  "api.cannotReadImage": "Couldn’t read image",
+  "api.cannotReadInputResource": "Couldn’t read input resource",
+  "api.connectionInterrupted":
+    "Connection interrupted. Please try again shortly.",
+  "api.describeAnImageOrConnectAReferenceImage":
+    "Describe an image or connect a reference image",
+  "api.documentContent": "Document content",
+  "api.enterTheTextToReadAloud": "Enter the text to read aloud",
+  "api.errors.analysisTextIsTooLong": "Analysis text is too long",
+  "api.errors.anotherRecordingIsBeingProcessed":
+    "Another recording is being processed. Try again shortly.",
+  "api.errors.audioDecodingTimedOut":
+    "Audio decoding timed out. Please try again.",
+  "api.errors.builtInExamplesCannotBeDeleted":
+    "Built-in examples can’t be deleted",
+  "api.errors.cannotExtractPdfText":
+    "Couldn’t extract PDF text. Use a PDF that contains selectable text.",
+  "api.errors.cannotReadTheDocxDocumentBody":
+    "Couldn’t read the DOCX document body",
+  "api.errors.cannotReadThePage":
+    "Couldn’t read the page. Check the address and try again.",
+  "api.errors.cannotReadThisRecordingsAudio":
+    "Couldn’t read this recording’s audio. Check that the file is complete and contains sound.",
+  "api.errors.cannotReadWorkbook": "Couldn’t read workbook",
+  "api.errors.cannotReadWorksheet": "Couldn’t read worksheet",
+  "api.errors.cannotResolveTheDomain": "Couldn’t resolve the domain",
+  "api.errors.canvasDataIsTooLarge":
+    "Canvas data is too large. Reduce embedded content and try again.",
+  "api.errors.characters": "characters",
+  "api.errors.chooseAFileToUpload": "Choose a file to upload",
+  "api.errors.chooseAVideoOrAudioFile": "Choose a video or audio file",
+  "api.errors.content": "Content",
+  "api.errors.contentNotFound": "Content not found",
+  "api.errors.documentsToParseCannotExceed10Mb":
+    "Documents to parse can’t exceed 10 MB",
+  "api.errors.filesCannotExceed512Mb": "Files can’t exceed 512 MB",
+  "api.errors.huayuStarted": "Huayu started",
+  "api.errors.invalidAudioSegmentRange":
+    "Invalid audio segment range. Read up to five minutes at a time.",
+  "api.errors.invalidDocxDocumentBody": "Invalid DOCX document body",
+  "api.errors.invalidDocxFormat": "Invalid DOCX format",
+  "api.errors.invalidFileUploadData": "Invalid file upload data",
+  "api.errors.invalidRecordingDuration": "Invalid recording duration",
+  "api.errors.invalidRedirectUrl": "Invalid redirect URL",
+  "api.errors.invalidRequestData": "Invalid request data",
+  "api.errors.invalidWebAddress": "Invalid web address",
+  "api.errors.invalidWebPort": "Invalid web port",
+  "api.errors.localAudioDecodingIsUnavailable":
+    "Local audio decoding is unavailable",
+  "api.errors.namesMustContain1120Characters":
+    "Names must contain 1–120 characters",
+  "api.errors.opening": "Opening…",
+  "api.errors.pageLoadingInterrupted": "Page loading interrupted",
+  "api.errors.selectedContent": "Selected content",
+  "api.errors.textFilesMustUseUtf8Encoding":
+    "Text files must use UTF-8 encoding",
+  "api.errors.theDocumentContainsTooMuchText":
+    "The document contains too much text. Split it into smaller files.",
+  "api.errors.theDocxDocumentBodyIsTooLarge":
+    "The DOCX document body is too large",
+  "api.errors.theDocxFileHasNoDocumentBody":
+    "The DOCX file has no document body",
+  "api.errors.theExampleDescriptionOrTagsAreTooLong":
+    "The example description or tags are too long",
+  "api.errors.theFileNameIsTooLongOrContainsInvalidCharacters":
+    "The file name is too long or contains invalid characters",
+  "api.errors.thePageIsTooLarge": "The page is too large",
+  "api.errors.thePageReturnedNoReadableContent":
+    "The page returned no readable content",
+  "api.errors.theRecordingHasNoReadableAudioTrack":
+    "The recording has no readable audio track",
+  "api.errors.theWebAddressIsMissingADomain":
+    "The web address is missing a domain",
+  "api.errors.theWorkbookContainsTooMuchText":
+    "The workbook contains too much text. Split it into smaller files.",
+  "api.errors.thisAddressCannotBeReadAsAnExternalPage":
+    "This address can’t be read as an external page",
+  "api.errors.thisFileFormatCannotBeParsed": "This file format can’t be parsed",
+  "api.errors.thisHostIsNotAllowed": "This host is not allowed",
+  "api.errors.thisRequestOriginIsNotAllowed":
+    "This request origin is not allowed",
+  "api.errors.tooManyPageRedirects": "Too many page redirects",
+  "api.errors.uploadInterrupted": "Upload interrupted. Please try again.",
+  "api.errors.useALocalImageForTheCover": "Use a local image for the cover",
+  "api.errors.useAnHttpOrHttpsWebAddressWithoutCredentials":
+    "Use an HTTP or HTTPS web address without credentials",
+  "api.failed": "{arg0} failed",
+  "api.fileExceedsTheSizeLimit": "File exceeds the size limit",
+  "api.generateACompleteWebPageFromTheInput":
+    "Generate a complete web page from the input.",
+  "api.generatedContent": "Generated content",
+  "api.generatedDocument": "Generated document",
+  "api.generatedFile": "Generated file",
+  "api.generatedImage": "Generated image",
+  "api.generatedSpeech": "Generated speech",
+  "api.generateTheCompleteFileBodyFromTheInputAndRequirements":
+    "Generate the complete file body from the input and requirements. Return only the body, without code fences. Include all relevant content from connected steps.",
+  "api.generateTheRequestedChart": "Generate the requested chart.",
+  "api.generateTheRequestedFileContent": "Generate the requested file content.",
+  "api.generationFailed": "Generation failed",
+  "api.invalidRequestUrl": "Invalid request URL",
+  "api.invalidResourceUrl": "Invalid resource URL",
+  "api.noGeneratedContentWasReturned": "No generated content was returned",
+  "api.requestFailed": "Request failed ({arg0})",
+  "api.theModelChoseAnUnsupportedFormat":
+    "The model chose an unsupported format. Specify a format in your instructions.",
+  "api.theModelResponseIsMissingTheContentField":
+    "The model response is missing the content field. Please try again.",
+  "api.theModelReturnedAnInvalidChartFormat":
+    "The model returned an invalid chart format",
+  "api.thePageMustBeEntirelySelfContained":
+    "\nThe page must be entirely self-contained. Inline all CSS and JavaScript. Do not reference CDNs, external fonts or remote scripts.",
+  "api.transcription": "Transcription",
+  "api.unsupportedFileFormat": "Unsupported file format",
+  "api.webSearchSourcesPreserveCitationsWhenUsingThem":
+    "\nWeb search sources (preserve citations when using them):\n{arg0}",
+  "app.brand": "Huayu",
+  "app.homeLabel": "Huayu home",
+  "app.name": "Huayu",
+  "canvas.aConnectedShapeNoLongerExists": "A connected shape no longer exists",
+  "canvas.addADescriptionOptional": "Add a description (optional)",
+  "canvas.addStep": "Add a step",
+  "canvas.components.palette": "Components",
+  "canvas.components.dragToCanvas": "Click to add, or drag onto the canvas",
+  "canvas.aShapeConnectedByThisArrowNoLongerExists":
+    "A shape connected by this arrow no longer exists",
+  "canvas.audioMaterial": "Audio material",
+  "canvas.audioStep": "Audio step",
+  "canvas.browserStorageIsFull": "Browser storage is full",
+  "canvas.cannotExportCanvas": "Couldn’t export canvas",
+  "canvas.cannotLoadCanvasResources": "Couldn’t load canvas resources",
+  "canvas.cannotReadCanvasData":
+    "Couldn’t read canvas data. Check the file format and version.",
+  "canvas.cannotSaveLibrary": "Couldn’t save library",
+  "canvas.cannotSaveLocalRecoveryData": "Couldn’t save local recovery data",
+  "canvas.canvas": "Canvas",
+  "canvas.canvasActions": "Canvas actions",
+  "canvas.canvasImage": "Canvas image",
+  "canvas.canvasMenu": "Canvas menu",
+  "canvas.canvasName": "Canvas name",
+  "canvas.canvasSyncFailed": "Canvas sync failed. Refresh to try again.",
+  "canvas.cardPreviewsCannotBeGenerated":
+    "Card previews couldn’t be generated. Try again shortly.",
+  "canvas.chart.addChildNode": "Add child node",
+  "canvas.chart.addNode": "Add node",
+  "canvas.chart.decision": "Decision",
+  "canvas.chart.deleteNode": "Delete node",
+  "canvas.chart.end": "End",
+  "canvas.chart.flowchart": "Flowchart",
+  "canvas.chart.mindmap": "Mind map",
+  "canvas.chart.newNode": "New node",
+  "canvas.chart.output": "Output",
+  "canvas.chart.process": "Process",
+  "canvas.chart.zoomIn": "Zoom in",
+  "canvas.chart.zoomOut": "Zoom out",
+  "canvas.chartContent": "Chart content",
+  "canvas.chartType": "Chart type",
+  "canvas.chooseAnAudioFile": "Choose an audio file",
+  "canvas.chooseAnImageFile": "Choose an image file",
+  "canvas.components.aiDrawing": "AI drawing",
+  "canvas.components.aiImage": "AI image",
+  "canvas.components.chart.description":
+    "Turn text into a mind map or flowchart",
+  "canvas.components.chart.help":
+    "Generate an editable mind map or flowchart from connected text or JSON.",
+  "canvas.components.chart.placeholder": "Enter a topic or paste chart JSON…",
+  "canvas.components.creativeInstruction": "Creative instruction",
+  "canvas.components.drawAndEditOnTheCanvasFromYourInstructions":
+    "Draw and edit on the canvas from your instructions",
+  "canvas.components.embedAnExternalPage":
+    "Embed an external page. Paste a URL to open it.",
+  "canvas.components.embedAPageOrUseItsContentAsMaterial":
+    "Embed a page or use its content as material",
+  "canvas.components.externalLink": "External link",
+  "canvas.components.file.description":
+    "Upload material or generate PDF, Word and other files",
+  "canvas.components.file.help":
+    "Upload and read documents, or generate a file from a description. Supported inputs include text, Markdown, CSV, JSON, YAML, XML, HTML, CSS, JavaScript, PDF, DOCX and XLSX.",
+  "canvas.components.file.placeholder":
+    "Describe the file and its format, or upload a document…",
+  "canvas.components.image.description":
+    "Create images from a description or reference",
+  "canvas.components.image.help":
+    "Generate an image or upload your own. Connected reference images are used when generating.",
+  "canvas.components.image.placeholder": "Describe the image you want…",
+  "canvas.components.instruction.description":
+    "Create with AI using your materials and instructions",
+  "canvas.components.instruction.help":
+    "Connect materials, describe the task, then run it. Supports text, images, audio and files.",
+  "canvas.components.instruction.placeholder":
+    "Write instructions and connect materials for more context…",
+  "canvas.components.run": "Run",
+  "canvas.components.runConnectedCreativeStepsFromHere":
+    "Run connected creative steps from here",
+  "canvas.components.speech.description": "Generate speech or transcribe audio",
+  "canvas.components.speech.help":
+    "Turn text into speech, or upload audio to transcribe it.",
+  "canvas.components.speech.placeholder": "Enter text to read aloud…",
+  "canvas.components.text.description":
+    "Write material, or collect generated content",
+  "canvas.components.text.help":
+    "Write source material, or collect content from connected steps.",
+  "canvas.components.text.placeholder":
+    "Write text, or connect output from another step…",
+  "canvas.components.frame.description":
+    "Use the contents of a frame as an image in the next step",
+  "canvas.components.website": "Website",
+  "canvas.components.website.description":
+    "Create a working page from a description",
+  "canvas.components.website.help":
+    "Generate a complete HTML page and preview it. Use a description or reference image to create styles and interactions.",
+  "canvas.components.website.placeholder": "Describe the web page you want…",
+  "canvas.composer.addSelected": "Add selected",
+  "canvas.composer.addStepOnly": "Add step only",
+  "canvas.composer.backToContent": "Back to content",
+  "canvas.composer.backToSelection": "Back to selection",
+  "canvas.composer.cannotAddACreativeStep": "Couldn’t add a creative step",
+  "canvas.composer.chooseAnOutputType": "Choose an output type",
+  "canvas.composer.closeCreationPanel": "Close creation panel",
+  "canvas.composer.continueUnfinishedCreation": "Continue unfinished creation",
+  "canvas.composer.createFromMaterials": "Create from materials",
+  "canvas.composer.creationIncomplete": "Creation incomplete",
+  "canvas.composer.creationInstructions": "Creation instructions",
+  "canvas.composer.ctrlEnterToStart": "⌘ / Ctrl + Enter to start",
+  "canvas.composer.describeTheContentToReadAloud":
+    "Describe the content to read aloud…",
+  "canvas.composer.describeTheDocumentAndItsFormat":
+    "Describe the document and its format…",
+  "canvas.composer.describeTheImageYoudLikeToCreate":
+    "Describe the image you’d like to create…",
+  "canvas.composer.describeThePagesContentAndInteractions":
+    "Describe the page’s content and interactions…",
+  "canvas.composer.document": "Document",
+  "canvas.composer.expandIntoAnArticle": "Expand into an article",
+  "canvas.composer.extractKeyPoints": "Extract key points",
+  "canvas.composer.materialsForThisCreation": "Materials for this creation",
+  "canvas.composer.removeMaterial": "Remove material: {arg0}",
+  "canvas.composer.selectContentOnTheCanvasThenAddItAsMaterial":
+    "Select content on the canvas, then add it as material.",
+  "canvas.composer.startCreating": "Start creating",
+  "canvas.composer.theseMaterialsAreNoLongerOnThisPage":
+    "These materials are no longer on this page. Select them again.",
+  "canvas.composer.whatStructureOrProcessWouldYouLikeToMapOut":
+    "What structure or process would you like to map out?",
+  "canvas.composer.whatWouldYouLikeToWriteFromTheseMaterials":
+    "What would you like to write from these materials?",
+  "canvas.composer.yourDraftHasntBeenSaved":
+    "Your draft hasn’t been saved. Keep this page open.",
+  "canvas.connectionInterrupted":
+    "Connection interrupted. Edits are temporarily saved in this browser.",
+  "canvas.connections.chooseInputMaterial": "Choose input material",
+  "canvas.connections.chooseTheNextStep": "Choose the next step",
+  "canvas.connections.connect": "Connect {arg0}",
+  "canvas.connections.connectAnExistingCard": "Connect an existing card",
+  "canvas.connections.createInputMaterial": "Create input material",
+  "canvas.connections.createNextStep": "Create next step",
+  "canvas.connections.failed": "Couldn’t connect",
+  "canvas.connections.noCardsAvailableToConnect":
+    "No cards available to connect",
+  "canvas.connections.releaseToAddInputMaterial":
+    "Release to add input material",
+  "canvas.connections.releaseToAddTheNextStep": "Release to add the next step",
+  "canvas.connections.selectACardAgain": "Select a card again",
+  "canvas.connections.unavailable": "Can’t connect",
+  "canvas.connectionToTheLocalServiceInterrupted":
+    "Connection to the local service interrupted",
+  "canvas.copyContent": "Copy content",
+  "canvas.copyLink": "Copy link",
+  "canvas.createFromThisContent": "Create from this content",
+  "canvas.creationComplete": "Creation complete",
+  "canvas.creationStopped": "Creation stopped",
+  "canvas.documentTxt": "document.txt",
+  "canvas.downloadContent": "Download content",
+  "canvas.drawing.aiDrawingInstructions": "AI drawing instructions",
+  "canvas.drawing.describeWhatToDrawOrChangeOnTheCanvas":
+    "Describe what to draw or change on the canvas…",
+  "canvas.drawing.drawingComplete": "Drawing complete",
+  "canvas.drawing.drawingFailed": "Drawing failed",
+  "canvas.drawing.generate": "Generate",
+  "canvas.drawingActionsCannotBeApplied":
+    "Drawing actions couldn’t be applied. Try again or revise your instructions.",
+  "canvas.embed.cannotReadWebPage": "Couldn’t read web page",
+  "canvas.embed.checkTheWebAddress": "Check the web address",
+  "canvas.embed.enterAnAddressToOpenAPage": "Enter an address to open a page",
+  "canvas.embed.enterAValidWebAddress": "Enter a valid web address",
+  "canvas.embed.externalPage": "External page",
+  "canvas.embed.openPageInANewWindow": "Open page in a new window",
+  "canvas.embed.readWebPage": "Read web page",
+  "canvas.embed.webAddress": "Web address",
+  "canvas.exampleDescription": "Example description",
+  "canvas.exampleName": "Example name",
+  "canvas.examples.chartPrompt":
+    "Map a new product’s journey from idea to launch, including user research, design, development, testing and a launch retrospective.",
+  "canvas.examples.imagePrompt":
+    "A small coastal town, warm evening light, hand-drawn illustration style.",
+  "canvas.examples.websitePrompt":
+    "Build a to-do page with adding, completing, filtering and deleting tasks. Make it work on both mobile and desktop.",
+  "canvas.export.png": "Export PNG",
+  "canvas.export.pngImage": "Export PNG",
+  "canvas.export.svg": "Export SVG",
+  "canvas.export.svgImage": "Export SVG",
+  "canvas.exportExcalidrawFile": "Export Excalidraw file",
+  "canvas.exportFailed": "Export failed",
+  "canvas.exportProjectFile": "Export project file",
+  "canvas.fileMaterial": "File material",
+  "canvas.files.description":
+    "Download images, audio, web pages and documents from this canvas.",
+  "canvas.files.downloadNamed": "Download {arg0}",
+  "canvas.files.empty": "No files to download yet",
+  "canvas.files.label": "Canvas files",
+  "canvas.files.title": "Project files",
+  "canvas.fileStep": "File step",
+  "canvas.findContent": "Find content",
+  "canvas.frame": "Frame",
+  "canvas.frameContent": "Frame content",
+  "canvas.generatedResult": "Generated result",
+  "canvas.group": "Group",
+  "canvas.imageExportFailed": "Image export failed",
+  "canvas.imagesAreStillLoading":
+    "Images are still loading. Try again shortly.",
+  "canvas.imageStep": "Image step",
+  "canvas.importedCanvas": "Imported canvas",
+  "canvas.importedImage": "Imported image",
+  "canvas.importedProject": "Imported project",
+  "canvas.input": "Input",
+  "canvas.inputCount": {
+    one: "{count} input material",
+    other: "{count} input materials",
+  },
+  "canvas.inspector.readEditOrCreateSomethingNewFromThisContent":
+    "Read, edit, or create something new from this content.",
+  "canvas.invalidCanvasData": "Invalid canvas data",
+  "canvas.invalidCanvasRecordFormat": "Invalid canvas record format",
+  "canvas.invalidCanvasRecordId": "Invalid canvas record ID",
+  "canvas.invalidConnectionBinding": "Invalid connection binding",
+  "canvas.invalidProjectFileFormat": "Invalid project file format",
+  "canvas.invalidShapeCoordinates": "Invalid shape coordinates",
+  "canvas.invalidShapeData": "Invalid shape data",
+  "canvas.invalidShapeDimensions": "Invalid shape dimensions",
+  "canvas.invalidShapeScale": "Invalid shape scale",
+  "canvas.keepAtLeastOnePage": "Keep at least one page",
+  "canvas.legacyInputCount": "{arg0} input materials",
+  "canvas.localSavingInterrupted": "Local saving interrupted",
+  "canvas.materialCount": {
+    one: "{count} material",
+    other: "{count} materials",
+  },
+  "canvas.myExample": "My example",
+  "canvas.node.clearGeneratedResult": "Clear generated result",
+  "canvas.node.closeEditor": "Close editor",
+  "canvas.node.failed": "Failed",
+  "canvas.node.lastRunCompleted": "Last run completed",
+  "canvas.node.lockStep": "Lock step",
+  "canvas.node.materialsOrInstructionsChanged":
+    "Materials or instructions changed. Run again to update the result.",
+  "canvas.node.needsUpdate": "Needs update",
+  "canvas.node.openEditor": "Open editor",
+  "canvas.node.running": "Running",
+  "canvas.node.runStep": "Run step",
+  "canvas.node.stepOptions": "Step options",
+  "canvas.node.stopRun": "Stop run",
+  "canvas.node.unlockStep": "Unlock step",
+  "canvas.node.viewWork": "View work",
+  "canvas.node.waiting": "Waiting",
+  "canvas.open": "Open canvas",
+  "canvas.openingCanvas": "Opening canvas",
+  "canvas.pages.canvasPages": "Canvas pages",
+  "canvas.pages.deleteCurrentPage": "Delete current page",
+  "canvas.pages.deletePage": "Delete page",
+  "canvas.pages.deleteThisPage": "Delete this page?",
+  "canvas.pages.everythingOnThisPageWillAlsoBeDeleted":
+    "Everything on this page will also be deleted.",
+  "canvas.pages.giveThisPageANameThatsEasyToRecognize":
+    "Give this page a name that’s easy to recognize.",
+  "canvas.pages.label": "Page",
+  "canvas.pages.newPage": "New page",
+  "canvas.pages.numberedName": "Page {arg0}",
+  "canvas.pages.page1": "Page 1",
+  "canvas.pages.pageName": "Page name",
+  "canvas.pages.renamePage": "Rename page",
+  "canvas.projectDeleted": "Project deleted",
+  "canvas.projectFilesCannotExceed128Mb": "Project files can’t exceed 128 MB",
+  "canvas.quickCommands": "Quick commands",
+  "canvas.readContent": "Read content",
+  "canvas.referenceImage": "Reference image",
+  "canvas.result": "Result",
+  "canvas.saveAsExample": "Save as example",
+  "canvas.savedAsExample": "Saved as example",
+  "canvas.saveExample": "Save example",
+  "canvas.saveStatus": "Save status: {arg0}",
+  "canvas.saveThisCanvasAsAStartingPointForNewProjects":
+    "Save this canvas as a starting point for new projects.",
+  "canvas.saving": "Saving…",
+  "canvas.share": "Share",
+  "canvas.share.allowCollaboration": "Allow collaboration through a link",
+  "canvas.share.description":
+    "Copy this link and open it in a browser that can access this canvas. Changes sync in real time.",
+  "canvas.share.linkCopied": "Link copied",
+  "canvas.share.linkLabel": "Collaboration link",
+  "canvas.share.linkUnavailable":
+    "This collaboration link is disabled or no longer valid",
+  "canvas.share.title": "Share canvas",
+  "canvas.start": "Start",
+  "canvas.syncFailed": "Sync failed",
+  "canvas.textMaterial": "Text material",
+  "canvas.theBrowserCannotExportTheImage":
+    "The browser couldn’t export the image",
+  "canvas.theBrowserCannotSaveRecoveryData":
+    "The browser couldn’t save recovery data",
+  "canvas.theCanvasHasNoPages": "The canvas has no pages",
+  "canvas.theCanvasIsntReadyYet": "The canvas isn’t ready yet",
+  "canvas.theExcalidrawFileHasNoValidCanvasContent":
+    "The Excalidraw file has no valid canvas content",
+  "canvas.theModelReturnedInvalidDrawingActions":
+    "The model returned invalid drawing actions",
+  "canvas.theProjectFileContainsInvalidRecords":
+    "The project file contains invalid records",
+  "canvas.theProjectFileIsMissingCanvasData":
+    "The project file is missing canvas data",
+  "canvas.theProjectFileIsntValidJson": "The project file isn’t valid JSON",
+  "canvas.theresNothingOnTheCanvasToExportYet":
+    "There’s nothing on the canvas to export yet",
+  "canvas.theresNothingToExportYet": "There’s nothing to export yet",
+  "canvas.theShapeTransformIsMissingItsCenterPoint":
+    "The shape transform is missing its center point",
+  "canvas.thisProjectFileVersionIsntSupported":
+    "This project file version isn’t supported",
+  "canvas.thisProjectWasDeleted": "This project was deleted",
+  "canvas.title": "Canvas",
+  "canvas.tools.arrow": "Arrow",
+  "canvas.tools.cannotAddImage": "Couldn’t add image",
+  "canvas.tools.canvasTools": "Canvas tools",
+  "canvas.tools.diamond": "Diamond",
+  "canvas.tools.draw": "Draw",
+  "canvas.tools.ellipse": "Ellipse",
+  "canvas.tools.embeddedContent": "Embedded content",
+  "canvas.tools.eraser": "Eraser",
+  "canvas.tools.hand": "Hand",
+  "canvas.tools.moreCanvasTools": "More canvas tools",
+  "canvas.tools.rectangle": "Rectangle",
+  "canvas.tools.select": "Select",
+  "canvas.tools.stickyNote": "Sticky note",
+  "canvas.tools.writeAnIdea": "Write an idea",
+  "canvas.topic":
+    "Topic: A day in the city\nStyle: Warm and observant\nAudience: People who notice everyday life",
+  "canvas.transcribeAudio": "Transcribe audio",
+  "canvas.uploadFile": "Upload file",
+  "canvas.viewImage": "View image",
+  "canvas.viewInputCount": {
+    one: "View {count} input material",
+    other: "View {count} input materials",
+  },
+  "canvas.viewLegacyInputCount": "View {arg0} input materials",
+  "canvas.viewResult": "View result",
+  "canvas.waitingToReconnect": "Waiting to reconnect",
+  "canvas.webContent": "Web content",
+  "canvas.webPreview": "Web preview",
+  "canvas.websiteStep": "Website step",
+  "canvas.writeAShortCaptionForThisImage":
+    "Write a short caption for this image.",
+  "canvas.writeAVividShortPieceBasedOnThePrecedingMaterials":
+    "Write a vivid short piece based on the preceding materials.",
+  "canvas.youCanKeepEditing":
+    "You can keep editing. Reopen the canvas to try loading again.",
+  "common.addInputMaterial": "Add input material",
+  "common.addNextStep": "Add next step",
+  "common.all": "All",
+  "common.and": "and",
+  "common.cancel": "Cancel",
+  "common.characterCount": {
+    one: "{formatted} character",
+    other: "{formatted} characters",
+  },
+  "common.chart": "Chart",
+  "common.close": "Close",
+  "common.copied": "Copied",
+  "common.copy": "Copy",
+  "common.delete": "Delete",
+  "common.dismissNotification": "Dismiss notification",
+  "common.download": "Download",
+  "common.downloadFailed": "Download failed",
+  "common.dragToConnectInputMaterialOrClickToAdd":
+    "Drag to connect input material, or click to add",
+  "common.dragToConnectTheNextStepOrClickToAdd":
+    "Drag to connect the next step, or click to add",
+  "common.duration.minutesSeconds": "{arg0} min {arg1} s",
+  "common.duration.seconds": "{arg0} s",
+  "common.edit": "Edit",
+  "common.file": "File",
+  "common.image": "Image",
+  "common.loading": "Loading…",
+  "common.operationFailed": "Something went wrong",
+  "common.operationFailedLater":
+    "Something went wrong. Please try again shortly.",
+  "common.operationFailedRetry": "Something went wrong. Please try again.",
+  "common.preview": "Preview",
+  "common.refreshPage": "Refresh page",
+  "common.refreshToTryAgain":
+    "Refresh to try again. Your saved projects are still here.",
+  "common.reload": "Reload",
+  "common.retry": "Retry",
+  "common.save": "Save",
+  "common.speech": "Audio",
+  "common.text": "Text",
+  "common.textContent": "Text",
+  "common.thisPageCannotBeDisplayed": "This page couldn’t be displayed",
+  "common.tryAgain": "Please try again",
+  "common.webPage": "Web page",
+  "models.cannotConnectToTheModelService":
+    "Couldn’t connect to the model service. Check the URL, network and browser cross-origin settings.",
+  "models.cannotLoadTheGeneratedImage": "Couldn’t load the generated image",
+  "models.cannotLoadThePdfFont": "Couldn’t load the PDF font",
+  "models.configureWebSearchInSettingsModelConnectionsFirst":
+    "Configure web search in Settings → Model connections first",
+  "models.connected": "Connected. You’re ready to create.",
+  "models.enterAModelNameInSettingsModelConnectionsFirst":
+    "Enter a model name in Settings → Model connections first",
+  "models.enterTheUrlOfYourModelService": "Enter the URL of your model service",
+  "models.generationWasInterrupted":
+    "Generation was interrupted. Please try again.",
+  "models.image.referenceInstructions":
+    "Create from the reference image, preserving its main content and composition.",
+  "models.imageGeneration": "Image generation",
+  "models.imageUnderstanding": "Image understanding",
+  "models.invalidModelServiceUrl":
+    "Invalid model service URL. Check Settings → Model connections.",
+  "models.modelRequestFailed": "Model request failed: {arg0}",
+  "models.serviceConnected": "Service connected. Model found.",
+  "models.serviceConnectedButThisModelWasntInTheList":
+    "Service connected, but this model wasn’t in the list. Check the model name.",
+  "models.serviceConnectionFailed": "Service connection failed ({arg0})",
+  "models.textGeneration": "Text generation",
+  "models.textToSpeech": "Text to speech",
+  "models.theModelReturnedAnInvalidFormat":
+    "The model returned an invalid format. Try again or select a model that supports structured output.",
+  "models.theModelReturnedAnInvalidImageUrl":
+    "The model returned an invalid image URL",
+  "models.theModelReturnedNoImage": "The model returned no image",
+  "models.theModelReturnedNoTranscript": "The model returned no transcript",
+  "models.theModelServiceReturnedEmptyContent":
+    "The model service returned empty content",
+  "models.theModelServiceReturnedNoContent":
+    "The model service returned no content",
+  "models.theServiceReturnedNoModelList": "The service returned no model list",
+  "models.thisFileFormatCannotBeGenerated":
+    "This file format can’t be generated",
+  "models.serviceUrl.invalid":
+    "Use an HTTP or HTTPS URL without credentials or query parameters",
+  "models.webSearch": "Web search",
+  "models.webSearchFailed": "Web search failed. Check your search settings.",
+  "navigation.backToProjects": "Back to projects",
+  "navigation.closeSidebar": "Close sidebar",
+  "navigation.collapseSidebar": "Collapse sidebar",
+  "navigation.description": "Open projects, recordings and settings.",
+  "navigation.expandSidebar": "Expand sidebar",
+  "navigation.main": "Main navigation",
+  "navigation.projects": "Projects",
+  "navigation.recordings": "Recordings",
+  "navigation.sidebar": "Sidebar",
+  "navigation.title": "Navigation",
+  "projects.all": "All projects",
+  "projects.cannotLoadProjects": "Couldn’t load projects",
+  "projects.clearFilters": "Clear filters",
+  "projects.continueCreating": "Continue creating {arg0}",
+  "projects.continueYourLastCreation": "Continue your last creation",
+  "projects.copy": "{arg0} copy",
+  "projects.copying": "Copying…",
+  "projects.create": "New project",
+  "projects.createABlankCanvasOrStartFromAnExample":
+    "Create a blank canvas, or start from an example.",
+  "projects.createBlankProject": "Create blank project",
+  "projects.createFailed": "Couldn’t create project",
+  "projects.createFromThis": "Create from this",
+  "projects.createProject": "Create project",
+  "projects.deleteExample": "Delete example {arg0}",
+  "projects.deleteProject": "Delete project",
+  "projects.duplicateProject": "Duplicate project",
+  "projects.empty.title": "No projects yet",
+  "projects.examples": "Examples",
+  "projects.exportAnythingYouWantToKeepFirst":
+    "Export anything you want to keep first.",
+  "projects.giveThisCanvasANameThatsEasyToRecognize":
+    "Give this canvas a name that’s easy to recognize.",
+  "projects.importProject": "Import project",
+  "projects.lastOpenedProject": "Last opened project",
+  "projects.loadingProjects": "Loading projects",
+  "projects.makeComplexMaterialIntoAClearMap":
+    "Make complex material into a clear map",
+  "projects.myProjects": "My projects",
+  "projects.exampleProjects": "Example projects",
+  "projects.listTabs": "Projects and examples",
+  "projects.open": "Open",
+  "projects.view": "View",
+  "projects.updatedOn": "Updated {date}",
+  "projects.forkCount": "Copies: {count}",
+  "projects.noMatchingExamples": "No matching examples",
+  "projects.noMatchingProjects": "No matching projects",
+  "projects.openCopy": "Open copy",
+  "projects.projectCopied": "Project copied",
+  "projects.projectName": "Project name",
+  "projects.projectsAlreadyCreatedFromThisExampleWillBeKept":
+    "Projects already created from this example will be kept.",
+  "projects.projectsCannotBeLoaded":
+    "Projects couldn’t be loaded. Please reload.",
+  "projects.quickStart": "Quick start",
+  "projects.recent": "Recent projects",
+  "projects.reload": "Reload projects",
+  "projects.reloadToTryAgain": "Reload to try again.",
+  "projects.renameProject": "Rename project",
+  "projects.savedCanvasExample": "Saved canvas example",
+  "projects.search.label": "Search projects or examples",
+  "projects.search.placeholder": "Search projects or examples…",
+  "projects.startFromAnExample": "Start from an example",
+  "projects.startWithAnIdeaOrPickUpWhereYouLeftOff":
+    "Start with an idea, or pick up where you left off.",
+  "projects.startWithYourFirstCanvas": "Start with your first canvas",
+  "projects.templates.loadFailed": "Examples couldn’t be loaded",
+  "projects.templates.readFailed": "Examples couldn’t be loaded.",
+  "projects.thisCannotBeUndone": "This can’t be undone.",
+  "projects.turnABriefIntoAnInteractivePage":
+    "Turn a brief into an interactive page",
+  "projects.turnAnIdeaIntoWordsAndPictures":
+    "Turn an idea into words and pictures",
+  "projects.turnATopicIntoAnArticle": "Turn a topic into an article",
+  "projects.untitled": "Untitled project",
+  "projects.updated": "Updated {arg0}",
+  "projects.updatedToday": "Updated today",
+  "projects.updatedYesterday": "Updated yesterday",
+  "projects.use": "Use {arg0}",
+  "projects.viewAllProjects": "View all projects",
+  "projects.empty.description":
+    "Write an idea, add materials, then connect them into something new.",
+  "projects.yourCreativeSpace": "Your creative space",
+  "recordings.actionsFor": "Actions for {arg0}",
+  "recordings.all": "All recordings",
+  "recordings.analysis.actionIncomplete": "Action incomplete",
+  "recordings.analysis.analysisCopied": "Analysis copied",
+  "recordings.analysis.analysisFailed": "Analysis failed",
+  "recordings.analysis.analysisIncomplete":
+    "Analysis incomplete. You can continue processing.",
+  "recordings.analysis.analysisMarkdown": "Analysis Markdown",
+  "recordings.analysis.analysisMd": "{arg0}-analysis.md",
+  "recordings.analysis.backToRecordings": "Back to recordings",
+  "recordings.analysis.chapters": "Chapters",
+  "recordings.analysis.chaptersHint":
+    "Choose a chapter to jump to that moment in the recording.",
+  "recordings.analysis.clearSelection": "Clear selection",
+  "recordings.analysis.contentOrganized": "Content organized",
+  "recordings.analysis.continueProcessing": "Continue processing",
+  "recordings.analysis.continueTranscription": "Continue transcription",
+  "recordings.analysis.copyAnalysis": "Copy analysis",
+  "recordings.analysis.copyTranscript": "Copy transcript",
+  "recordings.analysis.correctTheTextWhileKeepingTimestamps":
+    "Correct the text while keeping timestamps. You can regenerate analysis after saving.",
+  "recordings.analysis.createACanvas": "Create a canvas",
+  "recordings.analysis.createFrom": "Create from {arg0}",
+  "recordings.analysis.createFromChapter": "Create from chapter “{arg0}”",
+  "recordings.analysis.createFromThisChapter": "Create from this chapter",
+  "recordings.analysis.createFromThisText": "Create from this text",
+  "recordings.analysis.description":
+    "Transcribe the recording and organize notes, chapters and Q&A.",
+  "recordings.analysis.downloadTheOriginalRecordingToReviewIt":
+    "Download the original recording to review it",
+  "recordings.analysis.durationUnavailable": "Duration unavailable",
+  "recordings.analysis.editTranscript": "Edit transcript",
+  "recordings.analysis.enterText": "Enter text",
+  "recordings.analysis.export": "Export",
+  "recordings.analysis.exportRecordingContent": "Export recording content",
+  "recordings.analysis.followPlayback": "Follow playback",
+  "recordings.analysis.modelSettings": "Model settings",
+  "recordings.analysis.moreAnalysisOptions": "More analysis options",
+  "recordings.analysis.nextSentence": "Next sentence",
+  "recordings.analysis.noMatchingContent": "No matching content",
+  "recordings.analysis.questionsEmpty":
+    "No questions and answers were found in this recording.",
+  "recordings.analysis.noSpeechWasRecognized":
+    "No speech was recognized. Check that the recording’s audio is clear.",
+  "recordings.analysis.notes": "Notes",
+  "recordings.analysis.notesTab": "Analysis",
+  "recordings.analysis.notOrganized": "Not organized",
+  "recordings.analysis.notTranscribed": "Not transcribed",
+  "recordings.analysis.openingRecording": "Opening recording…",
+  "recordings.analysis.organizeAgain": "Organize again",
+  "recordings.analysis.organizeContent": "Organize content",
+  "recordings.analysis.organized": "Organized",
+  "recordings.analysis.organizeDescription":
+    "Organize the transcript into notes, chapters and Q&A, so key points are easy to find.",
+  "recordings.analysis.organizingContent": "Organizing content {arg0}/{arg1}…",
+  "recordings.analysis.organizingNotesChaptersAndQA":
+    "Organizing notes, chapters and Q&A…",
+  "recordings.analysis.originalRecording": "Original recording",
+  "recordings.analysis.pausePlayback": "Pause playback",
+  "recordings.analysis.playback": "Playback",
+  "recordings.analysis.playbackSpeed": "Playback speed",
+  "recordings.analysis.playRecording": "Play recording",
+  "recordings.analysis.preparingAnalysis": "Preparing analysis",
+  "recordings.analysis.preparingAudio": "Preparing audio…",
+  "recordings.analysis.preparingContent": "Preparing content…",
+  "recordings.analysis.previousSentence": "Previous sentence",
+  "recordings.analysis.processing": "Processing…",
+  "recordings.analysis.processingProgress": "Processing progress",
+  "recordings.analysis.processingStopped":
+    "Processing stopped. Progress saved.",
+  "recordings.analysis.qA": "Q&A",
+  "recordings.analysis.questionsEmptyHint":
+    "Questions and answers will appear here after analysis.",
+  "recordings.analysis.recordingAndTranscript": "Recording and transcript",
+  "recordings.analysis.recordingCannotBePlayed": "Recording couldn’t be played",
+  "recordings.analysis.recordingWorkspace": "Recording workspace",
+  "recordings.analysis.resultTitle": "Analysis",
+  "recordings.analysis.questionsDescription":
+    "Review questions and answers from the recording.",
+  "recordings.analysis.saved": "Saved",
+  "recordings.analysis.saveTranscript": "Save transcript",
+  "recordings.analysis.search.label": "Search transcript",
+  "recordings.analysis.search.placeholder": "Search transcript…",
+  "recordings.analysis.segment": "Segment {arg0}",
+  "recordings.analysis.selectTranscriptSegment":
+    "Select transcript segment {arg0}",
+  "recordings.analysis.startTranscription": "Start transcription",
+  "recordings.analysis.stopProcessing": "Stop processing",
+  "recordings.analysis.subtitlesSrt": "Subtitles SRT",
+  "recordings.analysis.subtitlesVtt": "Subtitles VTT",
+  "recordings.analysis.summarizingTheFullRecording":
+    "Summarizing the full recording…",
+  "recordings.analysis.theModelReturnedAnInvalidAnalysisFormat":
+    "The model returned an invalid analysis format. Please try again.",
+  "recordings.analysis.thisRecordingHasNoAudio":
+    "This recording has no audio. Import a video with an audio track or an audio file.",
+  "recordings.analysis.thisRecordingIsAlreadyBeingAnalyzed":
+    "This recording is already being analyzed",
+  "recordings.analysis.title": "Recording analysis",
+  "recordings.analysis.transcribeAndAnalyzeAgain":
+    "Transcribe and analyze again",
+  "recordings.analysis.transcribeAndOrganize": "Transcribe and organize",
+  "recordings.analysis.transcribed": "Transcribed",
+  "recordings.analysis.transcribeOnly": "Transcribe only",
+  "recordings.analysis.transcribing": "Transcribing…",
+  "recordings.analysis.transcribingAudio": "Transcribing audio {arg0}/{arg1}…",
+  "recordings.analysis.transcriptCopied": "Transcript copied",
+  "recordings.analysis.transcriptDescription":
+    "Turn a recording’s audio into searchable text linked to each moment.",
+  "recordings.analysis.transcriptionComplete": "Transcription complete",
+  "recordings.analysis.transcriptionIncomplete": "Transcription incomplete",
+  "recordings.analysis.transcriptionProgressSaved":
+    "Transcription progress saved",
+  "recordings.analysis.transcriptSegment": "Transcript segment {arg0}",
+  "recordings.analysis.transcriptTab": "Transcript",
+  "recordings.analysis.transcriptText": "Transcript text",
+  "recordings.analysis.transcriptTitle": "Transcript",
+  "recordings.analysis.transcriptTxt": "Transcript TXT",
+  "recordings.analysis.transcriptUpdated": "Transcript updated",
+  "recordings.analysis.turnIntoCanvas": "Turn into canvas",
+  "recordings.analysis.turnPlaybackIntoUnderstanding":
+    "Turn playback into understanding",
+  "recordings.analysis.youCanNowRegenerateNotesChaptersAndQA":
+    "You can now regenerate notes, chapters and Q&A",
+  "recordings.audioCover": "Audio",
+  "recordings.coverUnavailable": "Preview unavailable",
+  "recordings.cannotLoadRecording": "Couldn’t load recording",
+  "recordings.cannotReadTheRecordingsAudio":
+    "Couldn’t read the recording’s audio. Check that it contains sound, or import an audio file for analysis.",
+  "recordings.canvas.creation": " · Creation",
+  "recordings.canvas.excerpts": "{arg0} excerpts",
+  "recordings.canvas.originalTranscript": "Original transcript",
+  "recordings.canvas.transcriptRequired":
+    "Analyze the recording or enter a transcript before creating",
+  "recordings.clearSearch": "Clear search",
+  "recordings.delete": "Delete “{name}”?",
+  "recordings.downloadRecording": "Download recording",
+  "recordings.importRecording": "Import recording",
+  "recordings.myRecordings": "My recordings",
+  "recordings.newRecordingName": "New recording name",
+  "recordings.noMatchingRecordings": "No matching recordings",
+  "recordings.noRecordingsYet": "No recordings yet",
+  "recordings.open": "Open {arg0}",
+  "recordings.organizedReadyToReviewAndCreate":
+    "Organized · Ready to review and create",
+  "recordings.previewRecording": "Preview recording",
+  "recordings.progressSavedReadyToContinue":
+    "Progress saved · Ready to continue",
+  "recordings.prompts.analyzeTranscript":
+    'Analyze the supplied recording transcript in English. Return only JSON: {"summary":"Concise overview","notes":"Complete notes faithful to the source, organized by key points; Markdown is allowed","chapters":[{"title":"Chapter title","start_time":0,"end_time":30,"summary":"Chapter summary"}],"qa_pairs":[{"question":"Question from the source","answer":"Answer from the source","time":0}]}. Preserve key facts, arguments, examples and conclusions. Times are in seconds. Use only the transcript’s timestamps; do not restart timing from zero. Without timestamps, set chapter times to 0 and Q&A time to null. Extract only questions and answers present in the source. Do not invent questions, answers, people, times or conclusions. Use an empty qa_pairs array when no actual Q&A exists.',
+  "recordings.prompts.combineSummaries":
+    "Combine these chronological recording summaries into a concise, coherent English overview. Preserve key conclusions and disagreements. Return only the overview, adding no information absent from the input.",
+  "recordings.prompts.createFromMaterials":
+    "Extract the central ideas from these materials and organize them into clear, structured content. Preserve key facts.",
+  "recordings.recorder.cannotSave":
+    "Couldn’t save. Try again or download the recording.",
+  "recordings.recorder.cannotStartRecording": "Couldn’t start recording",
+  "recordings.recorder.checkScreenRecordingPermissions":
+    "Check screen recording permissions",
+  "recordings.recorder.chooseAScreenWindowOrTab":
+    "Choose a screen, window or tab. To capture system audio, enable audio sharing in the browser’s selection dialog.",
+  "recordings.recorder.chooseWhatToRecord": "Choose what to record",
+  "recordings.recorder.continueSaving": "Continue saving",
+  "recordings.recorder.continueSavingRecording": "Continue saving recording",
+  "recordings.recorder.defaultName": "Recording {arg0}",
+  "recordings.recorder.discardRecording": "Discard recording",
+  "recordings.recorder.discardThisRecording": "Discard this recording?",
+  "recordings.recorder.downloadToComputer": "Download to computer",
+  "recordings.recorder.finishCapture": "Finish recording",
+  "recordings.recorder.finishRecording": "Finish recording",
+  "recordings.recorder.paused": "Paused · ",
+  "recordings.recorder.pauseRecording": "Pause recording",
+  "recordings.recorder.recorded":
+    "Recorded {duration}. Review it, then continue with transcription and analysis.",
+  "recordings.recorder.recordingInterrupted": "Recording interrupted",
+  "recordings.recorder.recordingName": "Recording name",
+  "recordings.recorder.recordingPrefix": "Recording · ",
+  "recordings.recorder.recordingSaved": "Recording saved",
+  "recordings.recorder.recordMicrophone": "Record microphone",
+  "recordings.recorder.recordScreen": "Record screen",
+  "recordings.recorder.resumeRecording": "Resume recording",
+  "recordings.recorder.saveAndReview": "Save and review",
+  "recordings.recorder.saveOnly": "Save only",
+  "recordings.recorder.saveRecording": "Save recording",
+  "recordings.recorder.saveWhatYouveRecordedSoFar":
+    "Save what you’ve recorded so far",
+  "recordings.recorder.startRecording": "Start recording",
+  "recordings.recorder.theRecordingServiceIsntReady":
+    "The recording service isn’t ready",
+  "recordings.recorder.thisBrowserDoesntSupportScreenRecording":
+    "This browser doesn’t support screen recording",
+  "recordings.recorder.thisRecordingHasntBeenSaved":
+    "This recording hasn’t been saved. Discarding it can’t be undone. You can go back and download it first.",
+  "recordings.recorder.unsavedRecording": "Unsaved recording ·",
+  "recordings.rename": "Rename",
+  "recordings.renameRecording": "Rename recording",
+  "recordings.report.notes": "\n\n# Notes\n\n",
+  "recordings.report.overviewChaptersQA":
+    "# Overview\n\n{arg0}{arg1}\n\n# Chapters\n\n{arg2}\n\n# Q&A\n\n{arg3}",
+  "recordings.report.q": "**Q: {arg0}**\n\nA: {arg1}{arg2}",
+  "recordings.report.speaker": "Speaker {arg0}",
+  "recordings.report.thisTranscriptHasNoTimestamps":
+    "This transcript has no timestamps. Export it as a text file.",
+  "recordings.reviewRecordingsExtractTextAndOrganizeKeyPoints":
+    "Review recordings, extract text and organize key points.",
+  "recordings.saving": "Saving…",
+  "recordings.search.label": "Search recordings",
+  "recordings.search.placeholder": "Search recordings…",
+  "recordings.selectedSegmentCount": {
+    one: "{count} segment selected",
+    other: "{count} segments selected",
+  },
+  "recordings.startRecordingOrImportAnExistingVideoOrAudioFile":
+    "Start recording, or import an existing video or audio file.",
+  "recordings.theRecordingAndItsAnalysisWillBeDeleted":
+    "The recording and its analysis will be deleted. This can’t be undone.",
+  "recordings.transcribedReadyToOrganize": "Transcribed · Ready to organize",
+  "recordings.tryDifferentKeywords": "Try different keywords",
+  "recordings.viewAllRecordings": "View all recordings",
+  "results.backToWork": "Back to work",
+  "results.cannotCopy": "Couldn’t copy. Please try again.",
+  "results.cannotCreateANewVersion":
+    "Couldn’t create a new version. Please try again.",
+  "results.cannotDownload": "Couldn’t download. Please try again.",
+  "results.cannotSaveYourDraft":
+    "Couldn’t save your draft. Keep this window open.",
+  "results.changesCannotBeSaved": "Changes couldn’t be saved",
+  "results.closeWork": "Close work",
+  "results.contentCopied": "Content copied",
+  "results.continueGeneration": "Continue generation",
+  "results.copyHtml": "Copy HTML",
+  "results.copyImage": "Copy image",
+  "results.copyWork": "Copy work",
+  "results.createAgain": "Create again",
+  "results.createANewVersionFromThisWork":
+    "Create a new version from this work. Keep this version, too.",
+  "results.createNewVersion": "Create new version",
+  "results.creating": "Creating",
+  "results.creatingANewVersion": "Creating a new version",
+  "results.currentWork": "Current work",
+  "results.discardChanges": "Discard changes",
+  "results.downloadWork": "Download work",
+  "results.draftKept": "Draft kept",
+  "results.edited": "Edited",
+  "results.editHtml": "Edit HTML",
+  "results.editingDraftKept": "Editing draft kept",
+  "results.editPageHtml": "Edit page HTML",
+  "results.editText": "Edit text",
+  "results.editWorkText": "Edit work text",
+  "results.emphasizeTheSubject": "Emphasize the subject",
+  "results.howWouldYouLikeToChangeThisWork":
+    "How would you like to change this work?",
+  "results.image.cancel": "Cancel",
+  "results.image.cannotSaveImage": "Couldn’t save image",
+  "results.image.cannotSaveTheImage":
+    "Couldn’t save the image. Please try again.",
+  "results.image.cropAndRotate": "Crop and rotate",
+  "results.image.dragToSelectACrop":
+    "Drag to select a crop. Your original image will be kept.",
+  "results.image.fitImageToWindow": "Fit image to window",
+  "results.image.imageCannotBeLoaded": "Image couldn’t be loaded",
+  "results.image.imageCropArea": "Image crop area",
+  "results.image.imageViewer": "Image viewer",
+  "results.image.originalSize": "Original size",
+  "results.image.processingImage": "Processing image",
+  "results.image.reopenHint":
+    "Image couldn’t be loaded. Close and reopen to try again.",
+  "results.image.reset": "Reset",
+  "results.image.rotate": "Rotate",
+  "results.image.rotateImageClockwise": "Rotate image clockwise",
+  "results.image.saveAsNewImage": "Save as new image",
+  "results.image.thisImageCannotBeEditedRightNow":
+    "This image can’t be edited right now",
+  "results.image.zoomIn": "Zoom in",
+  "results.image.zoomInThenDragToExploreTheDetails":
+    "Zoom in, then drag to explore the details",
+  "results.image.zoomOut": "Zoom out",
+  "results.imageCopied": "Image copied",
+  "results.imageRatio": "Image ratio",
+  "results.improveTheMobileExperience": "Improve the mobile experience",
+  "results.keepTheCompositionChangeTheTones":
+    "Keep the composition, change the tones",
+  "results.liveHtmlPreview": "Live HTML preview",
+  "results.makeItMoreConcise": "Make it more concise",
+  "results.materialsChanged": "Materials changed",
+  "results.model": "Model",
+  "results.newImageRatio": "New image ratio",
+  "results.newVersion": "New version",
+  "results.newVersionComplete": "New version complete",
+  "results.newVersionIncomplete": "New version incomplete",
+  "results.newVersionInstructions": "New version instructions",
+  "results.newVersionType": "New version type",
+  "results.nothingHereYet": "Nothing here yet. Choose “Edit text” to begin.",
+  "results.organizeIntoKeyPoints": "Organize into key points",
+  "results.read": "Read",
+  "results.readWork": "Read work",
+  "results.refineThePageLayout": "Refine the page layout",
+  "results.reopenTheWorkAndTryAgain": "Reopen the work and try again",
+  "results.retryGeneration": "Retry generation",
+  "results.saveAndCreate": "Save and create",
+  "results.saveChanges": "Save changes",
+  "results.savedToCanvas": "Saved to canvas",
+  "results.saveYourImageEditsBeforeCreatingANewVersion":
+    "Save your image edits before creating a new version",
+  "results.stopped": "Stopped. Your instructions have been kept.",
+  "results.textWork": "Text work",
+  "results.theOriginalChanged":
+    "The original changed. Your draft has been kept.",
+  "results.theOriginalImageWasRemoved": "The original image was removed",
+  "results.theOriginalWasUpdatedElsewhere":
+    "The original was updated elsewhere. Your editing draft has been kept.",
+  "results.thisBrowserCannotCopyImages":
+    "This browser can’t copy images. Download the image instead.",
+  "results.thisWorkIsBeingGenerated": "This work is being generated",
+  "results.tryADifferentStyle": "Try a different style",
+  "results.tryAnotherWayOfSayingIt": "Try another way of saying it",
+  "results.useAQuieterColorPalette": "Use a quieter color palette",
+  "results.version": "Version {count} · {name}",
+  "results.versions": "Versions",
+  "results.viewPreviousVersion": "View previous version",
+  "results.viewThisVersionsInstructions": "View this version’s instructions",
+  "results.viewVersions": "View versions",
+  "results.web.desktop": "Desktop",
+  "results.web.mobile": "Mobile",
+  "results.web.previewSize": "Preview size",
+  "results.web.reloadWebPreview": "Reload web preview",
+  "results.web.responsive": "Responsive",
+  "results.web.webPagePreview": "Web page preview",
+  "results.whatShouldChangeAndWhatShouldStay":
+    "What should change, and what should stay?",
+  "results.whichDetailsWouldYouLikeToChange":
+    "Which details would you like to change?",
+  "results.workContent": "Work content",
+  "results.workView": "Work view",
+  "results.writeYourInstructionsToBegin": "Write your instructions to begin",
+  "common.listSeparator": ", ",
+  "search.actions": "Actions",
+  "search.browseProjectsAndExamples": "Browse projects and examples",
+  "search.cannotLoad": "Couldn’t load {items}",
+  "search.closeQuickSearch": "Close quick search",
+  "search.description": "Find a project or recording, or start creating.",
+  "search.emptyHint": "Try a project name, a recording name, or “New project”.",
+  "search.inputLabel": "Search projects, recordings or actions",
+  "search.legacyResultCount": "{arg0} results",
+  "search.loadFailedSuffix": "couldn’t be loaded",
+  "search.noResultsFound": "No results found",
+  "search.openSettingsToConnectAnAiService":
+    "Open settings to connect an AI service",
+  "search.openShortcut": "↵ Open",
+  "search.pickUpWhereYouLeftOff": "Pick up where you left off",
+  "search.placeholder": "Search projects, recordings or actions…",
+  "search.recentRecordings": "Recent recordings",
+  "search.recordTranscribeAndReview": "Record, transcribe and review",
+  "search.resultCount": {
+    one: "{count} result",
+    other: "{count} results",
+  },
+  "search.reviewRecordingAndStartTranscription":
+    "Review recording and start transcription",
+  "search.reviewRecordingAndTranscript": "Review recording and transcript",
+  "search.searching": "Searching…",
+  "search.searchResults": "Search results",
+  "search.selectShortcut": "↑ ↓ Select",
+  "search.startWithABlankCanvas": "Start with a blank canvas",
+  "search.title": "Quick search",
+  "search.triggerLabel": "Search",
+  "settings.appearance.dark": "Dark",
+  "settings.appearance.description": "Choose how Huayu looks.",
+  "settings.appearance.label": "Appearance",
+  "settings.appearance.light": "Light",
+  "settings.appearance.system": "System",
+  "settings.categoriesLabel": "Settings categories",
+  "settings.description": "Choose your appearance and model connections.",
+  "settings.general": "General",
+  "settings.language.description": "Choose your interface language.",
+  "settings.language.label": "Language",
+  "settings.language.system": "Browser default",
+  "settings.models.allChangesSaved": "All changes saved",
+  "settings.models.apiKey": "API key",
+  "settings.models.apiKeyHint":
+    "Leave blank if your local service doesn’t require a key",
+  "settings.models.cancelTest": "Cancel test",
+  "settings.models.clearConnections": "Clear connections",
+  "settings.models.connectionFailed": "Connection failed",
+  "settings.models.hideKey": "Hide key",
+  "settings.models.modelName": "Model name",
+  "settings.models.privacyDescription":
+    "Connections are saved only in this browser. When you use AI, content is sent to your configured model service.",
+  "settings.models.reuseServiceQuestion":
+    "Using the same service for several models?",
+  "settings.models.reuseTextService": "Use the text generation service",
+  "settings.models.saved": "Model settings saved",
+  "settings.models.saveFailed": "Couldn’t save settings",
+  "settings.models.saveSettings": "Save settings",
+  "settings.models.searchProvider": "Search provider",
+  "settings.models.searchUrlHint": "Enter your search provider’s API URL.",
+  "settings.models.serviceUrl": "Service URL",
+  "settings.models.serviceUrlHint":
+    "Connect an OpenAI-compatible API or a local model service.",
+  "settings.models.showKey": "Show key",
+  "settings.models.testConnection": "Test connection",
+  "settings.models.textOnly": "Text only",
+  "settings.models.textWithTimestamps": "Text with timestamps",
+  "settings.models.title": "Model connections",
+  "settings.models.transcriptionFormatHint":
+    "Choose a format your model supports. Timestamps let you jump to the right moment in a recording.",
+  "settings.models.transcriptionOutput": "Transcription output",
+  "settings.models.unsavedChanges": "Unsaved changes",
+  "settings.models.voice": "Voice",
+  "settings.storageUnavailable":
+    "Browser storage is unavailable. Check your browser settings.",
+  "settings.title": "Settings",
+  "templates.chart.description":
+    "Find the structure in your materials and create a mind map.",
+  "templates.chart.name": "Knowledge map",
+  "templates.image.description":
+    "Turn a written idea into an image and caption.",
+  "templates.image.name": "Words and images",
+  "templates.tags.learning": "Learning",
+  "templates.tags.product": "Product design",
+  "templates.tags.visual": "Visual creation",
+  "templates.tags.writing": "Writing",
+  "templates.web.description":
+    "Describe what you need and create an interactive page.",
+  "templates.web.name": "Web prototype",
+  "templates.writing.description": "Develop a topic into ideas and a draft.",
+  "templates.writing.name": "Inspired writing",
+  "workflow.addACreativeStepBeforeRunningTheWorkflow":
+    "Add a creative step before running the workflow",
+  "workflow.aStepInThisWorkflowIsAlreadyRunning":
+    "A step in this workflow is already running",
+  "workflow.cannotCreateANewVersion":
+    "Couldn’t create a new version. Reopen the work and try again.",
+  "workflow.cannotSaveANewImage": "Couldn’t save a new image",
+  "workflow.canvasContent": "Canvas content",
+  "workflow.chooseADifferentCard": "Choose a different card",
+  "workflow.chooseAvailableMaterial": "Choose available material",
+  "workflow.completed": "Workflow complete",
+  "workflow.completedCount": "Completed {arg0} / {arg1}",
+  "workflow.connectToACreativeStep": "Connect to a creative step",
+  "workflow.describeAChartOrConnectPrecedingSteps":
+    "Describe a chart or connect preceding steps",
+  "workflow.describeAWebPageOrConnectPrecedingSteps":
+    "Describe a web page or connect preceding steps",
+  "workflow.describeTheFileOrConnectPrecedingSteps":
+    "Describe the file or connect preceding steps",
+  "workflow.describeWhatYoudLikeToChangeFirst":
+    "Describe what you’d like to change first",
+  "workflow.drawing": "Drawing",
+  "workflow.edited": "{arg0} · Edited",
+  "workflow.enterDrawingInstructions": "Enter drawing instructions",
+  "workflow.incomplete": "Run incomplete",
+  "workflow.lastRun": "Last run",
+  "workflow.legacyOutdatedCount": "{arg0} results to update",
+  "workflow.line": "Line",
+  "workflow.materialsChanged":
+    "Materials changed. These results need an update.",
+  "workflow.outdatedCount": {
+    one: "{count} result to update",
+    other: "{count} results to update",
+  },
+  "workflow.prompts.organizeMaterials":
+    "Organize the provided materials into a clear, complete result, preserving key information.",
+  "workflow.runHistory": "Run history",
+  "workflow.runTheEntireCanvasAgain": "Run the entire canvas again",
+  "workflow.runWorkflow": "Run workflow",
+  "workflow.selectedCanvasContent": "Selected canvas content",
+  "workflow.shape": "Shape",
+  "workflow.status.cancelled": "Stopped",
+  "workflow.status.completed": "Completed",
+  "workflow.status.failed": "Run failed",
+  "workflow.status.locked": "Locked",
+  "workflow.status.notRun": "Not run",
+  "workflow.status.outdated": "Needs update",
+  "workflow.status.processing": "Processing",
+  "workflow.status.queued": "Waiting for upstream steps to finish",
+  "workflow.status.reusedLockedResult": "Reused locked result",
+  "workflow.status.waitingForInputs": "Waiting for upstream steps",
+  "workflow.stickyNote": "Sticky note",
+  "workflow.stop": "Stop",
+  "workflow.stopWorkflow": "Stop workflow",
+  "workflow.textCannotBeEditedDirectlyForThisTypeOfWork":
+    "Text can’t be edited directly for this type of work",
+  "workflow.theNewVersionWasRemoved": "The new version was removed",
+  "workflow.theOriginalImageIsNoLongerOnTheCanvas":
+    "The original image is no longer on the canvas",
+  "workflow.theOriginalWorkIsNoLongerOnTheCanvas":
+    "The original work is no longer on the canvas",
+  "workflow.theseCardsAreAlreadyConnected": "These cards are already connected",
+  "workflow.theWorkflowContainsACycle":
+    "The workflow contains a cycle. Remove the cyclic connection and try again.",
+  "workflow.thisCardIsNoLongerOnTheCurrentPage":
+    "This card is no longer on the current page",
+  "workflow.thisConnectionWouldCreateACycle":
+    "This connection would create a cycle",
+  "workflow.thisStepWasDeleted": "This step was deleted",
+  "workflow.thisWorkIsBeingGenerated":
+    "This work is being generated. Wait for it to finish before editing.",
+  "workflow.thisWorkIsNoLongerOnTheCanvas":
+    "This work is no longer on the canvas",
+  "workflow.thisWorkWasUpdatedElsewhere":
+    "This work was updated elsewhere. Your editing draft has been kept.",
+  "workflow.unlockThisWorkBeforeEditing": "Unlock this work before editing",
+  "workflow.updateOutdatedResults": "Update outdated results",
+  "workflow.updateResults": "Update results",
+  "workflow.viewRunDetails": "View run details",
+  "workflow.writeInstructionsOrConnectMaterials":
+    "Write instructions or connect materials",
+  "models.connection.missingUrl":
+    "{capability} is not configured. Add its service URL in Settings → Model connections.",
+  "models.connection.missingModel":
+    "{capability} needs a model name. Add it in Settings → Model connections.",
+  "models.connection.missingKey":
+    "{capability} needs an API key. Add it in Settings → Model connections.",
+  "models.connection.timeout":
+    "{capability} timed out. Try again later or check that the model service is running.",
+  "models.connection.unauthorized":
+    "The API key for {capability} is invalid or expired. Update it in model settings.",
+  "models.connection.forbidden":
+    "This connection does not have permission to use {capability}. Check model access and account status.",
+  "models.connection.notFound":
+    "The model or endpoint for {capability} was not found. Check the service URL and model name.",
+  "models.connection.quota":
+    "The service has insufficient credit or quota for {capability}. Check your provider account.",
+  "models.connection.rateLimit":
+    "{capability} has reached a request or usage limit. Try again later and check your provider quota.",
+  "models.connection.unavailable":
+    "The {capability} service is temporarily unavailable. Try again later.",
+  "models.connection.rejected":
+    "{capability} rejected this request (HTTP {status}). Check that the model supports this task and its parameters.",
+  "models.connection.network":
+    "Cannot reach the {capability} service. Check its URL and your network. Direct browser requests also require CORS support.",
+  "models.connection.invalidResponse":
+    "The response from {capability} could not be read. Check that the service supports an OpenAI-compatible API and try again.",
+  "models.connection.searchTestPassed": "Web search test passed.",
+  "models.connection.visionTestLimited":
+    "The text request passed. Image understanding still needs to be verified with an image.",
+  "models.connection.modelListUnsupported":
+    "This service does not provide a model list, so this model could not be verified. Check its name before generating.",
+  "models.connection.capabilityTestLimited":
+    "The service is reachable and the model was found. {capability} still needs a real generation to confirm support.",
+  "models.connection.openSettings": "Open model settings",
+  "settings.models.optionalDescription":
+    "Configure only what you need. The canvas, asset library, recording and playback work without AI connections.",
+  "settings.models.notConfigured": "Not configured",
+  "settings.models.readyToTest": "Filled in · Not tested",
+  "settings.models.detailsComplete": "Connection details filled in",
+  "settings.models.textPurpose":
+    "For creative instructions, pages, documents, charts and recording notes.",
+  "settings.models.visionPurpose":
+    "For understanding images, drawings and frames. Text-only creation does not require it.",
+  "settings.models.imagePurpose":
+    "For AI image generation and changes. Uploading and editing existing images does not require it.",
+  "settings.models.speechPurpose":
+    "For generating speech. Uploading and playing existing audio does not require it.",
+  "settings.models.transcriptionPurpose":
+    "For turning recordings and audio into text. Recording, playback and reading existing transcripts do not require it.",
+  "settings.models.searchPurpose":
+    "Used only when web search is enabled for an instruction. Other creation does not require it.",
+  "settings.models.testTextScope":
+    "Sends one short text request. Your provider may charge for it.",
+  "settings.models.testListScope":
+    "Checks the connection and model list without generating content.",
+  "settings.models.testSearchScope":
+    "Runs one short search. Your provider may charge for it.",
+  "recordings.analysis.missingConnections":
+    "Recording and playback remain available. To transcribe and organize content, configure: {capabilities}.",
+  "projects.createNewProject": "Create new project",
+  "projects.templates.title": "Templates",
+  "projects.noMatchingTemplates": "No matching templates",
+  "projects.searchProjects.label": "Search projects",
+  "projects.searchProjects.placeholder": "Search projects…",
+  "projects.searchTemplates.label": "Search examples",
+  "projects.searchTemplates.placeholder": "Search examples…",
+} satisfies Record<MessageKey, Message>;

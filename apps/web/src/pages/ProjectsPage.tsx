@@ -1,0 +1,1097 @@
+import { localizeTemplate, templateTag } from "@/i18n/templates";
+import { t, useLocale, getLocale } from "@/i18n";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+} from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ContextMenu } from "@base-ui/react/context-menu";
+import { Tabs as ProjectTabs } from "@base-ui/react/tabs";
+import {
+  ArrowRight,
+  Calendar,
+  Copy,
+  FilePenLine,
+  FolderOpen,
+  Import,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Workflow,
+  Image,
+  Network,
+  Globe,
+  Volume2,
+  FileText,
+  X,
+} from "lucide-react";
+import { ShellSidebarTrigger } from "@/Components/Shell";
+import { useToast } from "@/Components/common/ToastProvider";
+import { api, type Project, type Template } from "@/api/client";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Card, CardContent } from "@/ui/card";
+import { searchScore } from "@/lib/search";
+import {
+  recipeKind,
+  templatePresetForRecipe,
+  templateSummaries,
+} from "@/canvas/template-catalog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/ui/alert-dialog";
+import "./projects.css";
+
+const recipeIcons = {
+  writing: Workflow,
+  image: Image,
+  chart: Network,
+  website: Globe,
+  speech: Volume2,
+  file: FileText,
+};
+const quickStartRecipes = [
+  {
+    id: "builtin-writing",
+    recipe: "writing",
+    nameKey: "templates.writing.name",
+  },
+  { id: "builtin-image", recipe: "image", nameKey: "templates.image.name" },
+  { id: "builtin-chart", recipe: "chart", nameKey: "templates.chart.name" },
+  { id: "builtin-web", recipe: "website", nameKey: "templates.web.name" },
+] as const;
+const recipeOrder: readonly string[] = quickStartRecipes.map(
+  (entry) => entry.recipe,
+);
+
+function ProjectListLoading() {
+  return (
+    <div role="status" className="flex items-center justify-center py-12">
+      <span
+        aria-hidden="true"
+        className="size-4 animate-spin rounded-full border-2 border-gray-300 border-t-black motion-reduce:animate-none dark:border-gray-600 dark:border-t-white"
+      />
+      <span className="sr-only">{t("common.loading")}</span>
+    </div>
+  );
+}
+
+function editedDate(value: string) {
+  return t("projects.updatedOn", {
+    date: new Date(value).toLocaleDateString(getLocale()),
+  });
+}
+export function ProjectsPage() {
+  useLocale();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedExample = templatePresetForRecipe(
+    searchParams.get("template") || undefined,
+  );
+  const { showToast } = useToast();
+  const pageRef = useRef<HTMLElement>(null);
+  const panelAreaRef = useRef<HTMLDivElement>(null);
+  const enteredCards = useRef(new Set<string>());
+  const listEntranceAllowed = useRef(true);
+  const input = useRef<HTMLInputElement>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [rawTemplates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [templateError, setTemplateError] = useState(false);
+  const [activeTab, setActiveTab] = useState<"projects" | "templates">(
+    requestedExample ? "templates" : "projects",
+  );
+  const [search, setSearch] = useState("");
+  const [templateSearch, setTemplateSearch] = useState(() =>
+    requestedExample
+      ? getLocale() === "en"
+        ? requestedExample.en.name
+        : requestedExample.name
+      : "",
+  );
+  const [tag, setTag] = useState("all");
+  const [renaming, setRenaming] = useState<Project | null>(null);
+  const [renamingBusy, setRenamingBusy] = useState(false);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [deleting, setDeleting] = useState<{
+    type: "project" | "template";
+    id: string;
+    name: string;
+  } | null>(null);
+  const refreshRequest = useRef<AbortController | null>(null);
+  const busy = pending !== null;
+  const initialLoading = loading && !hasLoaded;
+  const preservePanelSpace = useCallback((keepScroll = true) => {
+    const page = pageRef.current!;
+    const area = panelAreaRef.current!;
+    const scrollContainer = page.parentElement!;
+    const top =
+      area.getBoundingClientRect().top -
+      scrollContainer.getBoundingClientRect().top +
+      (keepScroll ? 0 : scrollContainer.scrollTop);
+    const bottom = Number.parseFloat(getComputedStyle(page).paddingBottom);
+    area.style.minHeight = `${Math.max(0, scrollContainer.clientHeight - top - bottom)}px`;
+  }, []);
+  function finishCardEntrance(event: AnimationEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget) return;
+    const card = event.currentTarget;
+    enteredCards.current.add(card.dataset.cardEntry!);
+    card.dataset.entered = "true";
+  }
+  function settleListEntrance() {
+    listEntranceAllowed.current = false;
+    for (const card of panelAreaRef.current!.querySelectorAll<HTMLElement>(
+      "[data-card-entry]",
+    )) {
+      enteredCards.current.add(card.dataset.cardEntry!);
+      card.dataset.entered = "true";
+    }
+  }
+  useLayoutEffect(() => {
+    const scrollContainer = pageRef.current!.parentElement!;
+    const previousGutter = scrollContainer.style.scrollbarGutter;
+    const previousOverflowX = scrollContainer.style.overflowX;
+    scrollContainer.style.scrollbarGutter = "stable";
+    scrollContainer.style.overflowX = "hidden";
+    let viewportWidth = -1;
+    let resizeFrame: number | undefined;
+    const updateLayout = (keepScroll = true) => {
+      if (viewportWidth !== window.innerWidth) {
+        viewportWidth = window.innerWidth;
+        const page = pageRef.current!;
+        const sidebar = document.getElementById("app-sidebar");
+        const columns = matchMedia("(min-width: 1024px)").matches
+          ? 4
+          : matchMedia("(min-width: 768px)").matches
+            ? 3
+            : 1;
+        const expandedSidebarWidth =
+          columns === 1
+            ? 0
+            : sidebar
+              ? Number.parseFloat(
+                  getComputedStyle(sidebar).getPropertyValue(
+                    "--sidebar-expanded-width",
+                  ),
+                )
+              : columns === 4
+                ? 256
+                : 240;
+        const style = getComputedStyle(page);
+        const gap = Number.parseFloat(
+          style.getPropertyValue("--project-card-gap"),
+        );
+        // Keep the legacy expanded-sidebar size; only viewport resizing changes it.
+        const width = Math.max(
+          1,
+          Math.floor(
+            (page.getBoundingClientRect().width +
+              (sidebar?.getBoundingClientRect().width || 0) -
+              expandedSidebarWidth -
+              Number.parseFloat(style.paddingLeft) -
+              Number.parseFloat(style.paddingRight) -
+              (columns - 1) * gap) /
+              columns,
+          ),
+        );
+        page.style.setProperty("--project-card-width", `${width}px`);
+        page.style.setProperty("--project-columns", String(columns));
+        page.style.setProperty(
+          "--project-content-width",
+          `${width * columns + (columns - 1) * gap}px`,
+        );
+      }
+      preservePanelSpace(keepScroll);
+    };
+    const onResize = () => {
+      if (resizeFrame !== undefined) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = undefined;
+        updateLayout();
+      });
+    };
+    const onScroll = () => {
+      if (scrollContainer.scrollTop === 0) preservePanelSpace();
+    };
+    updateLayout(false);
+    window.addEventListener("resize", onResize);
+    scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      scrollContainer.removeEventListener("scroll", onScroll);
+      if (resizeFrame !== undefined) cancelAnimationFrame(resizeFrame);
+      scrollContainer.style.scrollbarGutter = previousGutter;
+      scrollContainer.style.overflowX = previousOverflowX;
+    };
+  }, [preservePanelSpace]);
+  async function refresh() {
+    if (hasLoaded) {
+      settleListEntrance();
+      preservePanelSpace();
+    }
+    refreshRequest.current?.abort();
+    const controller = new AbortController();
+    refreshRequest.current = controller;
+    setLoading(true);
+    const [projectResult, templateResult] = await Promise.allSettled([
+      api<Project[]>("/api/projects", { signal: controller.signal }),
+      api<Template[]>("/api/templates", { signal: controller.signal }),
+    ]);
+    if (controller.signal.aborted) return;
+    if (projectResult.status === "fulfilled") {
+      setProjects(projectResult.value);
+      setError("");
+    } else {
+      setError(t("projects.projectsCannotBeLoaded"));
+      if (hasLoaded && projects.length)
+        showToast({
+          title: t("projects.projectsCannotBeLoaded"),
+          variant: "destructive",
+        });
+    }
+    if (templateResult.status === "fulfilled") {
+      setTemplates(templateResult.value);
+      setTemplateError(false);
+    } else {
+      setTemplateError(true);
+      if (hasLoaded && rawTemplates.length)
+        showToast({
+          title: t("projects.templates.readFailed"),
+          variant: "destructive",
+        });
+    }
+    setHasLoaded(true);
+    setLoading(false);
+  }
+  useEffect(() => {
+    void refresh();
+    return () => refreshRequest.current?.abort();
+  }, []);
+  useEffect(() => {
+    if (!initialLoading && requestedExample) {
+      setActiveTab("templates");
+      document
+        .getElementById("projects-library")
+        ?.scrollIntoView({ block: "start" });
+    }
+  }, [initialLoading, requestedExample]);
+  function failed(error: unknown) {
+    showToast({
+      title: t("common.operationFailed"),
+      description:
+        error instanceof Error ? error.message : t("common.tryAgain"),
+      variant: "destructive",
+    });
+  }
+  async function create() {
+    if (busy) return;
+    setPending("blank");
+    try {
+      const project = await api<Project>("/api/projects", {
+        method: "POST",
+        body: JSON.stringify({ name: t("projects.untitled") }),
+      });
+      navigate(`/drawing/${project.id}`);
+    } catch (error) {
+      failed(error);
+    } finally {
+      setPending(null);
+    }
+  }
+  async function fork(template: Pick<Template, "id" | "name">) {
+    if (busy) return;
+    setPending(template.id);
+    try {
+      let project = await api<Project>(`/api/templates/${template.id}/fork`, {
+        method: "POST",
+      });
+      if (
+        template.id.startsWith("builtin-") &&
+        project.name !== template.name
+      ) {
+        project = await api<Project>(`/api/projects/${project.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ name: template.name }),
+        });
+      }
+      navigate(`/drawing/${project.id}`);
+    } catch (error) {
+      failed(error);
+    } finally {
+      setPending(null);
+    }
+  }
+  async function duplicate(project: Project) {
+    if (duplicating) return;
+    setDuplicating(project.id);
+    try {
+      const original = await api<Project>(`/api/projects/${project.id}`);
+      let document = original.document;
+      if (!document && original.recipe) {
+        const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
+          await Promise.all([
+            import("@/canvas/editor"),
+            import("@/canvas/recipes"),
+          ]);
+        const store = createCanvasStore();
+        applyRecipe(new Editor(store), original.recipe);
+        document = getSnapshot(store).document;
+      }
+      const copy = await api<Project>("/api/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: t("projects.copy", { arg0: project.name.slice(0, 116) }),
+          document,
+        }),
+      });
+      setProjects((current) => [copy, ...current]);
+      showToast({
+        title: t("projects.projectCopied"),
+        action: {
+          label: t("projects.openCopy"),
+          onClick: () => navigate(`/drawing/${copy.id}`),
+        },
+      });
+    } catch (error) {
+      failed(error);
+    } finally {
+      setDuplicating(null);
+    }
+  }
+  async function rename() {
+    if (!renaming || !name.trim() || renamingBusy) return;
+    if (name.trim() === renaming.name) {
+      setRenaming(null);
+      return;
+    }
+    setRenamingBusy(true);
+    try {
+      const result = await api<Project>(`/api/projects/${renaming.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      setProjects((current) =>
+        current.map((project) => (project.id === result.id ? result : project)),
+      );
+      setRenaming(null);
+    } catch (error) {
+      failed(error);
+    } finally {
+      setRenamingBusy(false);
+    }
+  }
+  async function remove() {
+    if (!deleting) return;
+    try {
+      await api(
+        `/api/${deleting.type === "project" ? "projects" : "templates"}/${deleting.id}`,
+        { method: "DELETE" },
+      );
+      if (deleting.type === "project")
+        setProjects((current) =>
+          current.filter((project) => project.id !== deleting.id),
+        );
+      else
+        setTemplates((current) =>
+          current.filter((template) => template.id !== deleting.id),
+        );
+      setDeleting(null);
+    } catch (error) {
+      failed(error);
+    }
+  }
+  const shownProjects = projects
+    .filter((project) => searchScore(search, project.name))
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  const templates = rawTemplates.map(localizeTemplate);
+  const quickStartTemplates = quickStartRecipes.map((preset) => {
+    const saved = templates.find((template) => template.id === preset.id);
+    return {
+      id: preset.id,
+      recipe: preset.recipe,
+      name: saved?.name || t(preset.nameKey),
+      cover:
+        saved?.cover ||
+        `/examples/quick-start/${preset.recipe}-${getLocale()}.svg`,
+    };
+  });
+  const builtinTags = new Map(
+    rawTemplates
+      .filter((template) => template.id.startsWith("builtin-"))
+      .flatMap((template) =>
+        template.tags.map((tag) => [tag, templateTag(template, tag)] as const),
+      ),
+  );
+  const exampleOrder = templateSummaries
+    .filter((preset) => preset.showcase)
+    .map((preset) => preset.id);
+  const shownTemplates = templates
+    .filter(
+      (template) =>
+        (tag === "all" || template.tags.includes(tag)) &&
+        searchScore(
+          templateSearch,
+          template.name,
+          `${template.description} ${template.tags.map((tag) => templateTag(template, tag)).join(" ")}`,
+        ),
+    )
+    .sort((a, b) => {
+      const first = exampleOrder.indexOf(a.id);
+      const second = exampleOrder.indexOf(b.id);
+      return (
+        (first < 0 ? exampleOrder.length : first) -
+        (second < 0 ? exampleOrder.length : second)
+      );
+    });
+  const activeSearch = activeTab === "projects" ? search : templateSearch;
+  const setActiveSearch = (value: string) => {
+    settleListEntrance();
+    preservePanelSpace();
+    if (activeTab === "projects") setSearch(value);
+    else setTemplateSearch(value);
+  };
+  const importAction = (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept=".json,.tldr,.excalidraw"
+        className="hidden"
+        onChange={async (event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          setPending("import");
+          try {
+            const { importProject } = await import("@/canvas/transfer");
+            const project = await importProject(file);
+            navigate(`/drawing/${project.id}`);
+          } catch (error) {
+            failed(error);
+          } finally {
+            setPending(null);
+          }
+        }}
+      />
+      <Button
+        variant="outline"
+        className="project-import-button"
+        disabled={busy}
+        onClick={() => input.current?.click()}
+        aria-label={t("projects.importProject")}
+        aria-busy={pending === "import"}
+      >
+        {pending === "import" ? (
+          <Loader2 className="animate-spin" />
+        ) : (
+          <Import />
+        )}
+        <span>{t("projects.importProject")}</span>
+      </Button>
+    </>
+  );
+  return (
+    <>
+      <main ref={pageRef} className="projects-page w-full px-4 py-8 sm:px-6">
+        <div className="project-page-content">
+          <section aria-label={t("projects.quickStart")}>
+            <div className="mb-5 flex md:hidden">
+              <ShellSidebarTrigger />
+            </div>
+            <div className="quick-start-scroll">
+              <button
+                className="project-quick-card project-card-enter"
+                data-card-entry="quick:blank"
+                data-entered={
+                  enteredCards.current.has("quick:blank") || undefined
+                }
+                onAnimationEnd={finishCardEntrance}
+                aria-busy={pending === "blank"}
+                onClick={create}
+                disabled={busy}
+              >
+                <div className="project-quick-cover">
+                  {pending === "blank" ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Plus />
+                  )}
+                </div>
+                <p className="project-quick-title">
+                  {t("projects.createNewProject")}
+                </p>
+              </button>
+              {quickStartTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  className="project-quick-card project-card-enter"
+                  data-card-entry={`quick:${template.id}`}
+                  data-entered={
+                    enteredCards.current.has(`quick:${template.id}`) ||
+                    undefined
+                  }
+                  onAnimationEnd={finishCardEntrance}
+                  aria-busy={pending === template.id}
+                  disabled={busy}
+                  onClick={() => fork(template)}
+                >
+                  <div className="project-thumbnail project-quick-cover">
+                    <img
+                      src={template.cover}
+                      alt=""
+                      width={960}
+                      height={540}
+                      decoding="async"
+                      className="project-quick-preview"
+                    />
+                    {pending === template.id && (
+                      <div className="project-preview-loading">
+                        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="project-quick-title" title={template.name}>
+                    {template.name}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+          <ProjectTabs.Root
+            id="projects-library"
+            className="mt-6"
+            value={activeTab}
+            onValueChange={(value) => {
+              const next = value === "templates" ? "templates" : "projects";
+              if (next === activeTab) return;
+              settleListEntrance();
+              preservePanelSpace();
+              setActiveTab(next);
+            }}
+          >
+            <div className="project-library-toolbar">
+              <ProjectTabs.List
+                className="project-list-tabs"
+                aria-label={t("projects.listTabs")}
+              >
+                <ProjectTabs.Tab className="project-list-tab" value="projects">
+                  {t("projects.myProjects")}
+                </ProjectTabs.Tab>
+                <ProjectTabs.Tab className="project-list-tab" value="templates">
+                  {t("projects.exampleProjects")}
+                </ProjectTabs.Tab>
+              </ProjectTabs.List>
+              <div className="project-library-actions">
+                {importAction}
+                <div className="project-search-wrap">
+                  <Search className="project-search-icon" />
+                  <Input
+                    aria-label={t(
+                      activeTab === "projects"
+                        ? "projects.searchProjects.label"
+                        : "projects.searchTemplates.label",
+                    )}
+                    placeholder={t(
+                      activeTab === "projects"
+                        ? "projects.searchProjects.placeholder"
+                        : "projects.searchTemplates.placeholder",
+                    )}
+                    className="project-list-search"
+                    value={activeSearch}
+                    onChange={(event) => setActiveSearch(event.target.value)}
+                  />
+                  {activeSearch && (
+                    <button
+                      type="button"
+                      aria-label={t("recordings.clearSearch")}
+                      className="project-search-clear"
+                      onClick={() => setActiveSearch("")}
+                    >
+                      <X />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div ref={panelAreaRef} className="project-library-panels">
+              <ProjectTabs.Panel
+                id="projects-recent"
+                className="project-list-panel"
+                value="projects"
+                hidden={activeTab !== "projects"}
+                aria-busy={loading}
+                keepMounted
+              >
+                {initialLoading ? (
+                  <ProjectListLoading />
+                ) : error && !projects.length ? (
+                  <div
+                    role="alert"
+                    className="rounded-xl border p-8 text-center"
+                  >
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      {error}
+                    </p>
+                    <Button
+                      variant="outline"
+                      disabled={loading}
+                      onClick={refresh}
+                    >
+                      {t("common.reload")}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {shownProjects.length ? (
+                      <div className="project-card-grid">
+                        {shownProjects.map((project) => (
+                          <div className="project-card-slot" key={project.id}>
+                            <ContextMenu.Root>
+                              <ContextMenu.Trigger
+                                render={
+                                  <Card
+                                    className="project-list-card project-card-enter"
+                                    data-card-entry={`project:${project.id}`}
+                                    data-entered={
+                                      !listEntranceAllowed.current ||
+                                      enteredCards.current.has(
+                                        `project:${project.id}`,
+                                      ) ||
+                                      undefined
+                                    }
+                                    onAnimationEnd={finishCardEntrance}
+                                  />
+                                }
+                              >
+                                <button
+                                  className="project-thumbnail project-card-cover"
+                                  aria-label={t("recordings.open", {
+                                    arg0: project.name,
+                                  })}
+                                  onClick={() =>
+                                    navigate(`/drawing/${project.id}`)
+                                  }
+                                >
+                                  {project.cover ? (
+                                    <img
+                                      src={project.cover}
+                                      alt=""
+                                      className="project-card-preview"
+                                    />
+                                  ) : (
+                                    <FilePenLine
+                                      className="size-7 text-muted-foreground opacity-40"
+                                      strokeWidth={1.5}
+                                    />
+                                  )}
+                                </button>
+                                <CardContent className="project-card-content">
+                                  <div className="project-card-heading">
+                                    {renaming?.id === project.id ? (
+                                      <div className="min-w-0 flex-1">
+                                        <Input
+                                          aria-label={t("projects.projectName")}
+                                          value={name}
+                                          maxLength={120}
+                                          autoFocus
+                                          disabled={renamingBusy}
+                                          className="project-card-name-input"
+                                          onChange={(event) =>
+                                            setName(event.target.value)
+                                          }
+                                          onKeyDown={(event) => {
+                                            if (
+                                              event.nativeEvent.isComposing ||
+                                              event.nativeEvent.keyCode === 229
+                                            )
+                                              return;
+                                            if (event.key === "Enter") {
+                                              event.preventDefault();
+                                              void rename();
+                                            } else if (
+                                              event.key === "Escape" &&
+                                              !renamingBusy
+                                            ) {
+                                              setRenaming(null);
+                                            }
+                                          }}
+                                        />
+                                        <div className="project-name-actions">
+                                          <button
+                                            type="button"
+                                            className="project-name-save"
+                                            disabled={
+                                              !name.trim() || renamingBusy
+                                            }
+                                            onClick={rename}
+                                          >
+                                            {renamingBusy && (
+                                              <Loader2 className="size-3 animate-spin" />
+                                            )}
+                                            {renamingBusy
+                                              ? t("recordings.saving")
+                                              : t("common.save")}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="project-name-cancel"
+                                            disabled={renamingBusy}
+                                            onClick={() => setRenaming(null)}
+                                          >
+                                            {t("common.cancel")}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <button
+                                          className="project-card-title"
+                                          title={project.name}
+                                          onClick={() =>
+                                            navigate(`/drawing/${project.id}`)
+                                          }
+                                        >
+                                          {project.name}
+                                        </button>
+                                        <div className="project-card-actions">
+                                          <button
+                                            type="button"
+                                            className="project-card-action project-card-action-edit"
+                                            aria-label={`${t("projects.renameProject")}: ${project.name}`}
+                                            title={t("projects.renameProject")}
+                                            disabled={renamingBusy}
+                                            onClick={() => {
+                                              setRenaming(project);
+                                              setName(project.name);
+                                            }}
+                                          >
+                                            <Pencil className="size-4" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="project-card-action project-card-action-delete"
+                                            aria-label={`${t("projects.deleteProject")}: ${project.name}`}
+                                            title={t("projects.deleteProject")}
+                                            onClick={() =>
+                                              setDeleting({
+                                                type: "project",
+                                                id: project.id,
+                                                name: project.name,
+                                              })
+                                            }
+                                          >
+                                            <Trash2 className="size-4" />
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                  <div className="project-card-meta">
+                                    <p
+                                      className="project-card-meta-text"
+                                      title={new Date(
+                                        project.updated_at,
+                                      ).toLocaleString(getLocale())}
+                                    >
+                                      <Calendar className="size-3 shrink-0" />
+                                      <span className="truncate">
+                                        {editedDate(project.updated_at)}
+                                      </span>
+                                    </p>
+                                    <button
+                                      className="project-card-open"
+                                      onClick={() =>
+                                        navigate(`/drawing/${project.id}`)
+                                      }
+                                    >
+                                      {t("projects.open")}
+                                      <ArrowRight className="size-3" />
+                                    </button>
+                                  </div>
+                                </CardContent>
+                              </ContextMenu.Trigger>
+                              <ContextMenu.Portal>
+                                <ContextMenu.Positioner className="z-50 outline-none">
+                                  <ContextMenu.Popup className="project-card-menu min-w-40 bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none">
+                                    <ContextMenu.Item
+                                      className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 outline-none focus:bg-accent data-disabled:opacity-50"
+                                      disabled={!!duplicating}
+                                      onClick={() => duplicate(project)}
+                                    >
+                                      {duplicating === project.id ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                      ) : (
+                                        <Copy className="size-4" />
+                                      )}
+                                      {duplicating === project.id
+                                        ? t("projects.copying")
+                                        : t("projects.duplicateProject")}
+                                    </ContextMenu.Item>
+                                  </ContextMenu.Popup>
+                                </ContextMenu.Positioner>
+                              </ContextMenu.Portal>
+                            </ContextMenu.Root>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center rounded-xl border border-dashed py-20">
+                        <FolderOpen className="mb-4 size-9 text-muted-foreground" />
+                        <h2 className="text-base font-medium">
+                          {search.trim()
+                            ? t("projects.noMatchingProjects")
+                            : t("projects.empty.title")}
+                        </h2>
+                        <p className="mt-2 mb-5 text-sm text-muted-foreground">
+                          {search.trim()
+                            ? t("recordings.tryDifferentKeywords")
+                            : t(
+                                "projects.createABlankCanvasOrStartFromAnExample",
+                              )}
+                        </p>
+                        {search.trim() ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => setActiveSearch("")}
+                          >
+                            {t("projects.viewAllProjects")}
+                          </Button>
+                        ) : (
+                          <Button onClick={create} disabled={busy}>
+                            <Plus />
+                            {t("projects.createProject")}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </ProjectTabs.Panel>
+              <ProjectTabs.Panel
+                id="projects-templates"
+                className="project-list-panel project-list-panel-examples"
+                value="templates"
+                hidden={activeTab !== "templates"}
+                aria-busy={loading}
+                keepMounted
+              >
+                {initialLoading ? (
+                  <ProjectListLoading />
+                ) : (
+                  <>
+                    {templateError && !rawTemplates.length && (
+                      <div
+                        role="alert"
+                        className="mb-5 flex items-center justify-between gap-3 rounded-lg border p-4"
+                      >
+                        <p className="text-sm text-muted-foreground">
+                          {t("projects.templates.readFailed")}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={loading}
+                          onClick={refresh}
+                        >
+                          {t("common.reload")}
+                        </Button>
+                      </div>
+                    )}
+                    <div className="project-template-filters">
+                      {[
+                        "all",
+                        ...new Set(
+                          templates.flatMap((template) => template.tags),
+                        ),
+                      ].map((value) => (
+                        <button
+                          type="button"
+                          key={value}
+                          className="project-template-filter"
+                          data-active={tag === value ? "" : undefined}
+                          aria-pressed={tag === value}
+                          onClick={() => {
+                            settleListEntrance();
+                            preservePanelSpace();
+                            setTag(value);
+                          }}
+                        >
+                          {value === "all"
+                            ? t("common.all")
+                            : (builtinTags.get(value) ?? value)}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="project-card-grid">
+                      {shownTemplates.map((template) => {
+                        const Icon =
+                          recipeIcons[recipeKind(template.recipe)] || Workflow;
+                        const cover =
+                          template.cover ||
+                          (recipeOrder.includes(template.recipe || "")
+                            ? `/examples/quick-start/${template.recipe}-${getLocale()}.svg`
+                            : null);
+                        return (
+                          <div className="project-card-slot" key={template.id}>
+                            <Card
+                              className="project-list-card project-card-enter"
+                              data-card-entry={`template:${template.id}`}
+                              data-entered={
+                                !listEntranceAllowed.current ||
+                                enteredCards.current.has(
+                                  `template:${template.id}`,
+                                ) ||
+                                undefined
+                              }
+                              onAnimationEnd={finishCardEntrance}
+                            >
+                              <button
+                                className="project-thumbnail project-card-cover"
+                                aria-label={t("projects.use", {
+                                  arg0: template.name,
+                                })}
+                                disabled={busy}
+                                onClick={() => fork(template)}
+                              >
+                                {cover ? (
+                                  <img
+                                    src={cover}
+                                    alt=""
+                                    className="project-card-preview"
+                                  />
+                                ) : (
+                                  <Icon className="size-9 text-muted-foreground opacity-50" />
+                                )}
+                              </button>
+                              <CardContent className="project-card-content">
+                                <div className="project-card-heading">
+                                  <button
+                                    className="project-card-title"
+                                    title={`${template.name}\n${template.description || t("projects.savedCanvasExample")}`}
+                                    disabled={busy}
+                                    onClick={() => fork(template)}
+                                  >
+                                    {template.name}
+                                  </button>
+                                  {!template.id.startsWith("builtin-") && (
+                                    <div className="project-card-actions">
+                                      <button
+                                        type="button"
+                                        className="project-card-action project-card-action-delete"
+                                        aria-label={t(
+                                          "projects.deleteExample",
+                                          {
+                                            arg0: template.name,
+                                          },
+                                        )}
+                                        onClick={() =>
+                                          setDeleting({
+                                            type: "template",
+                                            id: template.id,
+                                            name: template.name,
+                                          })
+                                        }
+                                      >
+                                        <Trash2 />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="project-card-meta">
+                                  <p className="project-card-meta-text">
+                                    <Copy className="size-3 shrink-0" />
+                                    <span className="truncate">
+                                      {t("projects.forkCount", {
+                                        count: template.fork_count,
+                                      })}
+                                    </span>
+                                  </p>
+                                  <button
+                                    className="project-card-open"
+                                    disabled={busy}
+                                    onClick={() => fork(template)}
+                                  >
+                                    {t("projects.view")}
+                                    {pending === template.id ? (
+                                      <Loader2 className="size-3 animate-spin" />
+                                    ) : (
+                                      <ArrowRight className="size-3" />
+                                    )}
+                                  </button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {(!templateError || rawTemplates.length > 0) &&
+                      !shownTemplates.length && (
+                        <div className="py-16 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {t("projects.noMatchingTemplates")}
+                          </p>
+                          <Button
+                            className="mt-4"
+                            variant="outline"
+                            onClick={() => {
+                              settleListEntrance();
+                              preservePanelSpace();
+                              setTemplateSearch("");
+                              setTag("all");
+                            }}
+                          >
+                            {t("projects.clearFilters")}
+                          </Button>
+                        </div>
+                      )}
+                  </>
+                )}
+              </ProjectTabs.Panel>
+            </div>
+          </ProjectTabs.Root>
+        </div>
+      </main>
+      <AlertDialog
+        open={!!deleting}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogTitle>
+            {t("recordings.delete", { name: deleting?.name || "" })}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("projects.thisCannotBeUndone")}
+            {deleting?.type === "project"
+              ? t("projects.exportAnythingYouWantToKeepFirst")
+              : t("projects.projectsAlreadyCreatedFromThisExampleWillBeKept")}
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={remove}>
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

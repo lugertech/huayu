@@ -1,0 +1,36 @@
+name: 问题反馈
+description: 报告可复现的功能问题
+body:
+  - type: markdown
+    attributes:
+      value: 请勿提交 API 密钥、私人录屏、完整浏览器存储或未经脱敏的项目。
+  - type: input
+    id: version
+    attributes:
+      label: 版本或提交
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 系统与浏览器
+      placeholder: 例如 macOS / Chrome 版本
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 从一个空白项目开始，尽量给出最短步骤。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: 已脱敏的截图或错误信息

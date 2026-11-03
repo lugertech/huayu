@@ -1,0 +1,30 @@
+{
+  "name": "@huayu/site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vp dev",
+    "check": "vp check --no-fmt --no-lint",
+    "build": "vp check --no-fmt --no-lint && vp build && vp build --ssr src/render.tsx --outDir .render && node prerender.mjs",
+    "preview": "vp preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.2.8",
+    "@phosphor-icons/react": "^2.1.10",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "~5.9.3",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

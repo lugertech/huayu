@@ -1,0 +1,56 @@
+# From tldraw computer to Huayu
+
+Research and initial implementation: 2026-10-24.
+
+## Product direction
+
+Huayu is a local workspace that turns materials, sketches and recordings into works. The core journey is to add materials, express intent, see a result, edit directly, and build on it. The canvas provides working space, connections express dependencies, and recordings retain factual sources.
+
+Text, images, pages, speech, files, charts and drawing already exist. Their connections matter more than another component type. A real task should flow from beginning to end without unnecessary learning.
+
+## Research basis
+
+The following separates team statements from Huayu’s design inferences. Research used public articles, talk pages, chapter descriptions and available demonstration text; it was not described as watching every full video.
+
+| Primary material | Principle | Huayu inference |
+| --- | --- | --- |
+| Steve Ruiz, [tldraw computer at AI Engineer World’s Fair 2025](https://ai.engineer/talks/1C2TdPkj6aQ-tldraw-computer), [video](https://www.youtube.com/watch?v=1C2TdPkj6aQ), especially 3:26, 8:12, 13:23 and 15:43 | A canvas can contain working media that transforms through connected steps | Make material-to-work journeys natural and finite before adding programming loops |
+| Steve Ruiz, [Make Real, the story so far](https://tldraw.substack.com/p/make-real-the-story-so-far), 2023-11-18 | Generated pages return to the canvas for annotation, comparison and iteration, retaining HTML and visual context | Existing work should be useful input for the next request |
+| Steve Ruiz, [Text is not enough](https://tldraw.dev/blog/text-is-not-enough), 2026-03-30 | Visual adjustments and complex processes are difficult to express entirely through chat | Make selection a clear action target |
+| Tim Gilboy, [Agents can’t point](https://tldraw.dev/blog/agents-cant-point), 2026-08-11 | “This” needs an explicit referent; turning every conversation into a shape produces clutter | Put creation near selected material; commit confirmed steps rather than every temporary question |
+| Jessica Edwards, [A comment is not a shape](https://tldraw.dev/blog/a-comment-is-not-a-shape), 2026-08-06 | Discussion and work have different lifecycles | Future comments should anchor independently instead of entering work exports |
+| Steve Ruiz, [Hover areas](https://tldraw.dev/blog/a-review-of-design-tool-hover-areas), 2026-04-07; Steve Ruiz and Ani Krishnan, [Back to Content](https://tldraw.dev/blog/back-to-content), 2026-01-10 | Hit targets, conventions and returning to content deserve careful attention | Preserve native Excalidraw behavior and remove misclicks, jumps and lost-content states |
+
+## Implemented journeys
+
+Select materials and open **Create from this** near the selection. Review and remove inputs, revisit originals, and choose text, images, pages, charts, audio or documents. Starting creates a connected step and runs it; **Add step only** lets users arrange a flow first. New cards avoid existing content and can be undone with their connections.
+
+Text retains actual text, pages retain HTML, and charts retain structured data. Native drawings, shapes, notes, lines and frames form a coherent visual input. Running a new step uses cached source content without regenerating sources. Cancellation during capture prevents subsequent model requests. The independent drawing agent still uses whole-page context; scoped previews remain future work.
+
+Recording text, chapters and selected excerpts become editable canvas materials with original source/time links. Chapters use the matching transcript range. Conversion makes no model call, so facts can be checked before creating.
+
+Compact headers and selection-only action bars give content more room. Port dragging shows targets and previews; dropping on empty space continues the flow, with click and keyboard alternatives. Duplicate, cycle and cross-page connections explain their limits. Real port positions account for rotation and frames. Focusing input does not independently scroll the card layer.
+
+Execution paths and per-card state show waiting, running, failure, stopping and elapsed time. A run list locates content. Content fingerprints persist freshness after reload; changed material marks affected descendants and allows branch-only updates. Locked results remain reusable. Changed inputs during a request do not falsely mark old output as fresh. Existing works survive stopping and failure.
+
+**Back to content** returns to selected objects when available. View changes retain selection. The neutral sidebar, appearance and browser-only model settings remain consistent.
+
+## View, edit and create again
+
+Text, image and page works share one work window, reachable from card headers, selected-object controls and double-click. Closing restores focus to the current work; version changes locate the matching canvas object.
+
+Text reads as Markdown and edits the generated body, retaining the original request. Pages support real interaction, desktop/mobile preview, direct HTML editing and live preview with existing isolation. Browser drafts are scoped to project, page and work; conflicts preserve drafts rather than silently replacing newer content.
+
+Images support zoom, pan, original size, fit, crop and rotate. Cropping saves a new PNG without changing the original, with lineage and a suitable ratio for the next generation. Copy uses actual image pixels.
+
+Creation beside the work defaults to its current media type, keeps original versions, and can convert media types. Save-and-create includes manual edits. Pending steps are reused on retry, and reopened windows reconnect to in-flight browser tasks. Version history records derived works, while ordinary edits use undo/redo.
+
+## Scope and follow-up
+
+This is an adaptation of interaction principles on Excalidraw, not a copy of the tldraw SDK or visual assets. Keep attention on content clarity, predictable connections, explicit progress, local ownership and usable results. Validate real models and actual system permissions before claiming production readiness; see [Release checklist](./RELEASE.md).
+
+## Complete example projects — 2026-11-03
+
+Reviewed [tldraw Computer](https://computer.tldraw.com/), particularly [Story Generator](https://computer.tldraw.com/t/m6rf2ckVFbRc7r7yZt9oGM) and [Invention Inventor](https://computer.tldraw.com/t/9sfvz9vrz5nUsFRspwTJXm). Each expands a concrete task into multiple inputs, branches and downstream work, making the purpose easier to understand than a list of output formats.
+
+Huayu applies that approach to six complete scenarios: specific starting material, shared inputs and branching work, followed by text, illustrations and interactive pages. Content is authored and carries no fabricated execution timings or model history. The site and app share one catalog, so visitors can inspect work, trace its instructions and continue with the matching local template.
