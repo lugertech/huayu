@@ -233,7 +233,7 @@ function DrawingCanvasContent({
           if (cover !== project.cover)
             await api(`/api/projects/${project.id}`, {
               method: "PATCH",
-              body: JSON.stringify({ cover }),
+              body: JSON.stringify({ cover, cover_revision: revision }),
             });
           if (job !== coverJob) return;
           job.phase = "completed";

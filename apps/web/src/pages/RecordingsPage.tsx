@@ -67,6 +67,7 @@ export function RecordingsPage() {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const input = useRef<HTMLInputElement>(null);
+  const refreshRequest = useRef<AbortController | null>(null);
   const { showToast } = useToast();
   function failed(error: unknown) {
     showToast({
@@ -77,12 +78,20 @@ export function RecordingsPage() {
     });
   }
   async function refresh() {
+    refreshRequest.current?.abort();
+    const controller = new AbortController();
+    refreshRequest.current = controller;
     setLoading(true);
     setError("");
     try {
-      setRecordings(await api<Recording[]>("/api/recordings"));
+      const recordings = await api<Recording[]>("/api/recordings", {
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      setRecordings(recordings);
       setHasLoaded(true);
     } catch (error) {
+      if (controller.signal.aborted) return;
       const message =
         error instanceof Error
           ? error.message
@@ -90,7 +99,7 @@ export function RecordingsPage() {
       setError(message);
       if (hasLoaded) showToast({ title: message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }
   const refreshFromEvent = useEffectEvent(refresh);
@@ -101,6 +110,7 @@ export function RecordingsPage() {
     };
     window.addEventListener("huayu:recordings-changed", listener);
     return () => {
+      refreshRequest.current?.abort();
       window.removeEventListener("huayu:recordings-changed", listener);
     };
   }, []);

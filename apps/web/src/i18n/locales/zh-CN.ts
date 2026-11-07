@@ -143,6 +143,7 @@ export const zhCN = {
   "api.errors.opening": "正在打开…",
   "api.errors.pageLoadingInterrupted": "网页读取中断",
   "api.errors.selectedContent": "所选内容",
+  "api.errors.stalePreview": "画布已更新，请重试",
   "api.errors.textFilesMustUseUtf8Encoding": "文本文件应使用 UTF-8 编码",
   "api.errors.theDocumentContainsTooMuchText": "文档文本过多，请拆分文件",
   "api.errors.theDocxDocumentBodyIsTooLarge": "DOCX 正文过大",

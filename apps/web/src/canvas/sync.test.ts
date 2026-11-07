@@ -6,7 +6,7 @@ import {
   it,
   vi,
 } from "vite-plus/test";
-import type { Project } from "@/api/client";
+import { APIError, type Project } from "@/api/client";
 import { Editor, createCanvasStore } from "@/canvas/editor";
 import { CanvasSync, documentSnapshot } from "./sync";
 
@@ -25,7 +25,7 @@ class TestSocket {
   static instances: TestSocket[] = [];
   readyState = 1;
   onopen?: () => void;
-  onclose?: () => void;
+  onclose?: () => void | Promise<void>;
   onmessage?: (event: { data: string }) => void;
   send = vi.fn();
   constructor(readonly url: string) {
@@ -36,7 +36,7 @@ class TestSocket {
   }
   close() {
     this.readyState = 3;
-    this.onclose?.();
+    return this.onclose?.();
   }
 }
 
@@ -119,6 +119,44 @@ afterEach(() => {
 });
 
 describe("collaboration save ordering and recovery", () => {
+  it.each(["success", "revoked"])(
+    "ignores an old connection's late %s after a replacement connects",
+    async (outcome) => {
+      const { sync, socket } = await client("shared");
+      const permission = acknowledgement();
+      mocks.api.mockReturnValueOnce(permission.promise);
+      const closing = socket.close();
+      sync.retry();
+      const replacement = TestSocket.instances.at(-1)!;
+      expect(replacement).not.toBe(socket);
+      replacement.onopen?.();
+      if (outcome === "success") permission.resolve({ revision: 0 });
+      else
+        permission.reject(
+          new APIError("Old access response", 403, "COLLABORATION_CLOSED"),
+        );
+      await closing;
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(sync.getSnapshot()).toMatchObject({
+        connected: true,
+        connection: "connected",
+        error: null,
+      });
+      expect(replacement.readyState).toBe(TestSocket.OPEN);
+      expect(TestSocket.instances).toHaveLength(2);
+    },
+  );
+
+  it("still reconnects when the closed socket has not been replaced", async () => {
+    const { sync, socket } = await client("shared");
+    await socket.close();
+    expect(sync.getSnapshot().connection).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(TestSocket.instances).toHaveLength(2);
+    TestSocket.instances.at(-1)!.onopen?.();
+    expect(sync.getSnapshot().connected).toBe(true);
+  });
+
   it("distinguishes new edits made while an earlier patch is sending", async () => {
     const { sync, editor } = await client();
     const ack = acknowledgement();

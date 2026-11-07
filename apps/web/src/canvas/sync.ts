@@ -608,7 +608,7 @@ export class CanvasSync {
     };
     socket.onclose = async () => {
       if (this.socket !== socket) return;
-      this.socket = undefined;
+      // Keep this socket's identity while its access check is pending.
       this.peerId = undefined;
       this.peers = new Map();
       this.roomMembers = {
@@ -623,6 +623,7 @@ export class CanvasSync {
             `/api/projects/${this.project.id}${this.accessQuery}`,
           );
         } catch (error) {
+          if (this.socket !== socket || this.stopped) return;
           if (
             error instanceof APIError &&
             [
@@ -641,7 +642,7 @@ export class CanvasSync {
           }
         }
       }
-      if (!this.stopped && !this.deleted) {
+      if (this.socket === socket && !this.stopped && !this.deleted) {
         this.update({ connection: "reconnecting" });
         this.reconnectTimer = setTimeout(
           () => this.openSocket(),

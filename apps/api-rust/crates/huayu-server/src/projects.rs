@@ -60,6 +60,7 @@ pub(crate) struct UpdateRequest {
     name: Option<String>,
     #[serde(default, deserialize_with = "deserialize_cover")]
     cover: Option<Option<String>>,
+    cover_revision: Option<i64>,
 }
 
 // An omitted cover preserves it; an explicit null clears it.
@@ -253,6 +254,18 @@ pub(crate) async fn update(
         return Err(ApiError::invalid("封面应使用本地图片"));
     }
     let _guard = state.mutations.lock().await;
+    // Preview validation and document writes share this lock, so a late
+    // thumbnail cannot overwrite a cover rendered from a newer document.
+    if body.cover.is_some()
+        && let Some(revision) = body.cover_revision
+        && state.store.project(&id).await?.revision != revision
+    {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "STALE_PREVIEW",
+            "画布已更新，请重试",
+        ));
+    }
     Ok(Json(
         state
             .store

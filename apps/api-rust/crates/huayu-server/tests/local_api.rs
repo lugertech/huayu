@@ -267,6 +267,45 @@ async fn refreshing_a_preview_preserves_document_revision_and_edit_time() {
 }
 
 #[tokio::test]
+async fn stale_previews_cannot_replace_a_cover_for_the_current_document() {
+    let directory = TempDir::new().unwrap();
+    let router = application(&directory).await.router();
+    let (_, project) = request(&router, "POST", "/api/projects", json!({"name":"封面顺序"})).await;
+    let path = format!("/api/projects/{}", project["id"].as_str().unwrap());
+    let older_revision = project["revision"].clone();
+    let (status, revision) = request(
+        &router,
+        "PATCH",
+        &format!("{path}/document"),
+        json!({"upsert":[{"id":"shape:new","typeName":"shape","type":"ai-text","props":{"text":"最新内容"}}],"remove":[],"client_id":"preview-test"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, current) = request(
+        &router,
+        "PATCH",
+        &path,
+        json!({"cover":"/api/assets/new-preview","cover_revision":revision["revision"]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, error) = request(
+        &router,
+        "PATCH",
+        &path,
+        json!({"cover":"/api/assets/old-preview","cover_revision":older_revision}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(error["code"], "STALE_PREVIEW");
+    let (_, saved) = request(&router, "GET", &path, Value::Null).await;
+    assert_eq!(saved["cover"], "/api/assets/new-preview");
+    assert_eq!(saved["revision"], current["revision"]);
+    assert_eq!(saved["updated_at"], current["updated_at"]);
+    assert_eq!(saved["document"], current["document"]);
+}
+
+#[tokio::test]
 async fn collaboration_links_require_the_current_enabled_token() {
     let directory = TempDir::new().unwrap();
     let router = application(&directory).await.router();

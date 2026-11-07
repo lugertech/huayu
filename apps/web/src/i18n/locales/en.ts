@@ -158,6 +158,7 @@ export const en = {
   "api.errors.opening": "Opening…",
   "api.errors.pageLoadingInterrupted": "Page loading interrupted",
   "api.errors.selectedContent": "Selected content",
+  "api.errors.stalePreview": "The canvas has changed. Please try again.",
   "api.errors.textFilesMustUseUtf8Encoding":
     "Text files must use UTF-8 encoding",
   "api.errors.theDocumentContainsTooMuchText":

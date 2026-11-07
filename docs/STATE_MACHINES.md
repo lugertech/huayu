@@ -13,14 +13,14 @@
 | 1 | [画布加载与恢复](../apps/web/src/pages/DrawingPage.tsx) | 已调整 | `loading → ready / error`；状态绑定项目和分享令牌，旧页面的失败不显示到新页面。草稿与模板初始化仍在 ready 之前完成。 |
 | 2 | [自动保存](../apps/web/src/canvas/sync.ts) | 已调整 | 明确 `clean / waiting / sending / sending-dirty / retrying / blocked`。在途补丁与后续编辑分开持有；撤销访问后保留未确认编辑，迟到确认不能清除终止状态。 |
 | 3 | [版本与远端合并](../apps/web/src/canvas/sync.ts) | 保留 | `pending / inFlight / deferredRemote` 的集合及 revision 决定合并顺序；这些集合表达并存的工作，不能合并为一个互斥阶段。 |
-| 4 | [客户端连接](../apps/web/src/canvas/sync.ts)、[服务端房间](../apps/api-rust/crates/huayu-server/src/projects.rs) | 已调整 | 客户端连接阶段为 `disconnected / connecting / connected / reconnecting`，`connected` 从阶段派生。服务端心跳、落后事件后的快照恢复保留现有处理。 |
+| 4 | [客户端连接](../apps/web/src/canvas/sync.ts)、[服务端房间](../apps/api-rust/crates/huayu-server/src/projects.rs) | 已调整 | 客户端连接阶段为 `disconnected / connecting / connected / reconnecting`，`connected` 从阶段派生。关闭后的权限查询保留原 socket 身份，迟到的成功或失败响应不能改写替代连接。服务端心跳、落后事件后的快照恢复保留现有处理。 |
 | 5 | [协作链接](../apps/api-rust/crates/huayu-server/src/projects.rs) | 保留 | 链接开放、关闭、轮换由分享令牌及持久化配置表示；已有集成测试覆盖轮换后的旧连接失效，不修改协议。 |
 | 6 | [访问生命周期](../apps/web/src/canvas/sync.ts)、[服务端访问校验](../apps/api-rust/crates/huayu-server/src/access.rs) | 已调整 | 客户端使用 `stopped / active / deleted / revoked`，撤销原因由 revoked 持有；deleted、revoked 不能被 connect 重新激活。服务端访问类型保留。 |
 | 7 | [在线成员与即时广播](../apps/web/src/canvas/sync.ts) | 保留 | 成员集合、待广播 presence 和场景补丁是独立维度；现有定时器负责合并发送，断开时清理资源。 |
 | 8 | [浏览器恢复库](../apps/web/src/canvas/drafts.ts) | 已调整 | `closed / opening / open` 分别持有打开 Promise 或连接。打开失败后回到 closed，后续操作可重试；连接关闭后不复用失效句柄。 |
 | 9 | [事务与撤销](../apps/web/src/canvas/engine/store.ts) | 已调整 | 撤销组为 `none / open / recorded`，回放为 `idle / undo / redo`；事务嵌套深度及 finally 收尾保留。 |
 | 10 | [Excalidraw 双向桥接](../apps/web/src/canvas/excalidraw/ExcalidrawSurface.tsx) | 已调整 | `initializing / ready / applying-store / applying-native` 替代初始化和写入标志的组合；原有异步代次检查继续阻止旧场景覆盖。 |
-| 11 | [画布缩略图](../apps/web/src/pages/DrawingCanvas.tsx) | 已调整 | 任务经历等待、保存画布、渲染、上传、完成或失败；任务身份决定回调是否仍有效，卸载或新任务使旧任务失效。 |
+| 11 | [画布缩略图](../apps/web/src/pages/DrawingCanvas.tsx) | 已调整 | 任务经历等待、保存画布、渲染、上传、完成或失败；任务身份决定回调是否仍有效，卸载或新任务使旧任务失效。自动生成的封面携带 `cover_revision`，服务端在文档写入锁内拒绝与当前画布版本不符的请求，防止已发送的旧任务覆盖新封面。 |
 
 ## 工作流与结果
 
@@ -80,7 +80,7 @@
 
 | 编号 | 流程与源码 | 处理 | 状态与约束 |
 | --- | --- | --- | --- |
-| 46 | [项目列表](../apps/web/src/pages/ProjectsPage.tsx)、[录制列表](../apps/web/src/pages/RecordingsPage.tsx)、[素材列表](../apps/web/src/pages/LibraryPage.tsx) | 保留 | 首次加载、保留旧数据的刷新以及部分请求失败可以并存；不把数据与请求强行变成单个互斥状态。 |
+| 46 | [项目列表](../apps/web/src/pages/ProjectsPage.tsx)、[录制列表](../apps/web/src/pages/RecordingsPage.tsx)、[素材列表](../apps/web/src/pages/LibraryPage.tsx) | 已调整 | 首次加载、保留旧数据的刷新以及部分请求失败可以并存；不把数据与请求强行变成单个互斥状态。录制刷新使用当前控制器统一保护数据、错误及加载状态，替换请求和卸载时取消旧请求。 |
 | 47 | [项目创建、导入、导出](../apps/web/src/canvas/transfer.ts)、[模板操作](../apps/web/src/pages/DrawingCanvas.tsx) | 保留 | 顺序 await、单次提交锁和异常收尾已表达流程；导出前 flush 继续受同步终止状态约束。 |
 | 48 | [项目操作](../apps/web/src/pages/ProjectCardMenu.tsx)、[录制操作](../apps/web/src/pages/RecordingCardMenu.tsx)、[成员管理](../apps/web/src/Components/canvas/Collaborators.tsx) | 保留 | 已有对话框种类、单次请求锁和目标 ID；素材 CRUD 的组合状态单独在第 32 项调整。 |
 | 49 | [搜索与设置交接](../apps/web/src/Components/Shell.tsx) | 已调整 | `none / search / settings` 互斥；旧弹层的关闭回调只能关闭自身，不能关闭已打开的新弹层。 |
@@ -95,6 +95,9 @@
 ## 回归验证重点
 
 - [同步测试](../apps/web/src/canvas/sync.test.ts)：发送期间新增编辑；权限撤销后的迟到保存响应；禁止重新连接。
+- [录制列表测试](../apps/web/src/pages/RecordingsPage.test.ts)：直接执行页面刷新函数，覆盖旧请求覆盖新结果、旧成功或失败响应提前结束当前加载的路径。
+- [同步测试](../apps/web/src/canvas/sync.test.ts)同时覆盖旧连接权限响应迟到，以及没有替代连接时的正常重连。
+- [本地 API 测试](../apps/api-rust/crates/huayu-server/tests/local_api.rs)：新画布版本的封面写入后，旧版本封面返回 409，封面、正文、版本及编辑时间均不回退。
 - [本地恢复测试](../apps/web/src/canvas/drafts.test.ts)：首次打开失败后可以重新打开，不缓存失败 Promise。
 - [工作流测试](../apps/web/src/workflow/execute.test.ts)：已成功的上游节点在整个计划结束前仍不可编辑；既有测试继续覆盖取消、分支失败和锁定结果。
 - [录制状态测试](../apps/web/src/recording/capture-state.test.ts)：数据所有权、保存重试、终态后的无效事件。
