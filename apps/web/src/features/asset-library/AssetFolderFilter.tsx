@@ -14,7 +14,7 @@ import {
 } from "@/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { AssetGroupItem } from "./library-api";
-import { at } from "./messages";
+import { useAssetTranslations } from "./messages";
 
 export function flattenExpandedGroups(
   groups: AssetGroupItem[],
@@ -101,6 +101,7 @@ export function AssetFolderFilter({
   const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const { at } = useAssetTranslations();
   const allLabel = at("全部分组");
   const selectedPath = useMemo(
     () =>
@@ -165,16 +166,15 @@ export function AssetFolderFilter({
         render={
           <Button
             type="button"
-            size="sm"
             variant="outline"
-            className="max-w-[126px] gap-1.5 px-2.5 text-xs text-muted-foreground shadow-none"
+            className="max-w-[126px] text-muted-foreground shadow-none"
             aria-label={at("素材分组筛选器")}
           />
         }
       >
-        <Filter className="size-3.5" />
+        <Filter />
         <span className="truncate">{selectedLabel}</span>
-        <ChevronDown className="size-3.5 shrink-0" />
+        <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"

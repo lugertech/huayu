@@ -17,10 +17,14 @@ for (const locale of ["zh-CN", "en"] as const) {
   for (const recipe of ["writing", "image", "chart", "website"]) {
     const editor = new Editor(createCanvasStore());
     applyRecipe(editor, recipe);
-    const result = await exportSVG(editor, editor.getCurrentPageShapeIds(), {
-      background: true,
-      padding: 32,
-    });
+    const result = await exportSVG(
+      editor,
+      Array.from(editor.getCurrentPageShapeIds()),
+      {
+        background: true,
+        padding: 32,
+      },
+    );
     if (!result) throw new Error(`Cannot export quick-start cover: ${recipe}`);
     const scale = Math.min(width / result.width, height / result.height);
     const x = (width - result.width * scale) / 2;

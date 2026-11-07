@@ -1,33 +1,29 @@
-import { t, useLocale } from "@/i18n";
-import { StrictMode, Suspense, lazy } from "react";
+import { useLocale } from "@/i18n";
+import { StrictMode, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  BrowserRouter,
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./lib/theme";
 import { TooltipProvider } from "./ui/tooltip-provider";
 import { ToastProvider } from "./Components/common/ToastProvider";
 import { ErrorBoundary } from "./Components/common/ErrorBoundary";
 import { RecorderProvider } from "./recording/Recorder";
 import { ProjectsPage } from "./pages/ProjectsPage";
-import { Shell } from "./Components/Shell";
+import { RecordingsPage } from "./pages/RecordingsPage";
+import { WorkspaceLayout } from "./Components/WorkspaceLayout";
+import { WorkspaceAccess } from "./Components/WorkspaceAccess";
 const DrawingPage = lazy(() =>
   import("./pages/DrawingPage").then((module) => ({
     default: module.DrawingPage,
   })),
 );
+const LibraryPage = lazy(() =>
+  import("./pages/LibraryPage").then((module) => ({
+    default: module.LibraryPage,
+  })),
+);
 const AssetsPage = lazy(() =>
   import("./pages/AssetsPage").then((module) => ({
     default: module.AssetsPage,
-  })),
-);
-const RecordingsPage = lazy(() =>
-  import("./pages/RecordingsPage").then((module) => ({
-    default: module.RecordingsPage,
   })),
 );
 const RecordingAnalysisPage = lazy(() =>
@@ -46,21 +42,6 @@ if (import.meta.hot) {
   import.meta.hot.data.root = root;
   import.meta.hot.accept();
 }
-function WorkspaceLayout() {
-  return (
-    <Shell>
-      <Suspense
-        fallback={
-          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
-            {t("api.errors.opening")}
-          </div>
-        }
-      >
-        <Outlet />
-      </Suspense>
-    </Shell>
-  );
-}
 function Application() {
   useLocale();
   return (
@@ -70,30 +51,25 @@ function Application() {
           <ErrorBoundary>
             <BrowserRouter>
               <RecorderProvider>
-                <Suspense
-                  fallback={
-                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                      {t("api.errors.opening")}
-                    </div>
-                  }
-                >
+                <WorkspaceAccess>
                   <Routes>
                     <Route element={<WorkspaceLayout />}>
                       <Route path="/projects" element={<ProjectsPage />} />
-                      <Route path="/library" element={<AssetsPage />} />
+                      <Route path="/library" element={<LibraryPage />} />
+                      <Route path="/assets" element={<AssetsPage />} />
                       <Route path="/recordings" element={<RecordingsPage />} />
+                      <Route path="/drawing/:id" element={<DrawingPage />} />
+                      <Route
+                        path="/recordings/:id/analysis"
+                        element={<RecordingAnalysisPage />}
+                      />
                     </Route>
-                    <Route path="/drawing/:id" element={<DrawingPage />} />
-                    <Route
-                      path="/recordings/:id/analysis"
-                      element={<RecordingAnalysisPage />}
-                    />
                     <Route
                       path="*"
                       element={<Navigate to="/projects" replace />}
                     />
                   </Routes>
-                </Suspense>
+                </WorkspaceAccess>
               </RecorderProvider>
             </BrowserRouter>
           </ErrorBoundary>

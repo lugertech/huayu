@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { t, type MessageKey } from "@/i18n";
 import {
   Editor,
   Bounds,
@@ -39,8 +39,21 @@ export function connectedShapes(
 
 export const getNextConnectedShapes = (editor: Editor, id: ShapeId) =>
   connectedShapes(editor, id, "next");
-export const getPreviousConnectedShapes = (editor: Editor, id: ShapeId) =>
-  connectedShapes(editor, id, "previous");
+/** A start node gates execution, while its incoming materials remain readable. */
+export function getPreviousConnectedShapes(editor: Editor, id: ShapeId) {
+  const sources: CanvasShape[] = [];
+  const pending = connectedShapes(editor, id, "previous").reverse();
+  const seen = new Set<string>([id]);
+  while (pending.length) {
+    const shape = pending.pop()!;
+    if (seen.has(shape.id)) continue;
+    seen.add(shape.id);
+    if (shape.type === "start")
+      pending.push(...connectedShapes(editor, shape.id, "previous").reverse());
+    else sources.push(shape);
+  }
+  return sources;
+}
 
 export function connectShapes(
   editor: Editor,
@@ -151,30 +164,52 @@ export function createConnectedComponent(
         editor,
         side === "right" ? source : id,
         side === "right" ? id : source,
-        connectionLabel(
-          editor.getShape(side === "right" ? source : id)?.type || "",
-        ),
       );
   });
   return id;
 }
-export function connectionLabel(type: string) {
+
+const legacyConnectionLabelKeys: Partial<Record<string, MessageKey>> = {
+  "ai-image": "canvas.referenceImage",
+  image: "canvas.referenceImage",
+  speech: "canvas.audioMaterial",
+  file: "canvas.fileMaterial",
+  website: "canvas.webContent",
+  "interactive-web": "canvas.webContent",
+  chart: "canvas.chartContent",
+  "ai-text": "canvas.textMaterial",
+  instruction: "api.generatedContent",
+  frame: "canvas.frameContent",
+  start: "canvas.start",
+};
+
+export function isLegacyConnectionLabel(
+  editor: Editor,
+  arrowId: ShapeId,
+  label: string,
+): boolean {
+  const bindings = editor.getBindingsFromShape<ArrowBinding>(arrowId, "arrow");
+  const start = bindings.find((binding) => binding.props.terminal === "start");
+  const end = bindings.find((binding) => binding.props.terminal === "end");
+  // Old workflow connections used the exact midpoint ports on both cards.
+  if (
+    !start?.props.isPrecise ||
+    !end?.props.isPrecise ||
+    start.props.normalizedAnchor.x !== 1 ||
+    start.props.normalizedAnchor.y !== 0.5 ||
+    end.props.normalizedAnchor.x !== 0 ||
+    end.props.normalizedAnchor.y !== 0.5
+  )
+    return false;
+  const source = editor.getShape(start.toId);
+  if (!source) return false;
+  const key =
+    legacyConnectionLabelKeys[source.type] ?? "workflow.canvasContent";
   return (
-    {
-      "ai-image": t("canvas.referenceImage"),
-      image: t("canvas.referenceImage"),
-      speech: t("canvas.audioMaterial"),
-      file: t("canvas.fileMaterial"),
-      website: t("canvas.webContent"),
-      "interactive-web": t("canvas.webContent"),
-      chart: t("canvas.chartContent"),
-      "ai-text": t("canvas.textMaterial"),
-      instruction: t("api.generatedContent"),
-      frame: t("canvas.frameContent"),
-      start: t("canvas.start"),
-    }[type] || t("workflow.canvasContent")
+    label === t(key, undefined, "zh-CN") || label === t(key, undefined, "en")
   );
 }
+
 export const createConnectedTextShape = (
   editor: Editor,
   id: ShapeId,

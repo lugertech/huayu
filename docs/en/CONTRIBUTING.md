@@ -6,6 +6,8 @@ Read [Getting started](./GETTING_STARTED.md) and [Architecture](./ARCHITECTURE.m
 
 Install Vite+ and a supported Node.js version as described in [Getting started](./GETTING_STARTED.md). `vp run check` combines frontend formatting, lint, type checks and Rust checks. `vp run test` runs release-tool, frontend and Rust tests.
 
+Node.js helper scripts use TypeScript and run directly on the required Node.js version. `vp run check:scripts` checks their types and is included in `vp run check`. Use erasable type syntax and explicit `.ts` imports. Generators that need JSX or browser modules continue to build through Vite before running.
+
 ```sh
 vp install --frozen-lockfile
 vp run dev
@@ -27,6 +29,7 @@ The interface uses `http://127.0.0.1:5173`, the API uses port 5858, and `vp run 
 Before submitting:
 
 ```sh
+vp run check:security
 vp run check:release
 vp run check
 vp run test

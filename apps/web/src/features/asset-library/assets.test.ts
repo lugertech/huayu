@@ -6,8 +6,15 @@ import {
   folderRows,
   folderTree,
   insertLibraryImage,
+  applyLibraryImage,
   type LibraryAsset,
 } from "./assets";
+import { collectDownloadableFiles } from "@/utils/fileCollector";
+import { resultSource } from "@/workflow/results";
+import {
+  connectShapes,
+  getPreviousConnectedShapes,
+} from "@/utils/connectionParser";
 
 const asset: LibraryAsset = {
   id: "local-image",
@@ -43,7 +50,7 @@ describe("library image insertion", () => {
       sceneFromEditor(editor).find((element) => element.id === id)?.type,
     ).toBe("image");
   });
-  it("fits click-inserted images into the visible canvas and reuses local file records", () => {
+  it("fits click-inserted images into the viewport and keeps each use independent", () => {
     const editor = new Editor(createCanvasStore());
     editor.setViewport({ x: 0, y: 0, zoom: 3 });
     const id = insertLibraryImage(editor, {
@@ -57,16 +64,116 @@ describe("library image insertion", () => {
     expect(bounds.h).toBeLessThan(viewport.h);
     expect(bounds.center.x).toBeCloseTo(viewport.center.x);
     expect(bounds.center.y).toBeCloseTo(viewport.center.y);
-    const other = insertLibraryImage(editor, asset);
-    expect(editor.getShape(other)!.props.assetId).toBe(
+    const other = insertLibraryImage(editor, {
+      ...asset,
+      name: "新的名称.png",
+    });
+    expect(editor.getShape(other)!.props.assetId).not.toBe(
       editor.getShape(id)!.props.assetId,
     );
     expect(
       editor.store.allRecords().filter((record) => record.typeName === "asset"),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
+    expect(
+      editor.store.get(editor.getShape(id)!.props.assetId)!.props.name,
+    ).toBe(asset.name);
     editor.undo();
     expect(editor.getShape(other)).toBeUndefined();
     expect(editor.getShape(id)).toBeDefined();
+  });
+  it("replaces a component image without adding a shape or changing its request, layout or connections, and can undo", () => {
+    const editor = new Editor(createCanvasStore());
+    editor.createShape({
+      id: "shape:target",
+      type: "ai-image",
+      x: 120,
+      y: 80,
+      props: {
+        w: 360,
+        h: 240,
+        src: "/api/assets/original",
+        text: "保留创作要求",
+        name: "原图",
+      },
+    });
+    editor.createShape({
+      id: "shape:next",
+      type: "instruction",
+      props: { w: 300, h: 200 },
+    });
+    connectShapes(editor, "shape:target", "shape:next");
+    const count = editor.getCurrentPageShapes().length;
+    applyLibraryImage(editor, "shape:target", asset);
+    expect(editor.getCurrentPageShapes()).toHaveLength(count);
+    expect(editor.getShape("shape:target")).toMatchObject({
+      x: 120,
+      y: 80,
+      props: {
+        src: "/api/assets/local-image",
+        text: "保留创作要求",
+        w: 360,
+        h: 240,
+        isUploaded: true,
+      },
+    });
+    expect(
+      getPreviousConnectedShapes(editor, "shape:next").map((shape) => shape.id),
+    ).toContain("shape:target");
+    editor.undo();
+    expect(editor.getShape("shape:target")!.props.src).toBe(
+      "/api/assets/original",
+    );
+  });
+  it("rejects a missing, incompatible or locked target instead of inserting elsewhere", () => {
+    const editor = new Editor(createCanvasStore());
+    editor.createShape({
+      id: "shape:locked",
+      type: "ai-image",
+      props: { w: 360, h: 240, isLocked: true, src: "old" },
+    });
+    editor.createShape({
+      id: "shape:text",
+      type: "ai-text",
+      props: { w: 360, h: 240 },
+    });
+    for (const id of ["shape:locked", "shape:text", "shape:missing"])
+      expect(() => applyLibraryImage(editor, id, asset)).toThrow();
+    expect(editor.getCurrentPageShapes()).toHaveLength(2);
+    expect(editor.getShape("shape:locked")!.props.src).toBe("old");
+  });
+  it("includes native canvas images in project attachments with their original filenames", () => {
+    const editor = new Editor(createCanvasStore());
+    const id = insertLibraryImage(editor, asset);
+    expect(collectDownloadableFiles(editor)).toMatchObject([
+      {
+        shapeId: id,
+        fileName: asset.name,
+        source: "image",
+        downloadUrl: "/api/assets/local-image",
+      },
+    ]);
+  });
+  it("replaces a native image's direct URL and restores the previous image on undo", () => {
+    const editor = new Editor(createCanvasStore());
+    editor.createShape({
+      id: "shape:native",
+      type: "image",
+      props: {
+        w: 200,
+        h: 200,
+        src: "/api/assets/original",
+        name: "original.png",
+      },
+    });
+    applyLibraryImage(editor, "shape:native", asset);
+    expect(resultSource(editor, editor.getShape("shape:native")!)).toBe(
+      "/api/assets/local-image",
+    );
+    expect(collectDownloadableFiles(editor)[0].fileName).toBe(asset.name);
+    editor.undo();
+    expect(resultSource(editor, editor.getShape("shape:native")!)).toBe(
+      "/api/assets/original",
+    );
   });
   it("keeps nested folder order and depth for browsing and moving materials", () => {
     expect(

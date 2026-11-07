@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import React, {
   useMemo,
   useRef,
@@ -337,11 +337,13 @@ export function FlowchartRenderer({
   data,
   onDataChange,
 }: FlowchartRendererProps) {
-  useLocale();
+  const { t } = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const isDragging = dragStart !== null;
   const hasInitialized = useRef(false);
 
   // 选中和编辑状态
@@ -349,8 +351,12 @@ export function FlowchartRenderer({
   const [editingNode, setEditingNode] = useState<{
     id: string;
     label: string;
+    value: string;
   } | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const editValue = editingNode?.value ?? "";
+  function setEditValue(value: string) {
+    setEditingNode((current) => (current ? { ...current, value } : null));
+  }
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 计算布局
@@ -407,8 +413,7 @@ export function FlowchartRenderer({
   const handleNodeDoubleClick = useCallback(
     (nodeId: string, label: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      setEditingNode({ id: nodeId, label });
-      setEditValue(label);
+      setEditingNode({ id: nodeId, label, value: label });
     },
     [],
   );
@@ -480,7 +485,7 @@ export function FlowchartRenderer({
         edges: [...data.edges, newEdge],
       });
     },
-    [data, onDataChange],
+    [data, onDataChange, t],
   );
 
   // 删除节点
@@ -521,7 +526,6 @@ export function FlowchartRenderer({
       // 只要不是交互元素,就允许拖拽
       if (!isInteractive) {
         e.stopPropagation();
-        setIsDragging(true);
         setDragStart({
           x: e.clientX - transform.x,
           y: e.clientY - transform.y,
@@ -546,7 +550,7 @@ export function FlowchartRenderer({
   );
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
+    setDragStart(null);
   }, []);
 
   // 缩放控制

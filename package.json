@@ -8,32 +8,35 @@
     "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "node scripts/dev.ts",
     "dev:web": "vp run @huayu/web#dev",
     "dev:api": "sh scripts/cargo.sh run --package huayu-server",
     "build": "vp run build:web && sh scripts/cargo.sh build --release --package huayu-server",
-    "build:web": "node scripts/generate-template-index.mjs --check && vp run @huayu/web#build",
+    "build:web": "node scripts/generate-template-index.ts --check && vp run @huayu/web#build",
     "generate:quick-start-covers": "vp run @huayu/web#generate:quick-start-covers",
     "dev:site": "vp run @huayu/site#dev",
     "build:site": "vp run @huayu/site#build",
     "preview:site": "vp run @huayu/site#preview",
-    "check:release": "node scripts/check-release.mjs",
-    "package:source": "node scripts/package-source.mjs",
-    "test:release": "node --test scripts/release.test.mjs",
-    "licenses:generate": "node scripts/generate-notices.mjs",
-    "licenses:check": "node scripts/generate-notices.mjs --check",
+    "check:release": "node scripts/check-release.ts",
+    "package:source": "node scripts/package-source.ts",
+    "test:release": "node --test scripts/release.test.ts",
+    "licenses:generate": "node scripts/generate-notices.ts",
+    "licenses:check": "node scripts/generate-notices.ts --check",
     "start": "sh scripts/cargo.sh run --release --package huayu-server",
-    "check": "vp check --deny-warnings && sh scripts/cargo.sh check --workspace --all-targets --locked",
+    "check": "vp check --deny-warnings && vp run check:scripts && sh scripts/cargo.sh check --workspace --all-targets --locked",
     "test": "vp run test:release && vp test && sh scripts/cargo.sh test --workspace --locked",
     "format": "vp fmt",
     "format:check": "vp fmt --check",
     "lint": "vp lint --deny-warnings",
     "lint:rust": "sh scripts/cargo.sh clippy --workspace --all-targets --all-features --locked -- -D warnings",
-    "lint:fix": "vp lint --fix --deny-warnings"
+    "lint:fix": "vp lint --fix --deny-warnings",
+    "check:security": "node scripts/check-security.ts",
+    "check:scripts": "tsc --project scripts/tsconfig.json"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "@types/node": "^22.18.0"
   },
   "license": "MIT"
 }

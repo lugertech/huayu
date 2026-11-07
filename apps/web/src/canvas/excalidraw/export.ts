@@ -8,7 +8,6 @@ import type {
 import type { Editor } from "@/canvas/editor";
 import { createCanvasStore } from "@/canvas/engine/store";
 import { Editor as SnapshotEditor } from "@/canvas/engine/editor";
-import { exportPNG as legacyExportPNG } from "@/canvas/engine/export";
 import { shapeIdForElement, isCustomElement } from "./scene";
 import { blobAsDataURL } from "@/api/backend";
 
@@ -25,7 +24,9 @@ export async function exportScene(
     (element) =>
       !element.isDeleted &&
       (wanted.has(shapeIdForElement(editor, element)) ||
-        wanted.has(element.customData?.huayuLabelFor)),
+        (element.type === "text" &&
+          element.containerId &&
+          wanted.has(element.customData?.huayuLabelFor))),
   );
   const files: BinaryFiles = {};
   for (const element of selected)
@@ -53,7 +54,8 @@ export async function exportScene(
       rotation: 0,
       parentId: isolated.getCurrentPageId(),
     });
-    const snapshot = await legacyExportPNG(isolated, [shape.id], {
+    const { exportPNG } = await import("@/canvas/engine/export");
+    const snapshot = await exportPNG(isolated, [shape.id], {
       padding: 0,
       scale: 2,
     });

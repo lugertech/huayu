@@ -84,19 +84,18 @@ export function completeAgentEvents(text: string): AgentEvent[] {
   const offset = text.indexOf("[", start) + 1;
   const events: AgentEvent[] = [];
   let depth = 0;
-  let quoted = false;
-  let escaped = false;
+  let token: "object" | "string" | "escape" = "object";
   let begin = -1;
   for (let i = offset; i < text.length; i++) {
     const char = text[i];
-    if (quoted) {
-      if (escaped) escaped = false;
-      else if (char === "\\") escaped = true;
-      else if (char === '"') quoted = false;
+    if (token !== "object") {
+      if (token === "escape") token = "string";
+      else if (char === "\\") token = "escape";
+      else if (char === '"') token = "object";
       continue;
     }
     if (char === '"') {
-      quoted = true;
+      token = "string";
       continue;
     }
     if (char === "{" && depth++ === 0) begin = i;

@@ -7,20 +7,41 @@ export interface RecordPatch {
   schema?: unknown;
   client_id: string;
 }
-let database: Promise<IDBDatabase> | undefined;
-function openDatabase() {
-  if (!database)
-    database = new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("huayu-local", 1);
-      request.onupgradeneeded = () => {
-        request.result.createObjectStore("drafts");
-        request.result.createObjectStore("views");
+type DatabaseState =
+  | { phase: "closed" }
+  | { phase: "opening"; promise: Promise<IDBDatabase> }
+  | { phase: "open"; connection: IDBDatabase };
+let database: DatabaseState = { phase: "closed" };
+function openDatabase(): Promise<IDBDatabase> {
+  if (database.phase === "open") return Promise.resolve(database.connection);
+  if (database.phase === "opening") return database.promise;
+  const promise = new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open("huayu-local", 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore("drafts");
+      request.result.createObjectStore("views");
+    };
+    request.onsuccess = () => {
+      const connection = request.result;
+      database = { phase: "open", connection };
+      connection.onversionchange = () => {
+        connection.close();
+        database = { phase: "closed" };
       };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () =>
-        reject(new Error(t("canvas.theBrowserCannotSaveRecoveryData")));
-    });
-  return database;
+      connection.onclose = () => {
+        if (database.phase === "open" && database.connection === connection)
+          database = { phase: "closed" };
+      };
+      resolve(connection);
+    };
+    request.onerror = () =>
+      reject(new Error(t("canvas.theBrowserCannotSaveRecoveryData")));
+  }).catch((error) => {
+    database = { phase: "closed" };
+    throw error;
+  });
+  database = { phase: "opening", promise };
+  return promise;
 }
 async function transaction<T>(
   store: string,
@@ -41,6 +62,9 @@ async function transaction<T>(
     tx.onabort = () => reject(new Error(t("canvas.localSavingInterrupted")));
   });
 }
+export const canvasDraftKey = (id: string, shareToken: string | null) =>
+  shareToken === null ? id : `${id}:share:${shareToken}`;
+
 export const readDraft = (id: string) =>
   transaction<RecordPatch | undefined>("drafts", "readonly", (store) =>
     store.get(id),

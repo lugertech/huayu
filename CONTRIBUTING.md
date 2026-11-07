@@ -6,6 +6,8 @@
 
 按 [快速开始](./docs/GETTING_STARTED.md) 安装 Vite+ 与对应的 Node.js 版本。`vp run check` 统一执行前端格式、lint、类型检查及 Rust 检查；`vp run test` 执行发布工具、前端与 Rust 测试。
 
+Node.js 辅助脚本使用 TypeScript，由项目要求的 Node.js 直接运行，类型检查使用 `vp run check:scripts`，并纳入 `vp run check`。修改脚本时使用可擦除的类型语法和显式 `.ts` 导入；需要 JSX 或浏览器模块的生成器继续由 Vite 构建后执行。
+
 ```sh
 vp install --frozen-lockfile
 vp run dev
@@ -27,6 +29,7 @@ vp run dev
 提交前执行：
 
 ```sh
+vp run check:security
 vp run check:release
 vp run check
 vp run test

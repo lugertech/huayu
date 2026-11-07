@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { RotateCw, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/ui/button";
@@ -8,14 +8,9 @@ export function previewHTML(html: string) {
   const doctype = /^\s*<!doctype[^>]*>/i.exec(html);
   return `${doctype?.[0] || "<!doctype html>"}<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob: https: http:; media-src data: blob:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">${doctype ? html.slice(doctype[0].length) : html}`;
 }
-export function WebPreview({
-  html,
-  label = t("results.web.webPagePreview"),
-}: {
-  html: string;
-  label?: string;
-}) {
-  useLocale();
+export function WebPreview({ html, label }: { html: string; label?: string }) {
+  const { t } = useTranslations();
+  const previewLabel = label ?? t("results.web.webPagePreview");
   const area = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 1, h: 1 });
   const [device, setDevice] = useState("auto");
@@ -75,7 +70,7 @@ export function WebPreview({
       >
         <iframe
           key={`${device}:${reload}`}
-          title={label}
+          title={previewLabel}
           srcDoc={previewHTML(html)}
           sandbox="allow-scripts allow-forms"
           referrerPolicy="no-referrer"

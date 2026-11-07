@@ -1,4 +1,4 @@
-import { t, type MessageKey } from "@/i18n";
+import { t, type Locale, type MessageKey } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "@/ai/errors";
 import type { Capability } from "@/ai/settings";
@@ -12,7 +12,9 @@ import { COMPONENT_CONFIGS } from "../config/components";
 import {
   connectedShapes,
   createConnectedTextShape,
+  getPreviousConnectedShapes,
 } from "../utils/connectionParser";
+import { drawingShapes } from "./context";
 import { planWorkflow, type GraphEdge } from "./graph";
 import {
   generationFingerprint,
@@ -61,7 +63,11 @@ export interface NodeData {
   url?: string;
   recordingSource?: { id: string; name: string; start: number; end?: number };
 }
-const executions = new WeakMap<Editor, Map<string, AbortController>>();
+interface WorkflowRun {
+  phase: "running" | "cancelling";
+  controller: AbortController;
+}
+const executions = new WeakMap<Editor, Map<string, WorkflowRun>>();
 export interface NodeExecution {
   status: "idle" | "queued" | "running" | "success" | "error" | "cancelled";
   message: string;
@@ -80,7 +86,11 @@ function changed() {
   version++;
   listeners.forEach((listener) => listener());
 }
-export function useNodeRunning(editor: Editor, id: string) {
+/** Includes queued nodes and completed nodes still owned by the current plan. */
+export function nodeIsBusy(editor: Editor, id: string) {
+  return executions.get(editor)?.has(id) || false;
+}
+export function useNodeBusy(editor: Editor, id: string) {
   useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
@@ -90,15 +100,22 @@ export function useNodeRunning(editor: Editor, id: string) {
     },
     () => version,
   );
-  return executions.get(editor)?.has(id) || false;
+  return nodeIsBusy(editor, id);
 }
-export function nodeExecution(editor: Editor, id: string): NodeExecution {
+export function nodeExecution(
+  editor: Editor,
+  id: string,
+  locale?: Locale,
+): NodeExecution {
   const state = states.get(editor)?.get(id);
   if (!state) return idleExecution;
   const { messageKey, ...execution } = state;
-  return { ...execution, message: messageKey ? t(messageKey) : state.message };
+  return {
+    ...execution,
+    message: messageKey ? t(messageKey, undefined, locale) : state.message,
+  };
 }
-export function useNodeExecution(editor: Editor, id: string) {
+export function useNodeExecution(editor: Editor, id: string, locale: Locale) {
   useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
@@ -108,7 +125,7 @@ export function useNodeExecution(editor: Editor, id: string) {
     },
     () => version,
   );
-  return nodeExecution(editor, id);
+  return nodeExecution(editor, id, locale);
 }
 export function useWorkflowState(editor: Editor) {
   useSyncExternalStore(
@@ -121,8 +138,14 @@ export function useWorkflowState(editor: Editor) {
     () => version,
   );
   const values = [...(states.get(editor)?.values() || [])];
+  const runs = [...(executions.get(editor)?.values() || [])];
   return {
-    busy: !!executions.get(editor)?.size,
+    busy: runs.length > 0,
+    phase: runs.some((run) => run.phase === "cancelling")
+      ? "cancelling"
+      : runs.length
+        ? "running"
+        : "idle",
     total: values.length,
     completed: values.filter((value) => value.status === "success").length,
     failed: values.filter((value) => value.status === "error").length,
@@ -142,8 +165,11 @@ function updateExecution(
   changed();
 }
 export function stopAllExecutions(editor: Editor) {
-  for (const controller of executions.get(editor)?.values() || [])
-    controller.abort();
+  for (const run of new Set(executions.get(editor)?.values())) {
+    run.phase = "cancelling";
+    run.controller.abort();
+  }
+  changed();
 }
 
 export async function inputForShape(
@@ -248,6 +274,89 @@ export async function inputsForShapes(
   return inputs;
 }
 
+/** Component execution follows MenteX's per-destination input contracts. */
+export async function inputsForNode(
+  editor: Editor,
+  type: string,
+  sources: CanvasShape[],
+): Promise<AIAPIInput[]> {
+  const inputs: AIAPIInput[] = [];
+  for (const source of sources) {
+    const props = source.props as NodeData;
+    const text =
+      source.type === "chart" &&
+      props.chartData &&
+      props.result === props.chartData
+        ? props.name || ""
+        : (props.result ?? props.text ?? plainText(source.props.richText));
+    if (type === "ai-text" || type === "chart") {
+      const content =
+        type === "chart"
+          ? text
+          : source.type === "website"
+            ? props.description || text
+            : source.type === "ai-image"
+              ? props.result || props.description
+              : source.type === "frame"
+                ? props.description ||
+                  props.text ||
+                  props.name ||
+                  t("canvas.frame")
+                : text;
+      if (content?.trim()) inputs.push({ type: "text", text: content.trim() });
+    } else if (source.type === "frame") {
+      inputs.push(...(await inputForShape(editor, source, new Set())));
+    } else if (type === "speech" || type === "file") {
+      if (text?.trim())
+        inputs.push({
+          type: "text",
+          text,
+          name: props.name,
+          description: props.description,
+        });
+    } else if (
+      type === "ai-image" &&
+      !["instruction", "ai-text", "ai-image", "image"].includes(source.type) &&
+      source.type in COMPONENT_CONFIGS
+    ) {
+      continue;
+    } else if (
+      type === "website" &&
+      !["ai-image", "image"].includes(source.type)
+    ) {
+      if (text?.trim())
+        inputs.push({
+          type: "text",
+          text,
+          name: props.name,
+          description: props.description,
+        });
+    } else if (source.type === "chart") {
+      if (text?.trim())
+        inputs.push({
+          type: "text",
+          text,
+          name: props.name,
+          description: props.description,
+        });
+    } else {
+      const values = await inputsForShapes(editor, [source]);
+      for (const input of values) {
+        if (source.type === "file") input.text = props.text || props.result;
+        if (source.type === "ai-image") {
+          input.text = undefined;
+          input.description =
+            type === "instruction"
+              ? props.result || props.description
+              : props.description || props.result;
+        } else input.description = props.description;
+        inputs.push(input);
+      }
+    }
+  }
+  return inputs;
+}
+
 async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   signal.throwIfAborted();
   const shape = editor.getShape(id);
@@ -257,11 +366,12 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
     props.isLocked ||
     shape.type === "start" ||
     shape.type === "frame" ||
+    shape.type === "interactive-web" ||
     !(shape.type in COMPONENT_CONFIGS)
   )
     return;
   const startedAt = Date.now();
-  const fingerprint = generationFingerprint(editor, id);
+  let fingerprint = generationFingerprint(editor, id);
   function saveResult(updates: Partial<NodeData>) {
     if (!editor.getShape(id)) return;
     const unchanged = generationFingerprint(editor, id) === fingerprint;
@@ -281,10 +391,11 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       });
     });
   }
-  const inputs = await inputsForShapes(
-    editor,
-    connectedShapes(editor, id, "previous"),
-  );
+  const previous = getPreviousConnectedShapes(editor, id);
+  const inputs =
+    shape.type === "ai-draw"
+      ? []
+      : await inputsForNode(editor, shape.type, previous);
   signal.throwIfAborted();
   const prompt = props.text?.trim() || "";
   let updates: Partial<NodeData> = {};
@@ -292,11 +403,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
     const parts = inputs
       .map((input) => input.text || input.description)
       .filter(Boolean);
-    updates = {
-      result: parts.length
-        ? [...parts, prompt].filter(Boolean).join("\n\n")
-        : prompt,
-    };
+    if (!parts.length) return;
+    const text = parts.join("\n");
+    updates = { text, result: text };
   } else if (shape.type === "instruction") {
     if (!prompt && !inputs.length)
       throw new Error(t("workflow.writeInstructionsOrConnectMaterials"));
@@ -314,15 +423,16 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       description: value.description,
     };
   } else if (shape.type === "ai-image") {
-    if (props.isUploaded && props.src && !prompt) return;
-    if (!prompt && !inputs.length) return;
-    if (prompt) inputs.push({ type: "text", text: prompt });
-    if (props.src && prompt) inputs.push({ type: "image", src: props.src });
+    if (!prompt && !inputs.length) {
+      if (props.src) return;
+      throw new Error(t("workflow.connectOrUploadInput"));
+    }
+    if (prompt) inputs.unshift({ type: "text", text: prompt });
     const size = props.imageSize || "1:1";
     const sizes: Record<string, string> = {
-      "1:1": "1024x1024",
-      "3:2": "1536x1024",
-      "2:3": "1024x1536",
+      "1:1": "2048x2048",
+      "3:2": "2496x1664",
+      "2:3": "1664x2496",
       "4:3": "2304x1728",
       "3:4": "1728x2304",
       "16:9": "2560x1440",
@@ -340,19 +450,21 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       description: value.description,
     };
   } else if (shape.type === "speech") {
-    if (props.isUploaded && props.src) return;
-    if (prompt) inputs.push({ type: "text", text: prompt });
+    if (!inputs.length) {
+      if (props.src) return;
+      throw new Error(t("workflow.connectOrUploadInput"));
+    }
+    if (prompt) inputs.unshift({ type: "text", text: prompt });
     const value = extractAPIData(await audioGenerateAPI(inputs, signal));
     updates = {
       src: value.src,
       result: value.text,
       name: value.name,
+      description: value.description,
       isUploaded: false,
     };
   } else if (shape.type === "website") {
-    if (prompt) inputs.push({ type: "text", text: prompt });
-    if (!inputs.length)
-      throw new Error(t("workflow.describeAWebPageOrConnectPrecedingSteps"));
+    if (!inputs.length) throw new Error(t("workflow.connectWebsiteInput"));
     const value = extractAPIData(await websiteAPI(inputs, signal));
     updates = {
       htmlContent: value.text,
@@ -361,86 +473,70 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       description: value.description,
     };
   } else if (shape.type === "file") {
-    if (props.isUploaded && props.src) return;
-    if (prompt) inputs.push({ type: "text", text: prompt });
-    if (!inputs.length)
-      throw new Error(t("workflow.describeTheFileOrConnectPrecedingSteps"));
+    if (!inputs.length) {
+      if (props.src) return;
+      throw new Error(t("workflow.connectOrUploadInput"));
+    }
+    if (prompt) inputs.unshift({ type: "text", text: prompt });
     const value = extractAPIData(await documentGenerateAPI(inputs, signal));
     updates = {
       src: value.src,
       result: value.text,
       name: value.name,
+      description: value.description,
       fileName: value.name,
       fileExtension: value.name.split(".").pop(),
       isUploaded: false,
     };
   } else if (shape.type === "chart") {
-    const text = [...inputs.map((input) => input.text), prompt]
-      .filter(Boolean)
-      .join("\n\n");
+    const text = previous.length
+      ? inputs
+          .map((input) => input.text)
+          .filter(Boolean)
+          .join("\n")
+      : prompt;
     if (!text)
       throw new Error(t("workflow.describeAChartOrConnectPrecedingSteps"));
-    let data: unknown;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      /* Natural language is sent to the selected model. */
-    }
-    const valid =
-      data &&
-      typeof data === "object" &&
-      (props.chartType === "flowchart"
-        ? Array.isArray(data["nodes"]) && Array.isArray(data["edges"])
-        : typeof data["content"] === "string" &&
-          Array.isArray(data["children"]));
-    const chart = valid
-      ? data
-      : await generateChart({
-          type: props.chartType === "flowchart" ? "flowchart" : "mindmap",
-          inputs: [
-            ...inputs,
-            ...(prompt ? [{ type: "text" as const, text: prompt }] : []),
-          ],
-          signal,
-        });
+    const chart = await generateChart({
+      type: props.chartType === "flowchart" ? "flowchart" : "mindmap",
+      inputs: [{ type: "text", text }],
+      signal,
+    });
     updates = {
+      text,
       chartData: JSON.stringify(chart),
-      result: JSON.stringify(chart),
-      name:
-        "name" in Object(chart)
-          ? String(chart["name"] || t("common.chart"))
-          : t("common.chart"),
+      result: chart.name || "",
+      description: chart.description || "",
     };
   } else if (shape.type === "ai-draw") {
-    const bounds = editor.getViewportPageBounds();
-    const query =
-      props.query || inputs.map((input) => input.text || "").join("\n");
+    const bounds = editor.getShapePageBounds(shape)!;
+    const query = props.query || "";
     if (!query.trim()) throw new Error(t("workflow.enterDrawingInstructions"));
-    const ids = [...editor.getCurrentPageShapeIds()].filter(
-      (shapeId) => shapeId !== id,
-    );
+    const shapes = drawingShapes(editor, shape);
+    const ids = shapes.map((shape) => shape.id);
     const { blob } = ids.length
-      ? await editor.toImage(ids, { format: "png", background: true })
+      ? await editor.toImage(ids, {
+          format: "png",
+          background: false,
+          padding: 10,
+        })
       : { blob: null };
     const request = buildAgentRequest(
       query,
       bounds,
-      editor
-        .getCurrentPageShapes()
-        .filter((item) => item.id !== id)
-        .map((item) => {
-          const bounds = editor.getShapePageBounds(item);
-          const data = item.props as NodeData;
-          return {
-            id: item.id,
-            type: item.type,
-            x: item.x,
-            y: item.y,
-            w: bounds?.w,
-            h: bounds?.h,
-            text: data.text || data.result || "",
-          };
-        }),
+      shapes.map((item) => {
+        const bounds = editor.getShapePageBounds(item);
+        const data = item.props as NodeData;
+        return {
+          id: item.id,
+          type: item.type,
+          x: item.x,
+          y: item.y,
+          w: bounds?.w,
+          h: bounds?.h,
+          text: data.text || plainText(item.props.richText) || "",
+        };
+      }),
       blob ? await blobAsDataURL(blob) : undefined,
     );
     const events = await callAgentSSE(
@@ -456,7 +552,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       signal,
     );
     signal.throwIfAborted();
+    const contextUnchanged = generationFingerprint(editor, id) === fingerprint;
     new AgentEventExecutor(editor).executeEvents(events);
+    if (contextUnchanged) fingerprint = generationFingerprint(editor, id);
     saveResult({ isSubmitting: false, isCompleted: true } as Partial<NodeData>);
     return;
   }
@@ -489,7 +587,9 @@ export async function runWorkflow(
 ): Promise<void> {
   const existing = executions.get(editor)?.get(root);
   if (existing) {
-    existing.abort();
+    existing.phase = "cancelling";
+    existing.controller.abort();
+    changed();
     return;
   }
   await runPlan(editor, [root]);
@@ -527,18 +627,26 @@ export async function runStaleWorkflow(editor: Editor): Promise<void> {
 async function runPlan(editor: Editor, roots: string[]) {
   const edges: GraphEdge[] = [];
   for (const shape of editor.getCurrentPageShapes()) {
-    for (const next of connectedShapes(editor, shape.id, "next"))
+    if (
+      (shape.type === "start" && !roots.includes(shape.id)) ||
+      ["interactive-web", "ai-draw"].includes(shape.type)
+    )
+      continue;
+    for (const next of connectedShapes(editor, shape.id, "next")) {
+      if (["interactive-web", "ai-draw"].includes(next.type)) continue;
       edges.push({ from: shape.id, to: next.id });
+    }
   }
   const levels = planWorkflow(roots, edges);
   const controller = new AbortController();
-  const running = executions.get(editor) || new Map<string, AbortController>();
+  const run: WorkflowRun = { phase: "running", controller };
+  const running = executions.get(editor) || new Map<string, WorkflowRun>();
   executions.set(editor, running);
   const ids = levels.flat();
   if (ids.some((id) => running.has(id)))
     throw new Error(t("workflow.aStepInThisWorkflowIsAlreadyRunning"));
   if (!running.size) states.set(editor, new Map());
-  ids.forEach((id) => running.set(id, controller));
+  ids.forEach((id) => running.set(id, run));
   for (const id of ids)
     updateExecution(editor, id, {
       status: "queued",
@@ -572,6 +680,7 @@ async function runPlan(editor: Editor, roots: string[]) {
           } catch (error) {
             const aborted = controller.signal.aborted;
             if (!aborted) failureCause = error;
+            run.phase = "cancelling";
             updateExecution(editor, id, {
               status: aborted ? "cancelled" : "error",
               modelCapability:
@@ -599,7 +708,7 @@ async function runPlan(editor: Editor, roots: string[]) {
     }
   } finally {
     ids.forEach((id) => {
-      if (running.get(id) === controller) running.delete(id);
+      if (running.get(id) === run) running.delete(id);
       const state = nodeExecution(editor, id);
       if (state.status === "queued" || state.status === "running")
         updateExecution(editor, id, {

@@ -1,4 +1,10 @@
-import { t, useLocale, getLocale } from "@/i18n";
+import {
+  getLocale,
+  t,
+  useLocale,
+  useTranslations,
+  type MessageKey,
+} from "@/i18n";
 import {
   createContext,
   useContext,
@@ -6,8 +12,9 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type ReactElement,
 } from "react";
-import { Circle, Loader2, Mic, Pause, Play, Square } from "lucide-react";
+import { Circle, Loader2, Mic, Pause, Play, Square, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/button";
 import {
@@ -20,6 +27,7 @@ import {
 import { Switch } from "@/ui/switch";
 import { Label } from "@/ui/label";
 import { Input } from "@/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/ui/native-select";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -30,13 +38,29 @@ import {
   AlertDialogAction,
 } from "@/ui/alert-dialog";
 import { useToast } from "@/Components/common/ToastProvider";
-import { api, uploadAsset, downloadBlob, type Recording } from "@/api/client";
+import {
+  api,
+  APIError,
+  uploadAsset,
+  downloadBlob,
+  type Project,
+  type Recording,
+} from "@/api/client";
+import { isSharedCanvas } from "@/lib/canvas-access";
 
-type RecorderStatus = "idle" | "starting" | "recording" | "paused" | "saving";
+import {
+  transitionCapture,
+  type CaptureState,
+  type CaptureEvent,
+} from "./capture-state";
+
+type RecorderStatus = CaptureState["status"];
+type StartRecordingResult = "started" | "cancelled" | MessageKey;
+
 interface RecorderState {
   status: RecorderStatus;
   elapsed: number;
-  start: (microphone: boolean) => Promise<void>;
+  start: (microphone: boolean) => Promise<StartRecordingResult>;
   stop: () => void;
   pause: () => void;
   resume: () => void;
@@ -46,23 +70,43 @@ interface RecorderState {
 const Context = createContext<RecorderState | null>(null);
 export function RecorderProvider({ children }: { children: ReactNode }) {
   useLocale();
-  const [status, setStatus] = useState<RecorderStatus>("idle");
+  const [capture, setCapture] = useState<CaptureState>({ status: "idle" });
+  const captureRef = useRef(capture);
+  function send(event: CaptureEvent) {
+    const next = transitionCapture(captureRef.current, event);
+    captureRef.current = next;
+    setCapture(next);
+  }
+  const status = capture.status;
+  const pending =
+    capture.status === "pending" || capture.status === "saving"
+      ? capture.blob
+      : null;
+  const saveError = capture.status === "pending" ? capture.error : "";
   const [elapsed, setElapsed] = useState(0);
-  const [pending, setPending] = useState<Blob | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [preview, setPreview] = useState("");
   const [discarding, setDiscarding] = useState(false);
   const [name, setName] = useState("");
-  const [saveError, setSaveError] = useState("");
+  const [boardId, setBoardId] = useState("");
+  const [boards, setBoards] = useState<
+    Pick<Project, "id" | "name">[] | "loading" | "unavailable"
+  >("loading");
   const recorder = useRef<MediaRecorder | null>(null);
   const streams = useRef<MediaStream[]>([]);
   const audioContext = useRef<AudioContext | null>(null);
   const duration = useRef(0);
   const recordedMs = useRef(0);
   const startedAt = useRef<number | null>(null);
-  const uploaded = useRef<Awaited<ReturnType<typeof uploadAsset>> | null>(null);
   const navigate = useNavigate();
+  const shared = isSharedCanvas();
   const { showToast } = useToast();
+  const boardUnavailable =
+    !!boardId &&
+    Array.isArray(boards) &&
+    !boards.some(({ id }) => id === boardId);
+  const canSave =
+    !shared && status === "pending" && !!name.trim() && !boardUnavailable;
   useEffect(() => {
     if (status !== "recording") return;
     const interval = setInterval(() => {
@@ -87,7 +131,30 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     return () => URL.revokeObjectURL(url);
   }, [pending]);
   useEffect(() => {
-    if (!pending && status !== "recording" && status !== "paused") return;
+    if (!pending || !reviewing || shared) return;
+    const controller = new AbortController();
+    void api<Pick<Project, "id" | "name">[]>("/api/projects", {
+      signal: controller.signal,
+    })
+      .then((projects) => {
+        if (!controller.signal.aborted) setBoards(projects);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setBoards((current) =>
+            Array.isArray(current) ? current : "unavailable",
+          );
+      });
+    return () => controller.abort();
+  }, [pending, reviewing, shared]);
+  useEffect(() => {
+    if (
+      !pending &&
+      status !== "recording" &&
+      status !== "paused" &&
+      status !== "stopping"
+    )
+      return;
     const guard = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
@@ -117,33 +184,46 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-  async function start(microphone: boolean) {
-    if (status !== "idle" || pending) return;
+  async function start(microphone: boolean): Promise<StartRecordingResult> {
+    if (captureRef.current.status !== "idle") return "cancelled";
     if (
       !navigator.mediaDevices?.getDisplayMedia ||
       typeof MediaRecorder === "undefined"
     )
-      throw new Error(
-        t("recordings.recorder.thisBrowserDoesntSupportScreenRecording"),
-      );
-    setStatus("starting");
+      return "recordings.recorder.thisBrowserDoesntSupportScreenRecording";
+    send({ type: "start" });
+    let choosingDisplay = true;
+    let failureMessage: MessageKey = "recordings.recorder.tryAnotherSource";
     try {
-      const display = await navigator.mediaDevices.getDisplayMedia({
+      const options: DisplayMediaStreamOptions & {
+        selfBrowserSurface: "include";
+      } = {
         video: true,
         audio: true,
-      });
+        selfBrowserSurface: "include",
+      };
+      const display = await navigator.mediaDevices.getDisplayMedia(options);
+      choosingDisplay = false;
       streams.current.push(display);
+      const displayTrack = display.getVideoTracks()[0];
       let microphoneStream: MediaStream | undefined;
       if (microphone) {
+        failureMessage = "recordings.recorder.microphoneUnavailable";
         microphoneStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
         streams.current.push(microphoneStream);
       }
+      failureMessage = "recordings.recorder.tryAnotherSource";
+      if (displayTrack.readyState === "ended") {
+        release();
+        send({ type: "start-failed" });
+        return "cancelled";
+      }
       const audioSources = [display, microphoneStream].filter(
         (stream) => stream?.getAudioTracks().length,
       ) as MediaStream[];
-      const output = new MediaStream(display.getVideoTracks());
+      const output = new MediaStream([displayTrack]);
       if (audioSources.length) {
         const context = new AudioContext();
         const destination = context.createMediaStreamDestination();
@@ -180,17 +260,16 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         const blob = new Blob(chunks, { type: media.mimeType || "video/webm" });
         release();
         recorder.current = null;
-        setStatus("idle");
+        send({ type: "stopped", blob });
         if (blob.size) {
-          setPending(blob);
-          uploaded.current = null;
+          setBoardId("");
+          setBoards("loading");
           setReviewing(true);
           setName(
             t("recordings.recorder.defaultName", {
               arg0: new Date().toLocaleString(getLocale(), { hour12: false }),
             }),
           );
-          setSaveError("");
         }
       };
       media.onerror = () => {
@@ -201,7 +280,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         });
         if (media.state !== "inactive") media.stop();
       };
-      display.getVideoTracks()[0].onended = () => {
+      displayTrack.onended = () => {
         if (media.state !== "inactive") media.stop();
       };
       recorder.current = media;
@@ -210,48 +289,56 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
       startedAt.current = performance.now();
       setElapsed(0);
       media.start(1000);
-      setStatus("recording");
+      send({ type: "started" });
+      return "started";
     } catch (error) {
       release();
-      setStatus("idle");
-      throw error;
+      recorder.current = null;
+      startedAt.current = null;
+      send({ type: "start-failed" });
+      if (choosingDisplay && error instanceof DOMException) {
+        if (error.name === "NotAllowedError") return "cancelled";
+        if (error.name === "NotReadableError" || error.name === "SecurityError")
+          return "recordings.recorder.checkScreenRecordingPermissions";
+      }
+      return failureMessage;
     }
   }
   async function save(open = true) {
-    if (!pending || !name.trim()) return;
-    setStatus("saving");
-    setSaveError("");
+    const current = captureRef.current;
+    if (current.status !== "pending" || !canSave) return;
+    send({ type: "save" });
     try {
-      const extension = pending.type.includes("mp4") ? "mp4" : "webm";
+      const extension = current.blob.type.includes("mp4") ? "mp4" : "webm";
       const asset =
-        uploaded.current ||
+        current.asset ||
         (await uploadAsset(
-          pending,
+          current.blob,
           `${name.replace(/[\\/:]/g, "-")}.${extension}`,
         ));
-      uploaded.current = asset;
+      send({ type: "uploaded", asset });
       const saved = await api<Recording>("/api/recordings", {
         method: "POST",
         body: JSON.stringify({
           name: name.trim(),
           asset_id: asset.id,
+          project_id: boardId || undefined,
           duration: duration.current,
         }),
       });
-      setPending(null);
+      send({ type: "saved" });
       setReviewing(false);
-      uploaded.current = null;
       showToast({ title: t("recordings.recorder.recordingSaved") });
       window.dispatchEvent(new Event("huayu:recordings-changed"));
       if (open) navigate(`/recordings/${saved.id}/analysis`);
     } catch (error) {
-      setSaveError(
-        error instanceof Error
-          ? error.message
-          : t("recordings.recorder.cannotSave"),
-      );
-    } finally {
-      setStatus("idle");
+      send({
+        type: "save-failed",
+        error:
+          error instanceof APIError
+            ? error.message
+            : t("recordings.recorder.cannotSave"),
+      });
     }
   }
   const value: RecorderState = {
@@ -261,70 +348,89 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     review: () => setReviewing(true),
     start,
     stop: () => {
-      if (recorder.current?.state !== "inactive") recorder.current?.stop();
+      if (
+        captureRef.current.status !== "recording" &&
+        captureRef.current.status !== "paused"
+      )
+        return;
+      send({ type: "stop" });
+      recorder.current?.stop();
     },
     pause: () => {
       if (recorder.current?.state === "recording") {
         recorder.current.pause();
         pauseClock();
-        setStatus("paused");
+        send({ type: "pause" });
       }
     },
     resume: () => {
       if (recorder.current?.state === "paused") {
         recorder.current.resume();
         startedAt.current = performance.now();
-        setStatus("recording");
+        send({ type: "resume" });
       }
     },
   };
+  const isPaused = status === "paused";
+  const pauseActionLabel = t(
+    isPaused
+      ? "recordings.recorder.resumeRecording"
+      : "recordings.recorder.pauseRecording",
+  );
+  const finishActionLabel = t("recordings.recorder.finishCapture");
+  const elapsedLabel = formatDuration(elapsed);
   return (
     <Context value={value}>
       {children}
-      {(status === "recording" || status === "paused") && (
-        <div
-          role="status"
-          className="fixed right-4 bottom-4 z-[1500] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border bg-popover p-3 shadow-lg"
-        >
-          <span
-            className={`size-2 rounded-full ${status === "paused" ? "bg-muted-foreground" : "animate-pulse bg-destructive"}`}
-          />
-          <span className="min-w-20 text-sm tabular-nums">
-            {status === "paused"
-              ? t("recordings.recorder.paused")
-              : t("recordings.recorder.recordingPrefix")}
-            {formatDuration(elapsed)}
+      {(status === "recording" || isPaused) && (
+        <div className="recording-toolbar fixed right-4 bottom-5 z-[1500] flex max-w-[calc(100vw-2rem)] items-center gap-1 rounded-full border bg-popover/95 p-1 text-popover-foreground shadow-sm backdrop-blur-md">
+          <span role="status" className="sr-only">
+            {t(
+              isPaused
+                ? "recordings.recorder.paused"
+                : "recordings.recorder.recording",
+            )}
+          </span>
+          <span role="timer" className="sr-only">
+            {elapsedLabel}
           </span>
           <Button
             variant="ghost"
-            size="icon-sm"
-            aria-label={
-              status === "paused"
-                ? t("recordings.recorder.resumeRecording")
-                : t("recordings.recorder.pauseRecording")
-            }
-            onClick={status === "paused" ? value.resume : value.pause}
+            size="icon"
+            className="rounded-full"
+            aria-label={pauseActionLabel}
+            title={pauseActionLabel}
+            onClick={isPaused ? value.resume : value.pause}
           >
-            {status === "paused" ? <Play /> : <Pause />}
+            {isPaused ? (
+              <Play aria-hidden="true" />
+            ) : (
+              <Pause aria-hidden="true" />
+            )}
           </Button>
           <Button
-            variant="destructive"
-            size="icon-sm"
-            aria-label={t("recordings.recorder.finishCapture")}
+            variant="ghost"
+            className="rounded-full bg-red-700 px-3 text-white hover:bg-red-800 hover:text-white dark:hover:bg-red-800"
+            aria-label={finishActionLabel}
+            title={finishActionLabel}
             onClick={value.stop}
           >
-            <Square />
+            <Square aria-hidden="true" className="size-3 fill-current" />
+            <span aria-hidden="true" className="tabular-nums">
+              {elapsedLabel}
+            </span>
           </Button>
         </div>
       )}
       {pending && !reviewing && (
         <div
-          className="fixed right-4 bottom-4 z-[1500] flex items-center gap-3 rounded-xl border bg-popover p-3 shadow-lg"
+          className="fixed right-4 bottom-4 z-[1500] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border bg-popover p-3 shadow-lg"
           role="status"
         >
-          <span className="text-sm">
+          <span className="min-w-0 text-sm tabular-nums">
             {t("recordings.recorder.unsavedRecording")}
-            {formatDuration(elapsed)}
+            {" · "}
+            {elapsedLabel}
           </span>
           <Button size="sm" onClick={() => setReviewing(true)}>
             {t("recordings.recorder.continueSaving")}
@@ -357,6 +463,44 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
             maxLength={120}
             onChange={(event) => setName(event.target.value)}
           />
+          {!shared && (
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="recording-board" className="shrink-0">
+                {t("recordings.recorder.linkBoard")}
+              </Label>
+              <NativeSelect
+                id="recording-board"
+                className="w-60 min-w-0 max-w-[65%]"
+                value={boardId}
+                disabled={status === "saving"}
+                onChange={(event) => setBoardId(event.target.value)}
+              >
+                <NativeSelectOption value="">
+                  {t("recordings.recorder.noLinkedBoard")}
+                </NativeSelectOption>
+                {Array.isArray(boards) ? (
+                  boards.map(({ id, name }) => (
+                    <NativeSelectOption key={id} value={id}>
+                      {name}
+                    </NativeSelectOption>
+                  ))
+                ) : (
+                  <NativeSelectOption disabled>
+                    {t(
+                      boards === "loading"
+                        ? "common.loading"
+                        : "projects.cannotLoadProjects",
+                    )}
+                  </NativeSelectOption>
+                )}
+                {boardUnavailable && (
+                  <NativeSelectOption value={boardId} disabled>
+                    {t("recordings.recorder.boardUnavailable")}
+                  </NativeSelectOption>
+                )}
+              </NativeSelect>
+            </div>
+          )}
           {saveError && (
             <p role="alert" className="text-sm text-destructive">
               {saveError}
@@ -383,20 +527,25 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
             >
               {t("recordings.recorder.downloadToComputer")}
             </Button>
-            <Button
-              variant="ghost"
-              disabled={status === "saving" || !name.trim()}
-              onClick={() => save(false)}
-            >
-              {t("recordings.recorder.saveOnly")}
-            </Button>
-            <Button
-              disabled={status === "saving" || !name.trim()}
-              onClick={() => save()}
-            >
-              {status === "saving" && <Loader2 className="animate-spin" />}
-              {t("recordings.recorder.saveAndReview")}
-            </Button>
+            {shared ? (
+              <Button onClick={() => navigate("/recordings")}>
+                {t("recordings.recorder.saveFromRecordings")}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  disabled={!canSave}
+                  onClick={() => save(false)}
+                >
+                  {t("recordings.recorder.saveOnly")}
+                </Button>
+                <Button disabled={!canSave} onClick={() => save()}>
+                  {status === "saving" && <Loader2 className="animate-spin" />}
+                  {t("recordings.recorder.saveAndReview")}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -415,9 +564,8 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                setPending(null);
+                send({ type: "discard" });
                 setReviewing(false);
-                uploaded.current = null;
                 setElapsed(0);
                 setDiscarding(false);
               }}
@@ -436,59 +584,80 @@ export function useRecorder() {
     throw new Error(t("recordings.recorder.theRecordingServiceIsntReady"));
   return value;
 }
-export function RecorderButton({ prominent = false }: { prominent?: boolean }) {
-  useLocale();
+export function RecorderButton({
+  prominent = false,
+  toolbar = false,
+  renderTrigger,
+}: {
+  prominent?: boolean;
+  toolbar?: boolean;
+  renderTrigger?: (trigger: ReactElement, label: string) => ReactNode;
+}) {
+  const { t } = useTranslations();
   const recorder = useRecorder();
   const [open, setOpen] = useState(false);
   const [microphone, setMicrophone] = useState(true);
   const [starting, setStarting] = useState(false);
   const { showToast } = useToast();
-  return (
-    <>
-      <Button
-        variant={prominent ? "default" : "ghost"}
-        size="sm"
-        aria-label={
-          recorder.hasPending
-            ? t("recordings.recorder.continueSavingRecording")
-            : recorder.status === "recording" || recorder.status === "paused"
-              ? t("recordings.recorder.finishRecording")
-              : t("recordings.recorder.recordScreen")
-        }
-        disabled={
-          recorder.status === "saving" ||
-          recorder.status === "starting" ||
-          starting
-        }
-        onClick={() =>
-          recorder.hasPending
-            ? recorder.review()
-            : recorder.status === "recording" || recorder.status === "paused"
-              ? recorder.stop()
-              : setOpen(true)
+  const active =
+    recorder.status === "recording" || recorder.status === "paused";
+  const recordingLabel = recorder.hasPending
+    ? t("recordings.recorder.continueSavingRecording")
+    : active
+      ? t("recordings.recorder.finishRecording")
+      : prominent
+        ? t("recordings.recorder.startRecording")
+        : t("recordings.recorder.recordScreen");
+  const RecordIcon = active ? Square : toolbar ? Video : Circle;
+  const trigger = (
+    <Button
+      variant={prominent ? "default" : "ghost"}
+      size={prominent ? "default" : "sm"}
+      className={toolbar ? "board-toolbar-button" : undefined}
+      aria-label={recordingLabel}
+      disabled={
+        recorder.status === "saving" ||
+        recorder.status === "stopping" ||
+        recorder.status === "starting" ||
+        starting
+      }
+      onClick={() =>
+        recorder.hasPending
+          ? recorder.review()
+          : active
+            ? recorder.stop()
+            : setOpen(true)
+      }
+    >
+      {starting ? (
+        <Loader2 aria-hidden="true" className="animate-spin" />
+      ) : (
+        <RecordIcon aria-hidden="true" />
+      )}
+      <span
+        className={
+          toolbar
+            ? "board-toolbar-utility-label"
+            : prominent
+              ? ""
+              : "hidden xl:inline"
         }
       >
-        {starting ? (
-          <Loader2 className="animate-spin" />
-        ) : (
-          <Circle
-            className={
-              recorder.status === "recording"
-                ? "fill-destructive text-destructive"
-                : ""
-            }
-          />
-        )}
-        <span className={prominent ? "" : "hidden xl:inline"}>
-          {recorder.status === "recording" || recorder.status === "paused"
-            ? t("recordings.recorder.finishRecording")
-            : recorder.hasPending
-              ? t("recordings.recorder.continueSaving")
-              : prominent
-                ? t("recordings.recorder.startRecording")
+        {active
+          ? recordingLabel
+          : recorder.hasPending
+            ? t("recordings.recorder.continueSaving")
+            : prominent
+              ? t("recordings.recorder.startRecording")
+              : toolbar
+                ? t("canvas.recordScreen")
                 : t("navigation.recordings")}
-        </span>
-      </Button>
+      </span>
+    </Button>
+  );
+  return (
+    <>
+      {renderTrigger ? renderTrigger(trigger, recordingLabel) : trigger}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogTitle>{t("recordings.recorder.recordScreen")}</DialogTitle>
@@ -518,19 +687,16 @@ export function RecorderButton({ prominent = false }: { prominent?: boolean }) {
               onClick={async () => {
                 setStarting(true);
                 try {
-                  await recorder.start(microphone);
-                  setOpen(false);
-                } catch (error) {
-                  showToast({
-                    title: t("recordings.recorder.cannotStartRecording"),
-                    description:
-                      error instanceof Error
-                        ? error.message
-                        : t(
-                            "recordings.recorder.checkScreenRecordingPermissions",
-                          ),
-                    variant: "destructive",
-                  });
+                  const result = await recorder.start(microphone);
+                  if (result === "started") {
+                    setOpen(false);
+                  } else if (result !== "cancelled") {
+                    showToast({
+                      title: t("recordings.recorder.cannotStartRecording"),
+                      description: t(result),
+                      variant: "destructive",
+                    });
+                  }
                 } finally {
                   setStarting(false);
                 }

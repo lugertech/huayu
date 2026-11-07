@@ -1,4 +1,9 @@
-import { useSyncExternalStore } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useSyncExternalStore,
+} from "react";
 import { messages, type MessageKey } from "./messages";
 import {
   LANGUAGE_STORAGE_KEY,
@@ -13,6 +18,7 @@ export * from "./locale";
 export type { MessageKey } from "./messages";
 
 const listeners = new Set<() => void>();
+export const LocaleContext = createContext<Locale | undefined>(undefined);
 let preference: LanguagePreference | undefined;
 function browserLanguages() {
   return typeof navigator === "undefined"
@@ -40,6 +46,9 @@ function changed() {
   if (typeof document !== "undefined") {
     document.documentElement.lang = getLocale();
     document.title = getLocale() === "en" ? "Huayu" : "Huayu 画语";
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute("content", t("app.description"));
   }
   listeners.forEach((listener) => listener());
 }
@@ -62,6 +71,15 @@ function subscribe(listener: () => void) {
 export function useLocale() {
   return useSyncExternalStore(subscribe, getLocale, () => "zh-CN" as Locale);
 }
+export function useTranslations() {
+  const appLocale = useLocale();
+  const locale = useContext(LocaleContext) ?? appLocale;
+  const localized = useCallback(
+    (key: MessageKey, values?: Values) => t(key, values, locale),
+    [locale],
+  );
+  return { locale, t: localized };
+}
 export function useLanguagePreference() {
   return useSyncExternalStore(
     subscribe,
@@ -81,8 +99,9 @@ export function formatDate(
 export function formatNumber(
   value: number,
   options?: Intl.NumberFormatOptions,
+  locale = getLocale(),
 ) {
-  return new Intl.NumberFormat(getLocale(), options).format(value);
+  return new Intl.NumberFormat(locale, options).format(value);
 }
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {

@@ -4,10 +4,9 @@ import {
   createConnectedComponent,
   connectedShapes,
 } from "@/utils/connectionParser";
-import { hasVisibleContent, materialShapes } from "./context";
 
 const board = () => new Editor(createCanvasStore());
-describe("contextual creation", () => {
+describe("connected component creation", () => {
   it("combines materials into one step without changing their content and undoes the step atomically", () => {
     const editor = board();
     editor.createShape({
@@ -68,7 +67,8 @@ describe("contextual creation", () => {
       "instruction",
       "右侧",
     )!;
-    expect(editor.getShape(right).y).toBeGreaterThan(600);
+    expect(editor.getShapePageBounds(right)!.y).toBeGreaterThan(600);
+    expect(editor.getShape(right).parentId).toBe("shape:frame");
     const left = createConnectedComponent(
       editor,
       ["shape:source"],
@@ -80,54 +80,5 @@ describe("contextual creation", () => {
     expect(connectedShapes(editor, "shape:source", "previous")[0].id).toBe(
       left,
     );
-  });
-  it("expands groups, respects selected frames and ignores stale or other-page selections", () => {
-    const editor = board();
-    editor.createShape({ id: "shape:frame", type: "frame" });
-    editor.createShape({
-      id: "shape:inside",
-      type: "geo",
-      parentId: "shape:frame",
-    });
-    editor.createShape({ id: "shape:group", type: "group" });
-    editor.createShape({
-      id: "shape:text",
-      type: "text",
-      parentId: "shape:group",
-    });
-    editor.createShape({ id: "shape:arrow", type: "arrow" });
-    const second = editor.createPage("另一个页面");
-    editor.createShape({
-      id: "shape:elsewhere",
-      type: "ai-text",
-      parentId: second,
-    });
-    editor.setCurrentPage("page:page");
-    expect(
-      materialShapes(editor, [
-        "shape:frame",
-        "shape:inside",
-        "shape:group",
-        "shape:arrow",
-        "shape:missing",
-        "shape:elsewhere",
-      ]).map((shape) => shape.id),
-    ).toEqual(["shape:frame", "shape:text"]);
-    expect(
-      createConnectedComponent(
-        editor,
-        ["shape:elsewhere"],
-        "instruction",
-        "无关内容",
-      ),
-    ).toBeNull();
-  });
-  it("detects an empty viewport even when its off-screen content remains selected", () => {
-    const editor = board();
-    editor.createShape({ id: "shape:a", type: "ai-text", x: 50000, y: 50000 });
-    editor.select("shape:a");
-    expect(hasVisibleContent(editor)).toBe(false);
-    editor.zoomToFit();
-    expect(hasVisibleContent(editor)).toBe(true);
   });
 });

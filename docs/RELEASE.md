@@ -20,6 +20,7 @@
 
 ```sh
 vp install --frozen-lockfile
+vp run check:security
 vp run check:release
 vp run licenses:check
 vp run test:release
@@ -33,11 +34,15 @@ vp pm audit --prod --audit-level high
 vp run package:source
 ```
 
-`check:release` 检查来源文件、必要文档、版本、内部绝对路径、明显密钥及本地文档链接；它是快速检查，不代替完整密钥扫描和授权审阅。`package:source` 只收集 Git 未忽略的受控源码目录，输出到 `var/releases/`，不打包数据、缓存或浏览器设置。源码包附文件清单和 SHA-256；生成源码包不表示它已经获准公开。
+`check:security` 独立扫描当前工作区的明显密钥、本机绝对路径和本地模型测试标记；`check:release` 检查必要文件、版本与本地文档链接。检查包含未跟踪的新文件，跳过工作区中已删除的文件；解压后没有 Git 元数据时也可执行。这些快速检查不代替完整安全审计和来源授权审阅。
+
+`package:source` 通过 `git archive` 归档已提交版本，默认使用 `HEAD`，可通过 `vp run package:source <tag-or-commit>` 指定 tag 或提交。版本号、文件内容与 `.gitattributes` 排除规则均来自选定提交；未提交和未跟踪的改动不进入归档。压缩包与 SHA-256 校验文件输出到 `var/releases/`，不再生成自定义逐文件清单。重新打包需要 Git 检出目录。
+
+正式发布时，先在目标提交的干净检出目录完成安全检查、发布检查和构建测试，再执行归档。打包命令不触发检查，也不自动发布。
 
 CI 配置会在三个桌面平台执行编译、测试、Rust 格式与 lint、前端及官网构建，并单独检查生产依赖高危通告。工作流尚未在远端运行时，应明确记为“已配置，待运行”。
 
-本地已通过前端 120 项、Rust 集成 7 项和发布工具 6 项测试；生产依赖审计为零条已知通告。Excalidraw 的部分旧 Radix 间接依赖仍将 React peer 范围声明到 18，当前安装为 React 19；本地白板和相关菜单已检查，未用忽略配置隐藏该提示，目标平台 CI 与真实浏览器回归仍需保留。此结果不等于完整安全审计或所有模型兼容性证明。
+初始发布检查通过前端 120 项、Rust 集成 7 项和发布工具 6 项测试；当时生产依赖审计为零条已知通告。Excalidraw 的 Radix Tabs 和 Popover 已分别升级至兼容 React 19 的 1.2.1 和 1.3.1，`pnpm peers check` 不再报告版本范围问题。原生标签、弹层及键盘回归结果见[本地验证记录](./VERIFICATION.md)。后续更新仍需保留目标平台 CI 与真实浏览器回归；此结果不等于完整安全审计或所有模型兼容性证明。
 
 ## 手工验收路径
 

@@ -34,7 +34,7 @@ Check FFmpeg and ffprobe on PATH and the 512 MB file limit. Inspect the error an
 
 ## Work was not saved after closing the browser
 
-Distinguish the top save status from a browser-only draft. A draft is not a committed project edit. Restore the local service and wait for submission; do not clear site data. Save or download unsaved recordings before refreshing, because in-memory recording data cannot be recovered afterward.
+The canvas saves in the background. When a warning appears at the bottom right, edits may still be browser-only drafts rather than committed project changes. Restore the local service and wait for submission; do not clear site data. Save or download unsaved recordings before refreshing, because in-memory recording data cannot be recovered afterward.
 
 ## A home-page thumbnail is outdated
 
@@ -44,7 +44,7 @@ Open the canvas and wait for resources and saving. The preview checks document r
 
 Confirm that both people use the same Huayu service. Links sent to another computer cannot use `127.0.0.1` or `localhost`. Use the host's actual IP as described in [Local-network collaboration](./DEPLOYMENT.md#local-network-collaboration), and check the port and firewall. If the link is disabled or invalid, ask the person who shared it to re-enable sharing and send the new link.
 
-For **Waiting to reconnect**, restore access and wait for **Saved** without clearing browser data. A reverse proxy must support WebSocket upgrades on `/api/projects/*/events`. Concurrent edits to one card keep the last saved content rather than merging characters; work on separate cards when possible. See [Multiplayer collaboration](./USER_GUIDE.md#multiplayer-collaboration).
+For a connection warning at the bottom right, restore access, use **Retry** if needed and wait for the warning to clear without clearing browser data. A reverse proxy must support WebSocket upgrades on `/api/projects/*/events`. Concurrent edits to one card keep the last saved content rather than merging characters; work on separate cards when possible. See [Multiplayer collaboration](./USER_GUIDE.md#multiplayer-collaboration).
 
 ## Web preview differs from a standalone browser
 

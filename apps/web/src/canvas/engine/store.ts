@@ -35,9 +35,8 @@ export class CanvasStore {
   private revision = 0;
   private past: HistoryFrame[] = [];
   private future: HistoryFrame[] = [];
-  private replaying = false;
-  private group = false;
-  private groupRecorded = false;
+  private replay: "idle" | "undo" | "redo" = "idle";
+  private historyGroup: "none" | "open" | "recorded" = "none";
   private lastHistoryAt = 0;
   private schemaValue: unknown = SCHEMA;
   session: any;
@@ -131,16 +130,16 @@ export class CanvasStore {
           Object.keys(changes.updated).length ||
           Object.keys(changes.removed).length
         ) {
-          if (source === "user" && !this.replaying) {
+          if (source === "user" && this.replay === "idle") {
             const now = Date.now();
             if (
               !this.past.length ||
-              (this.group && !this.groupRecorded) ||
-              (!this.group && now - this.lastHistoryAt > 350)
+              this.historyGroup === "open" ||
+              (this.historyGroup === "none" && now - this.lastHistoryAt > 350)
             ) {
               this.past.push(new Map());
               if (this.past.length > 100) this.past.shift();
-              this.groupRecorded = true;
+              if (this.historyGroup !== "none") this.historyGroup = "recorded";
             }
             const frame = this.past[this.past.length - 1];
             const changed = new Set([
@@ -200,15 +199,13 @@ export class CanvasStore {
     }, source);
   }
   beginHistoryGroup() {
-    this.group = true;
-    this.groupRecorded = false;
+    this.historyGroup = "open";
   }
   historyBoundary() {
-    if (!this.depth && !this.group) this.lastHistoryAt = 0;
+    if (!this.depth && this.historyGroup === "none") this.lastHistoryAt = 0;
   }
   endHistoryGroup() {
-    this.group = false;
-    this.groupRecorded = false;
+    this.historyGroup = "none";
     this.lastHistoryAt = 0;
   }
   get canUndo() {
@@ -222,7 +219,7 @@ export class CanvasStore {
     const to = direction === "undo" ? this.future : this.past;
     const frame = from.pop();
     if (!frame) return;
-    this.replaying = true;
+    this.replay = direction;
     try {
       this.batch(() => {
         for (const [id, change] of frame) {
@@ -237,7 +234,7 @@ export class CanvasStore {
       });
       to.push(frame);
     } finally {
-      this.replaying = false;
+      this.replay = "idle";
       this.lastHistoryAt = 0;
     }
   }

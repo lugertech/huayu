@@ -14,8 +14,7 @@ import {
 import Viewer from "viewerjs";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { t, useLocale } from "@/i18n";
-import { at } from "./messages";
+import { useAssetTranslations } from "./messages";
 import { assetUrl, ASSET_DRAG_TYPE, assetMasonryColumns } from "./assets";
 import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/backend";
@@ -24,7 +23,9 @@ import { AssetFolderFilter } from "./AssetFolderFilter";
 import {
   Check,
   ChevronRight,
+  Eye,
   FileText,
+  FolderInput,
   FolderOpen,
   ImageOff,
   Images,
@@ -34,12 +35,16 @@ import {
   Upload,
   FolderPlus,
   MoreHorizontal,
+  Pencil,
+  SquarePlus,
   Trash2,
   Undo2,
   Shapes,
   ArrowDownUp,
   Download,
   X,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import {
   ASSET_PAGE_SIZE_MAX,
@@ -58,6 +63,7 @@ import { useToast } from "@/Components/common/ToastProvider";
 import { cn } from "@/lib/utils";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -77,10 +83,12 @@ const DRAG_ASSET_ID_MIME = ASSET_DRAG_TYPE;
 
 interface AssetBrowserProps {
   picker?: boolean;
-  onInsert: (asset: AssetItem) => void | Promise<void>;
+  onInsert?: (asset: AssetItem) => void | Promise<void>;
   onClose?: () => void;
   onShapeLibrary?: () => void;
   navigation?: ReactNode;
+  selectionOnly?: boolean;
+  insertLabel?: string;
 }
 
 interface FlatGroupOption {
@@ -134,6 +142,7 @@ interface DragPreviewState {
   cardWidth: number;
   cardHeight: number;
   imageHeight: number;
+  listRow: boolean;
 }
 
 function mergeAssetPages(
@@ -150,7 +159,7 @@ function mergeAssetPages(
 }
 
 function resolveAssetImageUrl(asset: AssetItem): string {
-  return assetUrl(asset);
+  return asset.mime.startsWith("image/") ? assetUrl(asset) : "";
 }
 
 function formatBytes(bytes: number): string {
@@ -278,8 +287,15 @@ export function AssetBrowser({
   onClose,
   onShapeLibrary,
   navigation,
+  selectionOnly = false,
+  insertLabel,
 }: AssetBrowserProps) {
-  const locale = useLocale();
+  const { t, at } = useAssetTranslations();
+  const loadErrorText = useRef(at);
+  useEffect(() => {
+    // Language changes should not reload the asset list or reset pagination.
+    loadErrorText.current = at;
+  }, [at]);
   const { showToast } = useToast();
   const addToast = useCallback(
     ({
@@ -305,6 +321,8 @@ export function AssetBrowser({
   const groupsRequestRef = useRef<AbortController | null>(null);
   const dragPreviewElementRef = useRef<HTMLDivElement>(null);
   const dragPreviewFrameRef = useRef<number | null>(null);
+  const dragSourceRef = useRef<HTMLButtonElement | null>(null);
+  const dragReturnAnimationRef = useRef<Animation | null>(null);
   const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
   const dragPointerOffsetRef = useRef<{ x: number; y: number } | null>(null);
   const dragPreviewAreaRef = useRef<"grid" | "tree" | null>(null);
@@ -321,34 +339,66 @@ export function AssetBrowser({
   const [groups, setGroups] = useState<AssetGroupItem[]>([]);
   const [trash, setTrash] = useState(false);
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [view, setView] = useState<"grid" | "list">(() =>
+    localStorage.getItem("huayu:assets-view") === "list" ? "list" : "grid",
+  );
   const [inserting, setInserting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLElement | null>(null);
   const galleryScrollRef = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
 
-  const [assetsLoading, setAssetsLoading] = useState(true);
-  const [assetsLoadingMore, setAssetsLoadingMore] = useState(false);
+  const [assetsPhase, setAssetsPhase] = useState<
+    "loading" | "appending" | "ready" | "error"
+  >("loading");
+  const assetsLoading = assetsPhase === "loading";
+  const assetsLoadingMore = assetsPhase === "appending";
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState<
+    "staging" | "uploading" | "confirm-close"
+  >("staging");
+  const uploadPhaseRef = useRef(uploadPhase);
+  function changeUploadPhase(phase: typeof uploadPhase) {
+    uploadPhaseRef.current = phase;
+    setUploadPhase(phase);
+  }
+  const uploading = uploadPhase === "uploading";
+  const uploadCloseConfirm = uploadPhase === "confirm-close";
+  function setUploadCloseConfirm(open: boolean) {
+    if (uploadPhaseRef.current !== "uploading")
+      changeUploadPhase(open ? "confirm-close" : "staging");
+  }
   const [dragActive, setDragActive] = useState(false);
   const [uploadDialogItems, setUploadDialogItems] = useState<
     UploadDialogItem[]
   >([]);
-  const [uploadCloseConfirm, setUploadCloseConfirm] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
-  const [dialogSubmitting, setDialogSubmitting] = useState(false);
-  const [dialogError, setDialogError] = useState<string | null>(null);
+  const [dialogRequest, setDialogRequest] = useState<
+    { phase: "editing" | "submitting" } | { phase: "error"; message: string }
+  >({ phase: "editing" });
+  const dialogSubmitting = dialogRequest.phase === "submitting";
+  const dialogError =
+    dialogRequest.phase === "error" ? dialogRequest.message : null;
+  function setDialogError(message: string | null) {
+    setDialogRequest(
+      message ? { phase: "error", message } : { phase: "editing" },
+    );
+  }
   const [loadedAssetsKey, setLoadedAssetsKey] = useState("");
 
+  const [previewFile, setPreviewFile] = useState<AssetItem | null>(null);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
-  const [draggingAssetId, setDraggingAssetId] = useState<string | null>(null);
+  const [assetDrag, setAssetDrag] = useState<
+    | { phase: "idle" }
+    | { phase: "dragging" | "returning" | "submitting"; assetId: string }
+  >({ phase: "idle" });
+  const draggingAssetId = assetDrag.phase === "idle" ? null : assetDrag.assetId;
+  const dragMoveSubmitting = assetDrag.phase === "submitting";
   const [dragMoveTarget, setDragMoveTarget] = useState<DragMoveTarget | null>(
     null,
   );
-  const [dragMoveSubmitting, setDragMoveSubmitting] = useState(false);
   const [dragPreview, setDragPreview] = useState<DragPreviewState | null>(null);
   const [dragPreviewArea, setDragPreviewArea] = useState<
     "grid" | "tree" | null
@@ -368,7 +418,7 @@ export function AssetBrowser({
     clientX: number,
     clientY: number,
   ): void => {
-    if (clientX === 0 && clientY === 0) {
+    if (dragReturnAnimationRef.current || (clientX === 0 && clientY === 0)) {
       return;
     }
 
@@ -456,6 +506,13 @@ export function AssetBrowser({
     return [...folders, ...files];
   }, [assets, keyword, visibleFolderCards]);
   const listSummaryText = (() => {
+    if (picker)
+      return t(
+        assetsTotal > assets.length
+          ? "assets.loadedFileCount"
+          : "assets.fileCount",
+        { count: assetsTotal, loaded: assets.length },
+      );
     if (assetsTotal > assets.length) {
       return at("{arg0} 个文件夹 · 已加载 {arg1}/{arg2} 个文件", {
         arg0: visibleFolderCards.length,
@@ -503,13 +560,8 @@ export function AssetBrowser({
       latestAssetsRequestRef.current = requestId;
       const requestAssetsKey = activeAssetsKey;
 
-      if (append) {
-        setAssetsLoadingMore(true);
-      } else {
-        setAssetsLoading(true);
-        setAssetsLoadingMore(false);
-        galleryScrollRef.current?.scrollTo({ top: 0 });
-      }
+      setAssetsPhase(append ? "appending" : "loading");
+      if (!append) galleryScrollRef.current?.scrollTo({ top: 0 });
 
       try {
         const res = await getAssets({
@@ -523,10 +575,14 @@ export function AssetBrowser({
           signal: controller.signal,
         });
 
-        if (requestId !== latestAssetsRequestRef.current) {
+        if (
+          controller.signal.aborted ||
+          requestId !== latestAssetsRequestRef.current
+        ) {
           return;
         }
 
+        setAssetsPhase("ready");
         setAssets((current) =>
           append ? mergeAssetPages(current, res.assets) : res.assets,
         );
@@ -535,15 +591,19 @@ export function AssetBrowser({
         setAssetsTotal(res.pagination.total);
         setLoadedAssetsKey(requestAssetsKey);
       } catch (error) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        if (requestId !== latestAssetsRequestRef.current) {
+        if (
+          controller.signal.aborted ||
+          requestId !== latestAssetsRequestRef.current
+        ) {
           return;
         }
 
-        console.error(at("获取素材列表失败:"), error);
-        addToast({ type: "error", message: at("获取素材列表失败") });
+        setAssetsPhase("error");
+        console.error(loadErrorText.current("获取素材列表失败:"), error);
+        addToast({
+          type: "error",
+          message: loadErrorText.current("获取素材列表失败"),
+        });
         if (!append) {
           setAssets([]);
           setAssetsPage(1);
@@ -557,11 +617,6 @@ export function AssetBrowser({
           assetsRequestRef.current === controller
         ) {
           assetsRequestRef.current = null;
-          if (append) {
-            setAssetsLoadingMore(false);
-          } else {
-            setAssetsLoading(false);
-          }
         }
       }
     },
@@ -575,13 +630,18 @@ export function AssetBrowser({
     setGroupsLoading(true);
     try {
       const res = await getAssetGroups(controller.signal);
+      if (controller.signal.aborted || groupsRequestRef.current !== controller)
+        return;
       setGroups(res.groups || []);
     } catch (error) {
       if (controller.signal.aborted) {
         return;
       }
-      console.error(at("获取素材分组失败:"), error);
-      addToast({ type: "error", message: at("获取素材分组失败") });
+      console.error(loadErrorText.current("获取素材分组失败:"), error);
+      addToast({
+        type: "error",
+        message: loadErrorText.current("获取素材分组失败"),
+      });
     } finally {
       if (groupsRequestRef.current === controller) {
         groupsRequestRef.current = null;
@@ -678,11 +738,15 @@ export function AssetBrowser({
       scheduleDragPreviewPosition(event.clientX, event.clientY);
     };
 
-    window.addEventListener("dragover", handleWindowDragOver);
+    // Drop targets stop bubbling to avoid handling a move twice. Track the
+    // pointer before those handlers so the preview follows the final position.
+    window.addEventListener("dragover", handleWindowDragOver, true);
 
     return () => {
-      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("dragover", handleWindowDragOver, true);
       cancelDragPreviewFrame();
+      dragReturnAnimationRef.current?.cancel();
+      dragReturnAnimationRef.current = null;
     };
   }, [draggingAssetId]);
 
@@ -751,7 +815,7 @@ export function AssetBrowser({
       viewer.destroy();
       assetViewerRef.current = null;
     };
-  }, [locale]);
+  }, [at]);
 
   useEffect(() => {
     assetViewerRef.current?.update();
@@ -868,6 +932,7 @@ export function AssetBrowser({
   };
 
   const startDialogUpload = async (): Promise<void> => {
+    if (uploadPhaseRef.current !== "staging") return;
     const targetGroupId = uploadTargetGroupId;
     const pendingItems = uploadDialogItems.filter(
       (item) => item.status === "pending",
@@ -876,7 +941,7 @@ export function AssetBrowser({
       return;
     }
 
-    setUploading(true);
+    changeUploadPhase("uploading");
     let successCount = 0;
     let failedCount = 0;
 
@@ -888,12 +953,6 @@ export function AssetBrowser({
           ),
         );
       };
-
-      if (!dialogItem.file.type.startsWith("image/")) {
-        failedCount += 1;
-        updateItem({ status: "error", message: at("不是图片文件") });
-        continue;
-      }
 
       try {
         updateItem({ status: "uploading", message: at("上传中...") });
@@ -912,7 +971,7 @@ export function AssetBrowser({
       }
     }
 
-    setUploading(false);
+    changeUploadPhase("staging");
 
     if (successCount > 0) {
       addToast({
@@ -1302,19 +1361,27 @@ export function AssetBrowser({
     event: ReactDragEvent<HTMLButtonElement>,
     asset: AssetItem,
   ): void => {
-    if (trash) {
+    if (trash || dragMoveSubmitting) {
       event.preventDefault();
       return;
     }
-    setDraggingAssetId(asset.id);
+    dragReturnAnimationRef.current?.cancel();
+    dragReturnAnimationRef.current = null;
+    dragSourceRef.current = event.currentTarget;
+    setAssetDrag({ phase: "dragging", assetId: asset.id });
     setDragMoveTargetState(null);
     setContextMenu(null);
     setSelectedAssetId(asset.id);
-    const assetResolution = `${asset.width} × ${asset.height}`;
+    const assetResolution =
+      asset.width > 0 && asset.height > 0
+        ? `${asset.width} × ${asset.height}`
+        : "";
     const cardRect = event.currentTarget.getBoundingClientRect();
+    const listRow = !picker && view === "list";
+    const previewWidth = listRow ? 280 : cardRect.width;
     const offsetX = Math.max(
       0,
-      Math.min(event.clientX - cardRect.left, cardRect.width),
+      Math.min(event.clientX - cardRect.left, previewWidth),
     );
     const offsetY = Math.max(
       0,
@@ -1324,9 +1391,14 @@ export function AssetBrowser({
       name: asset.name,
       thumbnailUrl: resolveAssetImageUrl(asset),
       metaText: `${formatBytes(asset.size)}${assetResolution ? ` · ${assetResolution}` : ""}`,
-      cardWidth: Math.round(cardRect.width),
+      cardWidth: Math.round(previewWidth),
       cardHeight: Math.round(cardRect.height),
-      imageHeight: Math.round(picker ? cardRect.height : cardRect.width * 0.75),
+      imageHeight: Math.round(
+        event.currentTarget
+          .querySelector(".asset-card-image")!
+          .getBoundingClientRect().height,
+      ),
+      listRow,
     });
     dragPointerOffsetRef.current = { x: offsetX, y: offsetY };
     dragSidebarRectRef.current =
@@ -1345,16 +1417,57 @@ export function AssetBrowser({
     }, 0);
   };
 
-  const handleAssetDragEnd = (): void => {
+  const finishAssetDrag = (returnToSource = false): void => {
+    if (dragReturnAnimationRef.current) return;
     cancelDragPreviewFrame();
-    setDraggingAssetId(null);
-    setDragMoveTargetState(null);
-    setDragPreview(null);
-    setDragPreviewArea(null);
-    dragPointerRef.current = null;
-    dragPointerOffsetRef.current = null;
-    dragPreviewAreaRef.current = null;
-    dragSidebarRectRef.current = null;
+    const clear = () => {
+      setAssetDrag((current) =>
+        current.phase === "submitting" ? current : { phase: "idle" },
+      );
+      setDragMoveTargetState(null);
+      setDragPreview(null);
+      setDragPreviewArea(null);
+      dragSourceRef.current = null;
+      dragPointerRef.current = null;
+      dragPointerOffsetRef.current = null;
+      dragPreviewAreaRef.current = null;
+      dragSidebarRectRef.current = null;
+    };
+    const preview = dragPreviewElementRef.current;
+    const source = dragSourceRef.current;
+    if (
+      returnToSource &&
+      preview &&
+      source &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      const origin = source.getBoundingClientRect();
+      setDragMoveTargetState(null);
+      setDragPreviewArea("grid");
+      setAssetDrag((current) =>
+        current.phase === "dragging"
+          ? { ...current, phase: "returning" }
+          : current,
+      );
+      const animation = preview.animate(
+        [
+          { transform: preview.style.transform, opacity: 1 },
+          {
+            transform: `translate3d(${origin.left}px, ${origin.top}px, 0)`,
+            opacity: 0.25,
+          },
+        ],
+        {
+          duration: 180,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "forwards",
+        },
+      );
+      dragReturnAnimationRef.current = animation;
+      animation.onfinish = clear;
+      return;
+    }
+    clear();
   };
 
   const handleAssetDragging = (
@@ -1430,11 +1543,13 @@ export function AssetBrowser({
     setDragMoveTargetState(null);
 
     if (!availability.allowed || !availability.asset) {
+      finishAssetDrag(true);
       return;
     }
 
+    finishAssetDrag();
     try {
-      setDragMoveSubmitting(true);
+      setAssetDrag({ phase: "submitting", assetId: availability.asset.id });
       await updateAsset(availability.asset, { folder_id: targetGroupId });
       addToast({ type: "success", message: at("素材已移动") });
       await Promise.all([loadGroups(), loadAssets()]);
@@ -1442,8 +1557,7 @@ export function AssetBrowser({
       console.error(at("拖拽移动素材失败:"), error);
       addToast({ type: "error", message: at("拖拽移动素材失败") });
     } finally {
-      setDragMoveSubmitting(false);
-      setDraggingAssetId(null);
+      setAssetDrag({ phase: "idle" });
       setDragMoveTargetState(null);
     }
   };
@@ -1460,6 +1574,10 @@ export function AssetBrowser({
   };
 
   const handleOpenAssetPreview = (asset: AssetItem): void => {
+    if (!asset.mime.startsWith("image/")) {
+      setPreviewFile(asset);
+      return;
+    }
     setSelectedAssetId(asset.id);
 
     const viewer = assetViewerRef.current;
@@ -1616,12 +1734,8 @@ export function AssetBrowser({
   };
 
   const handleDialogSubmit = async (): Promise<void> => {
-    if (!dialogState) {
-      return;
-    }
-
-    setDialogError(null);
-    setDialogSubmitting(true);
+    if (!dialogState || dialogSubmitting) return;
+    setDialogRequest({ phase: "submitting" });
 
     try {
       if (dialogState.type === "create-group") {
@@ -1691,12 +1805,14 @@ export function AssetBrowser({
         error instanceof Error ? error.message : at("操作失败，请重试"),
       );
     } finally {
-      setDialogSubmitting(false);
+      setDialogRequest((current) =>
+        current.phase === "submitting" ? { phase: "editing" } : current,
+      );
     }
   };
 
   async function insertAsset(asset: AssetItem) {
-    if (inserting) return;
+    if (inserting || !onInsert) return;
     setInserting(true);
     try {
       await onInsert(asset);
@@ -1736,10 +1852,13 @@ export function AssetBrowser({
   function renderAssetCard(asset: AssetItem) {
     const active = asset.id === selectedAssetId;
     const dragging = asset.id === draggingAssetId;
-    const draggable = !trash;
+    const draggable = !trash && !selectionOnly;
     const previewUrl = resolveAssetImageUrl(asset);
     const viewerSrc = assetUrl(asset);
-    const resolution = `${asset.width} × ${asset.height}`;
+    const resolution =
+      asset.width > 0 && asset.height > 0
+        ? `${asset.width} × ${asset.height}`
+        : "";
 
     return (
       <div
@@ -1763,20 +1882,20 @@ export function AssetBrowser({
           }}
           onDragStart={(event) => handleAssetDragStart(event, asset)}
           onDrag={handleAssetDragging}
-          onDragEnd={handleAssetDragEnd}
-          onContextMenu={(event) => handleAssetContextMenu(event, asset)}
+          onDragEnd={(event) =>
+            finishAssetDrag(event.dataTransfer.dropEffect === "none")
+          }
+          onContextMenu={(event) => {
+            if (!selectionOnly) handleAssetContextMenu(event, asset);
+          }}
           onKeyDown={(event) => {
             if (
-              event.key === "ContextMenu" ||
-              (event.shiftKey && event.key === "F10")
+              !selectionOnly &&
+              (event.key === "ContextMenu" ||
+                (event.shiftKey && event.key === "F10"))
             )
               openContextMenu(event, { type: "asset", assetId: asset.id });
           }}
-          style={
-            picker
-              ? { aspectRatio: `${asset.width} / ${asset.height}` }
-              : undefined
-          }
           aria-label={t("assets.selectAsset", { name: asset.name })}
           title={asset.name}
           aria-pressed={active}
@@ -1791,18 +1910,22 @@ export function AssetBrowser({
           )}
         >
           <div className="asset-card-image relative aspect-[4/3] overflow-hidden bg-muted">
-            <img
-              src={previewUrl}
-              alt={asset.name}
-              loading="lazy"
-              draggable={false}
-              data-viewer-src={viewerSrc}
-              data-asset-id={asset.id}
-              className={cn(
-                "absolute -inset-px block h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover",
-                ASSET_VIEWER_IMAGE_CLASS,
-              )}
-            />
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={asset.name}
+                loading="lazy"
+                draggable={false}
+                data-viewer-src={viewerSrc}
+                data-asset-id={asset.id}
+                className={cn(
+                  "absolute -inset-px block h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-contain",
+                  ASSET_VIEWER_IMAGE_CLASS,
+                )}
+              />
+            ) : (
+              <FileText className="absolute inset-0 m-auto size-9 text-muted-foreground" />
+            )}
             {picker && active && (
               <span className="asset-selection-mark">
                 <Check className="size-3" />
@@ -1811,30 +1934,40 @@ export function AssetBrowser({
           </div>
           <div className="asset-card-caption p-2.5">
             <div
-              className="truncate text-[11px] font-medium text-foreground"
+              className="truncate text-sm font-medium text-foreground"
               title={asset.name}
             >
               {asset.name}
             </div>
-            <div className="mt-1 truncate text-[10px] text-muted-foreground">
+            <div className="mt-1 truncate text-xs text-muted-foreground">
               {formatBytes(asset.size)}
               {resolution ? ` · ${resolution}` : ""}
             </div>
           </div>
+          {!picker && (
+            <time
+              className="asset-row-date text-xs text-muted-foreground"
+              dateTime={asset.created_at}
+            >
+              {new Date(asset.created_at).toLocaleDateString()}
+            </time>
+          )}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className="asset-card-more absolute right-1 bottom-1"
-          aria-label={t("assets.assetActions", { name: asset.name })}
-          onClick={(event) => {
-            event.stopPropagation();
-            setSelectedAssetId(asset.id);
-            openContextMenu(event, { type: "asset", assetId: asset.id });
-          }}
-        >
-          <MoreHorizontal />
-        </Button>
+        {!selectionOnly && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="asset-card-more absolute right-1 bottom-1"
+            aria-label={t("assets.assetActions", { name: asset.name })}
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedAssetId(asset.id);
+              openContextMenu(event, { type: "asset", assetId: asset.id });
+            }}
+          >
+            <MoreHorizontal />
+          </Button>
+        )}
       </div>
     );
   }
@@ -1843,6 +1976,36 @@ export function AssetBrowser({
   return (
     <div
       aria-label={t("assets.title")}
+      onDragOverCapture={(event) => {
+        if (!(event.target as Element).closest("[data-asset-drop-target]"))
+          setDragMoveTargetState(null);
+      }}
+      onDragOver={(event) => {
+        if (!draggingAssetId || hasFileTransferTypes(event.dataTransfer))
+          return;
+        // Accept a no-op drop so we can return the preview immediately,
+        // without waiting for the browser's rejected-drop feedback.
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => {
+        if (!draggingAssetId || hasFileTransferTypes(event.dataTransfer))
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        finishAssetDrag(true);
+      }}
+      onDragLeaveCapture={(event) => {
+        const next = event.relatedTarget as Node | null;
+        const target = (event.target as Element).closest(
+          "[data-asset-drop-target]",
+        );
+        if (
+          !event.currentTarget.contains(next) ||
+          (target && !target.contains(next))
+        )
+          setDragMoveTargetState(null);
+      }}
       ref={explorerRef}
       className={cn(
         "asset-browser grid h-full min-h-0 grid-cols-1 overflow-hidden bg-background",
@@ -1877,7 +2040,7 @@ export function AssetBrowser({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => setSidebarDrawerOpen(false)}
             aria-label={t("assets.close")}
           >
@@ -2003,64 +2166,65 @@ export function AssetBrowser({
 
           if (draggingAssetId) {
             e.preventDefault();
-            setDragMoveTargetState(null);
+            e.stopPropagation();
+            finishAssetDrag(true);
           }
         }}
       >
-        <div className="asset-browser-heading flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            {navigation}
-            {picker ? (
+        {picker && (
+          <div className="asset-browser-heading flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
+              {navigation}
               <h2 className="truncate text-sm font-semibold">
                 {t("assets.title")}
               </h2>
-            ) : (
-              <h1 className="truncate text-xl font-semibold">
-                {t("assets.title")}
-              </h1>
-            )}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {onShapeLibrary && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("assets.shapeLibrary")}
+                  onClick={onShapeLibrary}
+                >
+                  <Shapes />
+                </Button>
+              )}
+              {!selectionOnly && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  nativeButton={false}
+                  render={<Link to="/assets" />}
+                  className="text-muted-foreground"
+                  aria-label={t("assets.manage")}
+                >
+                  <FolderOpen />
+                </Button>
+              )}
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("assets.close")}
+                  onClick={onClose}
+                  disabled={uploading}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {onShapeLibrary && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("assets.shapeLibrary")}
-                onClick={onShapeLibrary}
-              >
-                <Shapes />
-              </Button>
-            )}
-            {picker && (
-              <Link
-                className="rounded-md p-2 text-muted-foreground hover:bg-accent"
-                to="/library"
-                aria-label={t("assets.manage")}
-              >
-                <FolderOpen className="size-4" />
-              </Link>
-            )}
-            {onClose && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("assets.close")}
-                onClick={onClose}
-                disabled={uploading}
-              >
-                <X />
-              </Button>
-            )}
-          </div>
-        </div>
+        )}
         <div className="border-b border-border bg-background">
-          <div className="flex flex-col gap-2 px-4 py-2.5 md:flex-row md:items-center md:justify-between">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex flex-col gap-2 px-4 py-2.5 md:flex-row md:flex-wrap md:items-center md:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:basis-60">
+              {!picker && navigation}
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="asset-folder-drawer-toggle h-9 w-9 shrink-0 md:hidden"
+                className="asset-folder-drawer-toggle md:hidden"
                 title={at("文件夹")}
                 aria-label={at("文件夹")}
                 onClick={() => setSidebarDrawerOpen(true)}
@@ -2079,7 +2243,7 @@ export function AssetBrowser({
                     setKeyword(e.target.value.trim());
                   }}
                   placeholder={at("搜索文件（输入关键词）")}
-                  className={cn("h-9 text-sm", "pr-9 pl-9")}
+                  className="pr-9 pl-9"
                 />
                 {searchInput && (
                   <Button
@@ -2087,16 +2251,58 @@ export function AssetBrowser({
                     variant="ghost"
                     size="icon-xs"
                     aria-label={t("assets.clearSearch")}
-                    className="absolute right-1.5 top-1/2 h-6 w-6 -translate-y-1/2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:bg-muted hover:text-foreground"
                     onClick={handleClearSearch}
                   >
-                    <X className="size-4 mx-auto" />
+                    <X />
                   </Button>
                 )}
               </form>
             </div>
 
             <div className="asset-browser-tools flex flex-wrap items-center gap-2">
+              {!picker && (
+                <>
+                  <div
+                    className="asset-view-toggle"
+                    role="group"
+                    aria-label={t("assets.viewMode")}
+                  >
+                    {(["grid", "list"] as const).map((mode) => (
+                      <Tooltip key={mode}>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={t(
+                                mode === "grid"
+                                  ? "assets.gridView"
+                                  : "assets.listView",
+                              )}
+                              aria-pressed={view === mode}
+                              className="border-0 text-muted-foreground aria-pressed:bg-card aria-pressed:text-foreground"
+                              onClick={() => {
+                                setView(mode);
+                                localStorage.setItem("huayu:assets-view", mode);
+                              }}
+                            >
+                              {mode === "grid" ? <LayoutGrid /> : <List />}
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>
+                          {t(
+                            mode === "grid"
+                              ? "assets.gridView"
+                              : "assets.listView",
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </>
+              )}
               {picker && (
                 <AssetFolderFilter
                   groups={groups}
@@ -2111,22 +2317,31 @@ export function AssetBrowser({
                   }}
                 />
               )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t(
-                  sort === "newest" ? "assets.newest" : "assets.oldest",
-                )}
-                title={t(sort === "newest" ? "assets.newest" : "assets.oldest")}
-                onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-              >
-                <ArrowDownUp />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t(
+                        sort === "newest" ? "assets.newest" : "assets.oldest",
+                      )}
+                      onClick={() =>
+                        setSort(sort === "newest" ? "oldest" : "newest")
+                      }
+                    >
+                      <ArrowDownUp />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">
+                  {t(sort === "newest" ? "assets.newest" : "assets.oldest")}
+                </TooltipContent>
+              </Tooltip>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 className="asset-new-folder"
                 onClick={() => handleCreateFolder()}
                 disabled={trash}
@@ -2134,35 +2349,40 @@ export function AssetBrowser({
                 <FolderPlus className="size-4" />
                 {at("新建文件夹")}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="asset-refresh h-9 gap-1.5 rounded-md px-3"
-                onClick={() => void refreshAll()}
-                disabled={refreshing}
-              >
-                {refreshing ? (
-                  <Loader2 className="size-4 animate-spin shrink-0" />
-                ) : (
-                  <RefreshCcw className="size-4" />
-                )}
-                {at("刷新")}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="asset-refresh"
+                      aria-label={at("刷新")}
+                      onClick={() => void refreshAll()}
+                      disabled={refreshing}
+                    >
+                      {refreshing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <RefreshCcw />
+                      )}
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">{at("刷新")}</TooltipContent>
+              </Tooltip>
 
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*"
                 onChange={handleFileInputChange}
                 className="hidden"
               />
               <Button
                 type="button"
                 variant="default"
-                size="sm"
-                className="asset-toolbar-upload h-9 gap-1.5 rounded-md px-3"
+                className="asset-toolbar-upload"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canUpload || uploading}
               >
@@ -2267,19 +2487,32 @@ export function AssetBrowser({
                         : at("当前目录暂无素材")}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {!trash && at("可以上传图片，或切换文件夹 / 搜索条件")}
+                    {!trash && t("assets.emptyFilesHint")}
                   </p>
                 </div>
               ) : picker ? (
-                <div className="asset-picker-masonry">
-                  {assetMasonryColumns(assets, 3).map((column, index) => (
-                    <div key={index} className="asset-picker-column">
-                      {column.map(renderAssetCard)}
-                    </div>
-                  ))}
+                <div
+                  className="asset-picker-masonry"
+                  style={{
+                    gridTemplateColumns: `repeat(${selectionOnly ? 3 : 2}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {assetMasonryColumns(assets, selectionOnly ? 3 : 2).map(
+                    (column, index) => (
+                      <div key={index} className="asset-picker-column">
+                        {column.map(renderAssetCard)}
+                      </div>
+                    ),
+                  )}
                 </div>
               ) : (
-                <div className="asset-manager-grid grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-3">
+                <div
+                  className={
+                    view === "grid"
+                      ? "asset-manager-grid grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-3"
+                      : "asset-manager-list"
+                  }
+                >
                   {listItems.map((item) => {
                     if (item.type === "group") {
                       const group = item.group;
@@ -2296,6 +2529,7 @@ export function AssetBrowser({
                           type="button"
                           variant="ghost"
                           data-asset-grid-item="group"
+                          data-asset-drop-target
                           onClick={(event) => {
                             if (event.ctrlKey) return;
                             setSelectedGroupId(group.id);
@@ -2313,6 +2547,9 @@ export function AssetBrowser({
                                 groupId: group.id,
                               });
                           }}
+                          onDragEnter={(event) =>
+                            handleDragOverMoveTarget(event, group.id, "grid")
+                          }
                           onDragOver={(event) =>
                             handleDragOverMoveTarget(event, group.id, "grid")
                           }
@@ -2385,7 +2622,6 @@ export function AssetBrowser({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     disabled={assetsLoadingMore}
                     onClick={() => void loadAssets(assetsPage + 1, true)}
                   >
@@ -2404,37 +2640,65 @@ export function AssetBrowser({
               <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-[var(--ring)] bg-background/80 px-16 py-12">
                 <Upload className="size-12 text-[var(--primary)]" />
                 <p className="text-lg font-medium text-[var(--primary)]">
-                  {at("将图片拖到这里，批量上传")}
+                  {t("assets.dropFiles")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {at("支持 JPG、PNG、GIF、WEBP 和 SVG 图片")}
+                  {t("assets.fileTypes")}
                 </p>
               </div>
             </div>
           )}
         </div>
 
+        {previewFile && (
+          <Dialog
+            open
+            onOpenChange={(open) => {
+              if (!open) setPreviewFile(null);
+            }}
+          >
+            <DialogContent>
+              <DialogTitle>{previewFile.name}</DialogTitle>
+              <DialogDescription>
+                {formatBytes(previewFile.size)} · {previewFile.mime}
+              </DialogDescription>
+              <div className="flex flex-col items-center gap-5 py-8">
+                <FileText className="size-12 text-muted-foreground" />
+                <Button
+                  variant="outline"
+                  onClick={() => void downloadAsset(previewFile)}
+                >
+                  <Download />
+                  {t("common.download")}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
         {picker && (
           <div className="asset-browser-footer flex shrink-0 items-center gap-2 border-t px-3 py-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || trash}
-            >
-              <Upload className="size-4" />
-              {t("assets.upload")}
-            </Button>
+            {!selectionOnly && (
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || trash}
+              >
+                <Upload className="size-4" />
+                {t("assets.upload")}
+              </Button>
+            )}
             <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-              {selectedAsset?.name || at("选择图片后插入")}
+              {selectedAsset?.name ||
+                (selectionOnly
+                  ? t("assets.chooseAnImage")
+                  : at("选择图片后插入"))}
             </span>
             <Button
-              size="sm"
               disabled={!selectedAsset || inserting || trash}
               onClick={() => selectedAsset && void insertAsset(selectedAsset)}
             >
               {inserting && <Loader2 className="size-4 animate-spin" />}
-              {t("assets.insert")}
+              {insertLabel || t("assets.insert")}
             </Button>
           </div>
         )}
@@ -2444,11 +2708,13 @@ export function AssetBrowser({
           createPortal(
             <div
               ref={dragPreviewElementRef}
+              data-asset-drag-preview
               className="pointer-events-none fixed left-0 top-0 z-[70] will-change-transform [transform:translate3d(-9999px,-9999px,0)]"
             >
               <div
                 className={cn(
                   "absolute left-0 top-0 overflow-hidden rounded-md border border-[var(--ring)] bg-background ring-1 ring-[var(--ring)]",
+                  dragPreview.listRow && "flex items-center px-2",
                   "transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
                   dragPreviewArea === "tree" ? "opacity-0" : "opacity-100",
                 )}
@@ -2460,15 +2726,18 @@ export function AssetBrowser({
                 }}
               >
                 <div
-                  className="relative overflow-hidden bg-muted"
-                  style={{ height: dragPreview.imageHeight }}
+                  className="relative shrink-0 overflow-hidden bg-muted"
+                  style={{
+                    height: dragPreview.imageHeight,
+                    width: dragPreview.listRow ? 40 : undefined,
+                  }}
                 >
                   {dragPreview.thumbnailUrl ? (
                     <img
                       src={dragPreview.thumbnailUrl}
                       alt=""
                       aria-hidden
-                      className="absolute inset-0 block h-full w-full object-cover"
+                      className="absolute inset-0 block h-full w-full object-contain"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -2476,11 +2745,11 @@ export function AssetBrowser({
                     </div>
                   )}
                 </div>
-                <div className="overflow-hidden px-2.5 py-2.5">
-                  <div className="truncate text-[11px] font-medium text-foreground">
+                <div className="min-w-0 overflow-hidden px-2.5 py-2.5">
+                  <div className="truncate text-sm font-medium text-foreground">
                     {dragPreview.name}
                   </div>
-                  <div className="mt-1 truncate text-[10px] text-muted-foreground">
+                  <div className="mt-1 truncate text-xs text-muted-foreground">
                     {dragPreview.metaText}
                   </div>
                 </div>
@@ -2563,7 +2832,7 @@ export function AssetBrowser({
           >
             {contextMenu.target.type === "asset" && (
               <>
-                {!trash && (
+                {!trash && onInsert && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -2572,6 +2841,7 @@ export function AssetBrowser({
                     disabled={inserting}
                     onClick={() => void handleContextMenuAction("insert")}
                   >
+                    <SquarePlus />
                     {t("assets.insert")}
                   </Button>
                 )}
@@ -2601,9 +2871,10 @@ export function AssetBrowser({
                   role="menuitem"
                   type="button"
                   variant="ghost"
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("open")}
                 >
+                  <Eye />
                   {at("打开")}
                 </Button>
 
@@ -2612,9 +2883,10 @@ export function AssetBrowser({
                   type="button"
                   variant="ghost"
                   disabled={trash}
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:text-muted-foreground"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("rename")}
                 >
+                  <Pencil />
                   {at("重命名")}
                 </Button>
 
@@ -2623,9 +2895,10 @@ export function AssetBrowser({
                   type="button"
                   variant="ghost"
                   disabled={trash}
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:text-muted-foreground"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("move")}
                 >
+                  <FolderInput />
                   {at("移动到文件夹...")}
                 </Button>
 
@@ -2636,9 +2909,10 @@ export function AssetBrowser({
                   type="button"
                   variant="ghost"
                   disabled={trash}
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:text-muted-foreground"
+                  className="asset-menu-item text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => void handleContextMenuAction("delete")}
                 >
+                  <Trash2 />
                   {at("删除")}
                 </Button>
               </>
@@ -2650,9 +2924,10 @@ export function AssetBrowser({
                   role="menuitem"
                   type="button"
                   variant="ghost"
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("open")}
                 >
+                  <FolderOpen />
                   {at("打开")}
                 </Button>
 
@@ -2666,9 +2941,10 @@ export function AssetBrowser({
                       ? ""
                       : contextMenuCreateAvailability?.message
                   }
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:text-muted-foreground"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("create-group")}
                 >
+                  <FolderPlus />
                   {at("新建子文件夹")}
                 </Button>
 
@@ -2676,10 +2952,10 @@ export function AssetBrowser({
                   role="menuitem"
                   type="button"
                   variant="ghost"
-
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:text-muted-foreground"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("rename")}
                 >
+                  <Pencil />
                   {at("重命名")}
                 </Button>
 
@@ -2689,10 +2965,10 @@ export function AssetBrowser({
                   role="menuitem"
                   type="button"
                   variant="ghost"
-
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:text-muted-foreground"
+                  className="asset-menu-item text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => void handleContextMenuAction("delete")}
                 >
+                  <Trash2 />
                   {at("删除")}
                 </Button>
               </>
@@ -2704,9 +2980,10 @@ export function AssetBrowser({
                   role="menuitem"
                   type="button"
                   variant="ghost"
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("refresh")}
                 >
+                  <RefreshCcw />
                   {at("刷新")}
                 </Button>
                 <Button
@@ -2719,9 +2996,10 @@ export function AssetBrowser({
                       ? ""
                       : contextMenuCreateAvailability?.message
                   }
-                  className="flex w-full justify-start rounded-none px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:text-muted-foreground"
+                  className="asset-menu-item"
                   onClick={() => void handleContextMenuAction("create-group")}
                 >
+                  <FolderPlus />
                   {contextMenuCanvasGroup
                     ? at("新建子文件夹")
                     : at("新建文件夹")}
@@ -2794,7 +3072,6 @@ export function AssetBrowser({
                       : at("请输入文件夹名称")
                   }
                   onFocus={(event) => event.currentTarget.select()}
-                  className="h-10 text-sm"
                   autoFocus
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -2813,7 +3090,7 @@ export function AssetBrowser({
                     type="button"
                     variant="ghost"
                     className={cn(
-                      "flex w-full justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors",
+                      "w-full justify-between text-left",
                       dialogState.targetGroupId === null
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:bg-background",
@@ -2832,7 +3109,7 @@ export function AssetBrowser({
                       type="button"
                       variant="ghost"
                       className={cn(
-                        "mt-1 flex w-full justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors",
+                        "mt-1 w-full justify-between text-left",
                         dialogState.targetGroupId === option.id
                           ? "bg-background text-foreground shadow-sm"
                           : "text-muted-foreground hover:bg-background",
@@ -2860,7 +3137,7 @@ export function AssetBrowser({
               <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                 {dialogState.type === "delete-group"
                   ? at("素材和子文件夹会保留。")
-                  : at("可以在回收站中恢复，已有画布中的图片不受影响。")}
+                  : t("assets.restoreHint")}
               </div>
             )}
 
@@ -2873,9 +3150,7 @@ export function AssetBrowser({
             <DialogFooter>
               <Button
                 type="button"
-                variant="secondary"
-                size="sm"
-                className="h-9 rounded-md px-3"
+                variant="outline"
                 onClick={closeDialog}
                 disabled={dialogSubmitting}
               >
@@ -2889,8 +3164,6 @@ export function AssetBrowser({
                     ? "destructive"
                     : "default"
                 }
-                size="sm"
-                className="h-9 rounded-md px-3"
                 onClick={() => void handleDialogSubmit()}
                 disabled={dialogSubmitting}
               >
@@ -2902,7 +3175,9 @@ export function AssetBrowser({
                   : dialogState.type === "delete-group" ||
                       dialogState.type === "delete-asset"
                     ? at("删除")
-                    : at("确定")}
+                    : dialogState.type === "create-group"
+                      ? at("创建")
+                      : t("common.save")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -2979,19 +3254,28 @@ export function AssetBrowser({
                 </span>
                 <div className="text-right">
                   {item.status === "pending" && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="asset-upload-cancel text-destructive"
-                      aria-label={`${at("取消")} ${item.name}`}
-                      onClick={() => removeUploadDialogItem(item.id)}
-                    >
-                      <span className="asset-upload-cancel-label">
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="hidden text-destructive sm:inline-flex"
+                        aria-label={`${at("取消")} ${item.name}`}
+                        onClick={() => removeUploadDialogItem(item.id)}
+                      >
                         {at("取消")}
-                      </span>
-                      <X className="asset-upload-cancel-icon size-4" />
-                    </Button>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-destructive sm:hidden"
+                        aria-label={`${at("取消")} ${item.name}`}
+                        onClick={() => removeUploadDialogItem(item.id)}
+                      >
+                        <X />
+                      </Button>
+                    </>
                   )}
                   {item.status === "done" && (
                     <Check className="ml-auto size-4 text-green-600" />
@@ -3010,7 +3294,6 @@ export function AssetBrowser({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
                   onClick={() =>
                     setUploadDialogItems((prev) => {
                       for (const item of prev) {
@@ -3031,7 +3314,7 @@ export function AssetBrowser({
               {uploadDialogAllFinished ? (
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   onClick={confirmCloseUploadDialog}
                 >
                   {at("关闭")}
@@ -3069,17 +3352,17 @@ export function AssetBrowser({
             <DialogFooter>
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => setUploadCloseConfirm(false)}
               >
-                {at("取消")}
+                {at("继续上传")}
               </Button>
               <Button
                 type="button"
-                variant="default"
+                variant="destructive"
                 onClick={confirmCloseUploadDialog}
               >
-                {at("确定")}
+                {at("取消上传")}
               </Button>
             </DialogFooter>
           </DialogContent>

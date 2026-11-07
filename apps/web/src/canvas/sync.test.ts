@@ -27,6 +27,7 @@ class TestSocket {
   onopen?: () => void;
   onclose?: () => void;
   onmessage?: (event: { data: string }) => void;
+  send = vi.fn();
   constructor(readonly url: string) {
     TestSocket.instances.push(this);
   }
@@ -103,6 +104,7 @@ function remoteText(
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("window", new EventTarget());
+  vi.stubGlobal("document", new EventTarget());
   vi.stubGlobal("location", { protocol: "http:", host: "127.0.0.1:5858" });
   vi.stubGlobal("WebSocket", TestSocket);
   TestSocket.instances = [];
@@ -117,6 +119,38 @@ afterEach(() => {
 });
 
 describe("collaboration save ordering and recovery", () => {
+  it("distinguishes new edits made while an earlier patch is sending", async () => {
+    const { sync, editor } = await client();
+    const ack = acknowledgement();
+    mocks.api.mockReturnValueOnce(ack.promise);
+    editor.updateShape({ id: "shape:left", props: { text: "first" } });
+    expect(sync.getSnapshot().savePhase).toBe("waiting");
+    const saving = sync.flush();
+    expect(sync.getSnapshot().savePhase).toBe("sending");
+    editor.updateShape({ id: "shape:right", props: { text: "second" } });
+    expect(sync.getSnapshot().savePhase).toBe("sending-dirty");
+    ack.resolve({ revision: 1 });
+    await saving;
+    expect(sync.getSnapshot().savePhase).toBe("clean");
+    expect(mocks.api).toHaveBeenCalledTimes(2);
+  });
+  it("does not reconnect a revoked session or replace its error with a late save", async () => {
+    const { sync, editor, socket } = await client("shared");
+    const ack = acknowledgement();
+    mocks.api.mockReturnValueOnce(ack.promise);
+    editor.updateShape({ id: "shape:left", props: { text: "pending" } });
+    const saving = sync.flush();
+    socket.receive({ type: "collaboration", enabled: false });
+    sync.connect();
+    sync.retry();
+    ack.resolve({ revision: 1 });
+    await expect(saving).rejects.toThrow();
+    expect(sync.getSnapshot()).toMatchObject({
+      status: "error",
+      connected: false,
+    });
+    expect(TestSocket.instances).toHaveLength(1);
+  });
   it("applies a later remote edit after an earlier local save acknowledgement", async () => {
     const { sync, editor, socket } = await client();
     const ack = acknowledgement();

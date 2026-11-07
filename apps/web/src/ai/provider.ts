@@ -1,6 +1,6 @@
 import { t } from "@/i18n";
-import OpenAI from "openai";
-import { Stream } from "openai/streaming";
+import type OpenAI from "openai";
+import { APIError } from "openai/core/error";
 import {
   CAPABILITY_LABELS,
   connectionFor,
@@ -35,6 +35,8 @@ async function modelRequest<T>(
   timeoutMs = 180_000,
 ): Promise<T> {
   requireConnection(capability, connection);
+  signal?.throwIfAborted();
+  const { default: OpenAI } = await import("openai");
   signal?.throwIfAborted();
   const timeout = new AbortController();
   const timer = setTimeout(() => timeout.abort(), timeoutMs);
@@ -119,6 +121,7 @@ export async function readChatStream(
 ): Promise<string> {
   if (!response.body)
     throw new Error(t("models.theModelServiceReturnedNoContent"));
+  const { Stream } = await import("openai/streaming");
   const controller = new AbortController();
   const stream =
     Stream.fromSSEResponse<OpenAI.Chat.Completions.ChatCompletionChunk>(
@@ -214,6 +217,23 @@ export async function generateImage(
     connection,
     signal,
     async (client, requestSignal) => {
+      const model = connection.model.trim();
+      const dimensions = /^(\d+)x(\d+)$/.exec(size);
+      let requestSize = size;
+      // Fixed-size GPT Image models accept one resolution per aspect ratio.
+      if (
+        /^gpt-image-(?:1|1-mini|1\.5)(?:-\d{4}-\d{2}-\d{2})?$/.test(model) &&
+        dimensions
+      ) {
+        const width = Number(dimensions[1]);
+        const height = Number(dimensions[2]);
+        requestSize =
+          width === height
+            ? "1024x1024"
+            : width > height
+              ? "1536x1024"
+              : "1024x1536";
+      }
       const files = images.map(
         (image, index) =>
           new File([image], `image-${index}.png`, {
@@ -221,10 +241,10 @@ export async function generateImage(
           }),
       );
       const params = {
-        model: connection.model.trim(),
+        model,
         prompt,
         n: 1,
-        size: size as OpenAI.Images.ImageGenerateParams["size"],
+        size: requestSize as OpenAI.Images.ImageGenerateParams["size"],
       };
       const data = images.length
         ? await client.images.edit(
@@ -437,7 +457,7 @@ export async function testConnection(
         data = await client.models.list({ signal: requestSignal });
       } catch (error) {
         if (
-          error instanceof OpenAI.APIError &&
+          error instanceof APIError &&
           [404, 405, 501].includes(error.status || 0)
         )
           return {

@@ -1,11 +1,7 @@
-import { t } from "@/i18n";
+import { t, type Locale } from "@/i18n";
 import type { CanvasShape, Editor, VecLike } from "@/canvas/editor";
 import { COMPONENT_CONFIGS } from "@/config/components";
-import {
-  connectedShapes,
-  connectShapes,
-  connectionLabel,
-} from "@/utils/connectionParser";
+import { connectedShapes, connectShapes } from "@/utils/connectionParser";
 
 export const CONNECT_EVENT = "huayu:connect";
 export type ConnectionSide = "left" | "right";
@@ -37,6 +33,7 @@ export function connectionProblem(
   editor: Editor,
   from: string,
   to: string,
+  locale?: Locale,
 ): string | null {
   const source = editor.getShape(from);
   const target = editor.getShape(to);
@@ -47,22 +44,23 @@ export function connectionProblem(
     editor.pageOf(from) !== page ||
     editor.pageOf(to) !== page
   )
-    return t("workflow.thisCardIsNoLongerOnTheCurrentPage");
-  if (from === to) return t("workflow.chooseADifferentCard");
+    return t("workflow.thisCardIsNoLongerOnTheCurrentPage", undefined, locale);
+  if (from === to) return t("workflow.chooseADifferentCard", undefined, locale);
   if (
     !(target.type in COMPONENT_CONFIGS) ||
-    ["start", "frame"].includes(target.type)
+    ["frame", "ai-draw", "interactive-web"].includes(target.type)
   )
-    return t("workflow.connectToACreativeStep");
+    return t("workflow.connectToACreativeStep", undefined, locale);
   if (["arrow", "group"].includes(source.type))
-    return t("workflow.chooseAvailableMaterial");
+    return t("workflow.chooseAvailableMaterial", undefined, locale);
   if (connectedShapes(editor, from, "next").some((shape) => shape.id === to))
-    return t("workflow.theseCardsAreAlreadyConnected");
+    return t("workflow.theseCardsAreAlreadyConnected", undefined, locale);
   const pending = [to];
   const visited = new Set<string>();
   while (pending.length) {
     const id = pending.pop()!;
-    if (id === from) return t("workflow.thisConnectionWouldCreateACycle");
+    if (id === from)
+      return t("workflow.thisConnectionWouldCreateACycle", undefined, locale);
     if (visited.has(id)) continue;
     visited.add(id);
     pending.push(
@@ -94,7 +92,7 @@ export function connectionTarget(
       if (
         side === "right" &&
         (!(shape.type in COMPONENT_CONFIGS) ||
-          ["frame", "start"].includes(shape.type))
+          ["frame", "ai-draw", "interactive-web"].includes(shape.type))
       )
         return false;
       const bounds = editor.getShapePageBounds(shape);
@@ -121,17 +119,17 @@ export function connectionTarget(
     });
 }
 
-export function linkWorkflow(editor: Editor, from: string, to: string) {
-  const problem = connectionProblem(editor, from, to);
+export function linkWorkflow(
+  editor: Editor,
+  from: string,
+  to: string,
+  locale?: Locale,
+) {
+  const problem = connectionProblem(editor, from, to, locale);
   if (problem) throw new Error(problem);
   let id: string | undefined;
   editor.run(() => {
-    id = connectShapes(
-      editor,
-      from,
-      to,
-      connectionLabel(editor.getShape(from)!.type),
-    );
+    id = connectShapes(editor, from, to);
   });
   return id;
 }

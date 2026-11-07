@@ -167,6 +167,24 @@ impl Store {
         height: i32,
         details: LibraryAssetDetails,
     ) -> StoreResult<()> {
+        // Saving the same immutable file twice must not duplicate or relocate it.
+        if let Some(row) = library_asset::Entity::find_by_id(&asset_id)
+            .one(&self.db)
+            .await?
+        {
+            if row.trashed {
+                self.update_library_asset(
+                    &asset_id,
+                    LibraryAssetDetails {
+                        name: row.name,
+                        folder_id: details.folder_id,
+                        trashed: false,
+                    },
+                )
+                .await?;
+            }
+            return Ok(());
+        }
         let name = huayu_core::validate_name(&details.name)?.to_owned();
         if let Some(folder_id) = &details.folder_id {
             asset_folder::Entity::find_by_id(folder_id)
@@ -181,6 +199,8 @@ impl Store {
             height: Set(height),
             folder_id: Set(details.folder_id),
             trashed: Set(false),
+            source_project_id: Set(None),
+            source_project_name: Set(None),
         }
         .insert(&self.db)
         .await?;

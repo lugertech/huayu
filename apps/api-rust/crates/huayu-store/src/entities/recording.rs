@@ -7,6 +7,7 @@ pub struct Model {
     pub id: String,
     pub name: String,
     pub asset_id: String,
+    pub project_id: Option<String>,
     pub duration: f64,
     pub size: i64,
     pub transcript: Option<String>,

@@ -6,11 +6,13 @@ mod library;
 
 pub use library::LibraryQuery;
 
+use std::collections::HashSet;
+
 use chrono::Utc;
 use huayu_core::{Asset, Document, DocumentPatch, Project, Recording, Template, ValidationError};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectOptions, ConnectionTrait, Database,
-    DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder,
+    DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder, SqlErr,
     TransactionTrait,
 };
 use uuid::Uuid;
@@ -30,6 +32,13 @@ pub enum StoreError {
 }
 
 pub type StoreResult<T> = Result<T, StoreError>;
+
+pub struct CollaborationMember {
+    pub id: String,
+    pub share_token: String,
+    pub session_token: String,
+    pub removed: bool,
+}
 
 #[derive(serde::Deserialize)]
 struct BuiltinTemplateSeed {
@@ -67,6 +76,22 @@ impl Store {
             (
                 "0002_asset_library",
                 include_str!("../migrations/0002_asset_library.sql"),
+            ),
+            (
+                "0003_project_assets",
+                include_str!("../migrations/0003_project_assets.sql"),
+            ),
+            (
+                "0004_collaboration_members",
+                include_str!("../migrations/0004_collaboration_members.sql"),
+            ),
+            (
+                "0005_recording_project",
+                include_str!("../migrations/0005_recording_project.sql"),
+            ),
+            (
+                "0006_library_source",
+                include_str!("../migrations/0006_library_source.sql"),
             ),
         ] {
             let migration = db
@@ -114,6 +139,118 @@ impl Store {
             .await?
             .ok_or(StoreError::NotFound)?;
         project_from_row(row)
+    }
+
+    /// Derives the catalogue from live projects. Deleted shapes and projects disappear without
+    /// maintaining a second set of files; full payloads are returned only by the detail API.
+    pub async fn project_library_items(
+        &self,
+    ) -> StoreResult<Vec<huayu_core::project_library::LibraryItem>> {
+        let projects = project::Entity::find()
+            .order_by_desc(project::Column::UpdatedAt)
+            .all(&self.db)
+            .await?;
+        let mut items = Vec::new();
+        for row in projects {
+            let project = project_from_row(row)?;
+            for mut item in huayu_core::project_library::project_library_items(&project) {
+                item.content = None;
+                items.push(item);
+            }
+        }
+        Ok(items)
+    }
+
+    /// Associates attachments with a canvas without exposing the global asset library.
+    pub async fn grant_project_assets(
+        &self,
+        project_id: &str,
+        assets: &HashSet<String>,
+    ) -> StoreResult<()> {
+        if assets.is_empty() {
+            return Ok(());
+        }
+        let transaction = self.db.begin().await?;
+        for asset_id in assets {
+            transaction.execute_raw(sea_orm::Statement::from_sql_and_values(
+                sea_orm::DbBackend::Sqlite,
+                "INSERT OR IGNORE INTO project_assets (project_id, asset_id) SELECT ?, id FROM assets WHERE id = ?",
+                [project_id.into(), asset_id.as_str().into()],
+            )).await?;
+        }
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    pub async fn project_asset_ids(&self, project_id: &str) -> StoreResult<HashSet<String>> {
+        let rows = self
+            .db
+            .query_all_raw(sea_orm::Statement::from_sql_and_values(
+                sea_orm::DbBackend::Sqlite,
+                "SELECT asset_id FROM project_assets WHERE project_id = ?",
+                [project_id.into()],
+            ))
+            .await?;
+        rows.into_iter()
+            .map(|row| row.try_get("", "asset_id").map_err(StoreError::from))
+            .collect()
+    }
+
+    pub async fn collaboration_member(
+        &self,
+        project_id: &str,
+        session_token: &str,
+    ) -> StoreResult<Option<CollaborationMember>> {
+        let row = self.db.query_one_raw(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Sqlite,
+            "SELECT id, share_token, session_token, removed FROM collaboration_members WHERE project_id = ? AND session_token = ?",
+            [project_id.into(), session_token.into()],
+        )).await?;
+        row.map(|row| {
+            Ok(CollaborationMember {
+                id: row.try_get("", "id")?,
+                share_token: row.try_get("", "share_token")?,
+                session_token: row.try_get("", "session_token")?,
+                removed: row.try_get("", "removed")?,
+            })
+        })
+        .transpose()
+    }
+
+    pub async fn create_collaboration_member(
+        &self,
+        project_id: &str,
+        share_token: &str,
+    ) -> StoreResult<CollaborationMember> {
+        let member = CollaborationMember {
+            id: Uuid::new_v4().to_string(),
+            share_token: share_token.to_owned(),
+            session_token: Uuid::new_v4().to_string(),
+            removed: false,
+        };
+        self.db.execute_raw(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Sqlite,
+            "INSERT INTO collaboration_members (id, project_id, share_token, session_token, created_at) VALUES (?, ?, ?, ?, ?)",
+            [member.id.as_str().into(), project_id.into(), share_token.into(), member.session_token.as_str().into(), timestamp().into()],
+        )).await?;
+        Ok(member)
+    }
+
+    pub async fn remove_collaboration_member(
+        &self,
+        project_id: &str,
+        member_id: &str,
+        share_token: &str,
+    ) -> StoreResult<()> {
+        let result = self.db.execute_raw(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Sqlite,
+            "UPDATE collaboration_members SET removed = 1 WHERE project_id = ? AND id = ? AND share_token = ?",
+            [project_id.into(), member_id.into(), share_token.into()],
+        )).await?;
+        if result.rows_affected() == 0 {
+            return Err(StoreError::NotFound);
+        }
+        Ok(())
     }
 
     pub async fn create_project(
@@ -275,7 +412,20 @@ impl Store {
         Ok(())
     }
 
-    pub async fn save_asset(&self, value: Asset) -> StoreResult<Asset> {
+    /// Stores an attachment and its optional canvas association in one transaction.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::NotFound`] if the target canvas no longer exists, or a
+    /// database error if either write fails. Failed writes retain neither record.
+    pub async fn save_asset(&self, value: Asset, project_id: Option<&str>) -> StoreResult<Asset> {
+        let transaction = self.db.begin().await?;
+        if let Some(project_id) = project_id {
+            project::Entity::find_by_id(project_id)
+                .one(&transaction)
+                .await?
+                .ok_or(StoreError::NotFound)?;
+        }
         asset::ActiveModel {
             id: Set(value.id.clone()),
             name: Set(value.name.clone()),
@@ -283,8 +433,18 @@ impl Store {
             size: Set(value.size),
             created_at: Set(value.created_at.clone()),
         }
-        .insert(&self.db)
+        .insert(&transaction)
         .await?;
+        if let Some(project_id) = project_id {
+            transaction
+                .execute_raw(sea_orm::Statement::from_sql_and_values(
+                    sea_orm::DbBackend::Sqlite,
+                    "INSERT INTO project_assets (project_id, asset_id) VALUES (?, ?)",
+                    [project_id.into(), value.id.as_str().into()],
+                ))
+                .await?;
+        }
+        transaction.commit().await?;
         Ok(value)
     }
 
@@ -318,16 +478,21 @@ impl Store {
         Ok(recording_from_row(row))
     }
 
+    /// Saves a recording with an optional association to an existing canvas.
+    ///
+    /// Returns [`StoreError::NotFound`] if the referenced asset or canvas is missing.
     pub async fn save_recording(
         &self,
         name: &str,
         asset: &Asset,
         duration: f64,
+        project_id: Option<String>,
     ) -> StoreResult<Recording> {
         let row = recording::ActiveModel {
             id: Set(Uuid::new_v4().to_string()),
             name: Set(huayu_core::validate_name(name)?.to_owned()),
             asset_id: Set(asset.id.clone()),
+            project_id: Set(project_id),
             duration: Set(duration),
             size: Set(asset.size),
             transcript: Set(None),
@@ -335,7 +500,11 @@ impl Store {
             created_at: Set(timestamp()),
         }
         .insert(&self.db)
-        .await?;
+        .await
+        .map_err(|error| match error.sql_err() {
+            Some(SqlErr::ForeignKeyConstraintViolation(_)) => StoreError::NotFound,
+            _ => StoreError::Database(error),
+        })?;
         Ok(recording_from_row(row))
     }
 
@@ -343,6 +512,7 @@ impl Store {
         &self,
         id: &str,
         name: Option<&str>,
+        duration: Option<f64>,
         transcript: Option<String>,
         analysis: Option<String>,
     ) -> StoreResult<Recording> {
@@ -353,6 +523,9 @@ impl Store {
         let mut active = row.into_active_model();
         if let Some(name) = name {
             active.name = Set(huayu_core::validate_name(name)?.to_owned());
+        }
+        if let Some(duration) = duration {
+            active.duration = Set(duration);
         }
         if let Some(transcript) = transcript {
             active.transcript = Set(Some(transcript));
@@ -479,6 +652,7 @@ fn recording_from_row(row: recording::Model) -> Recording {
         id: row.id,
         name: row.name,
         asset_id: row.asset_id,
+        project_id: row.project_id,
         duration: row.duration,
         size: row.size,
         transcript: row.transcript,

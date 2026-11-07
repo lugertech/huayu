@@ -1,17 +1,17 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import { useEditor } from "@/canvas/editor";
 import { Play, Square } from "lucide-react";
 import type { StartShape } from "@/types/components";
 import { ComponentConnectionDots } from "../../common/ComponentConnectionDots";
 import { Button } from "@/ui/button";
-import { runWorkflow, useNodeRunning } from "@/workflow/execute";
+import { runWorkflow, useNodeBusy } from "@/workflow/execute";
 import { useToast } from "../../common/ToastProvider";
 import { modelSettingsAction } from "@/lib/settings-event";
 
 export function StartComponent({ shape }: { shape: StartShape }) {
-  useLocale();
+  const { t, locale } = useTranslations();
   const editor = useEditor();
-  const running = useNodeRunning(editor, shape.id);
+  const running = useNodeBusy(editor, shape.id);
   const { showToast } = useToast();
   return (
     <div className="relative h-full w-full">
@@ -32,7 +32,7 @@ export function StartComponent({ shape }: { shape: StartShape }) {
                 title: t("workflow.status.failed"),
                 description: error.message,
                 variant: "destructive",
-                action: modelSettingsAction(error),
+                action: modelSettingsAction(error, locale),
               });
           })
         }

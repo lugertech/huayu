@@ -7,26 +7,42 @@ import {
 } from "@/canvas/editor";
 import { connectShapes } from "@/utils/connectionParser";
 import { setLanguage } from "@/i18n";
-const mocks = vi.hoisted(() => ({ instruction: vi.fn(), image: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  instruction: vi.fn(),
+  image: vi.fn(),
+  speech: vi.fn(),
+  website: vi.fn(),
+  file: vi.fn(),
+  chart: vi.fn(),
+  agent: vi.fn(),
+}));
 vi.mock("@/api/backend", () => ({
   instructionAPI: mocks.instruction,
   imageAPI: mocks.image,
-  audioGenerateAPI: vi.fn(),
-  websiteAPI: vi.fn(),
-  documentGenerateAPI: vi.fn(),
+  audioGenerateAPI: mocks.speech,
+  websiteAPI: mocks.website,
+  documentGenerateAPI: mocks.file,
   blobAsDataURL: vi.fn(async () => "data:image/png;base64,local-context"),
   extractAPIData: (response: any) => response,
+}));
+vi.mock("@/api/mentex", () => ({ generateChart: mocks.chart }));
+vi.mock("@/utils/agentSSE", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/utils/agentSSE")>()),
+  callAgentSSE: mocks.agent,
 }));
 import {
   inputForShape,
   inputsForShapes,
+  inputsForNode,
   nodeExecution,
+  nodeIsBusy,
   runProjectWorkflow,
   runStaleWorkflow,
   runWorkflow,
   stopAllExecutions,
 } from "./execute";
 import { resultIsStale } from "./freshness";
+import { saveResultEdit } from "./results";
 const value = (text: string) => ({ name: "生成内容", description: "", text });
 function board() {
   return new Editor(createCanvasStore());
@@ -35,11 +51,387 @@ function node(editor: Editor, id: string, type: string, text = "") {
   editor.createShape({ id, type, props: { w: 320, h: 220, text } });
 }
 beforeEach(() => {
-  mocks.instruction.mockReset();
-  mocks.image.mockReset();
+  setLanguage("zh-CN");
+  Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.instruction.mockResolvedValue(value("新的生成结果"));
+  mocks.image.mockResolvedValue({
+    ...value("图片说明"),
+    src: "/api/assets/generated-image",
+  });
+  mocks.website.mockResolvedValue({
+    ...value("<h1>网站</h1>"),
+    description: "网站摘要",
+  });
+  mocks.speech.mockResolvedValue({
+    ...value("朗读内容"),
+    src: "/api/assets/speech",
+    description: "语音摘要",
+  });
+  mocks.file.mockResolvedValue({
+    ...value("文件正文"),
+    src: "/api/assets/file",
+    name: "report.txt",
+    description: "文件摘要",
+  });
+  mocks.chart.mockResolvedValue({
+    content: "根节点",
+    children: [],
+    name: "图表标题",
+    description: "图表摘要",
+  });
+  mocks.agent.mockResolvedValue([]);
 });
 describe("workflow execution parity", () => {
+  it.each(["ai-image", "speech", "file"])(
+    "stops an empty %s before triggering downstream generation",
+    async (type) => {
+      const editor = board();
+      node(editor, "shape:empty", type);
+      node(editor, "shape:next", "instruction", "不应自动执行");
+      connectShapes(editor, "shape:empty", "shape:next");
+      await expect(runWorkflow(editor, "shape:empty")).rejects.toThrow(
+        "请连接前置组件",
+      );
+      expect(mocks.instruction).not.toHaveBeenCalled();
+    },
+  );
+  it("reads older Huayu chart titles without forwarding the previously duplicated JSON result", async () => {
+    const editor = board();
+    const data = JSON.stringify({
+      content: "根节点",
+      children: [],
+      name: "图表标题",
+    });
+    node(editor, "shape:chart", "chart");
+    editor.updateShape({
+      id: "shape:chart",
+      props: { result: data, chartData: data, name: "图表标题" },
+    });
+    for (const type of [
+      "ai-text",
+      "instruction",
+      "website",
+      "speech",
+      "file",
+    ]) {
+      expect(
+        await inputsForNode(editor, type, [editor.getShape("shape:chart")]),
+      ).toEqual([expect.objectContaining({ type: "text", text: "图表标题" })]);
+    }
+  });
+  it("replaces text with upstream outputs, using website summaries instead of HTML", async () => {
+    const editor = board();
+    node(editor, "shape:first", "instruction", "原要求");
+    editor.updateShape({ id: "shape:first", props: { result: "第一段" } });
+    node(editor, "shape:web", "website");
+    editor.updateShape({
+      id: "shape:web",
+      props: { result: "<h1>HTML</h1>", description: "网站摘要" },
+    });
+    node(editor, "shape:text", "ai-text", "不应追加的旧正文");
+    connectShapes(editor, "shape:first", "shape:text");
+    connectShapes(editor, "shape:web", "shape:text");
+    await runWorkflow(editor, "shape:text");
+    expect(editor.getShape("shape:text").props).toMatchObject({
+      text: "第一段\n网站摘要",
+      result: "第一段\n网站摘要",
+    });
+    expect(mocks.instruction).not.toHaveBeenCalled();
+    editor.deleteShape("shape:first");
+    editor.deleteShape("shape:web");
+    await runWorkflow(editor, "shape:text");
+    expect(editor.getShape("shape:text").props.result).toBe("第一段\n网站摘要");
+  });
+  it("generates a website from the latest upstream output and renders its HTML", async () => {
+    const editor = board();
+    node(editor, "shape:task", "instruction", "编写网站内容");
+    node(editor, "shape:web", "website", "不应作为独立提示词的旧内容");
+    node(editor, "shape:summary", "ai-text");
+    connectShapes(editor, "shape:task", "shape:web");
+    connectShapes(editor, "shape:web", "shape:summary");
+    await runWorkflow(editor, "shape:task");
+    expect(mocks.website.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ type: "text", text: "新的生成结果" }),
+    ]);
+    expect(editor.getShape("shape:web").props).toMatchObject({
+      htmlContent: "<h1>网站</h1>",
+      result: "<h1>网站</h1>",
+      description: "网站摘要",
+    });
+    expect(editor.getShape("shape:summary").props.text).toBe("网站摘要");
+  });
+  it("requires an upstream website input even if an old local prompt is stored", async () => {
+    const editor = board();
+    node(editor, "shape:web", "website", "旧的本地要求");
+    await expect(runWorkflow(editor, "shape:web")).rejects.toThrow(
+      "请连接前置组件",
+    );
+    expect(mocks.website).not.toHaveBeenCalled();
+  });
+  it("passes a connected frame as one snapshot without separately collecting its children", async () => {
+    const editor = board();
+    node(editor, "shape:frame", "frame");
+    editor.createShape({
+      id: "shape:child",
+      type: "ai-text",
+      parentId: "shape:frame",
+      props: { text: "不应单独传入的内部文字" },
+    });
+    const capture = vi.spyOn(editor, "toImage").mockResolvedValue({
+      blob: new Blob(["snapshot"]),
+      width: 100,
+      height: 100,
+    });
+    for (const type of [
+      "instruction",
+      "ai-image",
+      "website",
+      "speech",
+      "file",
+    ]) {
+      expect(
+        await inputsForNode(editor, type, [editor.getShape("shape:frame")]),
+      ).toEqual([
+        expect.objectContaining({
+          type: "image",
+          src: "data:image/png;base64,local-context",
+        }),
+      ]);
+    }
+    expect(
+      capture.mock.calls.every(
+        ([ids]) => ids.length === 1 && ids[0] === "shape:frame",
+      ),
+    ).toBe(true);
+    expect(
+      await inputsForNode(editor, "ai-text", [editor.getShape("shape:frame")]),
+    ).toEqual([{ type: "text", text: "画框" }]);
+    expect(capture).toHaveBeenCalledTimes(5);
+  });
+  it("uses only text, images and frame snapshots as image generation inputs", async () => {
+    const editor = board();
+    node(editor, "shape:source", "ai-text", "新的图片要求");
+    node(editor, "shape:audio", "speech");
+    editor.updateShape({
+      id: "shape:audio",
+      props: { result: "不应作为图片输入的语音", src: "/api/assets/audio" },
+    });
+    node(editor, "shape:image", "ai-image");
+    editor.updateShape({
+      id: "shape:image",
+      props: { isUploaded: true, src: "/api/assets/old", imageSize: "3:2" },
+    });
+    connectShapes(editor, "shape:source", "shape:image");
+    connectShapes(editor, "shape:audio", "shape:image");
+    await runWorkflow(editor, "shape:image");
+    expect(mocks.image.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ type: "text", text: "新的图片要求" }),
+    ]);
+    expect(mocks.image.mock.calls[0][1]).toMatchObject({ size: "2496x1664" });
+    expect(editor.getShape("shape:image").props).toMatchObject({
+      src: "/api/assets/generated-image",
+      isUploaded: false,
+    });
+  });
+  it.each(["speech", "file"])(
+    "regenerates an uploaded %s from upstream text and passes its new content onward",
+    async (type) => {
+      const editor = board();
+      node(editor, "shape:source", "instruction");
+      editor.updateShape({
+        id: "shape:source",
+        props: { result: "最新内容", description: "素材说明" },
+      });
+      node(editor, "shape:output", type);
+      editor.updateShape({
+        id: "shape:output",
+        props: { src: "/api/assets/old", isUploaded: true, result: "旧内容" },
+      });
+      node(editor, "shape:text", "ai-text");
+      connectShapes(editor, "shape:source", "shape:output");
+      connectShapes(editor, "shape:output", "shape:text");
+      await runWorkflow(editor, "shape:output");
+      const call = type === "speech" ? mocks.speech : mocks.file;
+      expect(call.mock.calls[0][0]).toEqual([
+        expect.objectContaining({
+          type: "text",
+          text: "最新内容",
+          description: "素材说明",
+        }),
+      ]);
+      expect(editor.getShape("shape:output").props).toMatchObject({
+        isUploaded: false,
+        description: type === "speech" ? "语音摘要" : "文件摘要",
+      });
+      expect(editor.getShape("shape:text").props.text).toBe(
+        type === "speech" ? "朗读内容" : "文件正文",
+      );
+    },
+  );
+  it.each(["ai-image", "speech", "file"])(
+    "passes an existing %s without regeneration when it has no upstream input",
+    async (type) => {
+      const editor = board();
+      node(editor, "shape:asset", type);
+      editor.updateShape({
+        id: "shape:asset",
+        props: {
+          src: "/api/assets/uploaded",
+          result: "上传内容",
+          isUploaded: true,
+        },
+      });
+      node(editor, "shape:task", "instruction", "读取内容");
+      connectShapes(editor, "shape:asset", "shape:task");
+      await runWorkflow(editor, "shape:asset");
+      expect(mocks.image).not.toHaveBeenCalled();
+      expect(mocks.speech).not.toHaveBeenCalled();
+      expect(mocks.file).not.toHaveBeenCalled();
+      expect(mocks.instruction.mock.calls[0][1]).toContainEqual(
+        expect.objectContaining({ src: "/api/assets/uploaded" }),
+      );
+    },
+  );
+  it("stores chart structure separately and passes its title as the text output", async () => {
+    const editor = board();
+    node(editor, "shape:source", "ai-text", '{"topic":"上游 JSON"}');
+    node(editor, "shape:chart", "chart", "不应追加的旧输入");
+    editor.updateShape({ id: "shape:chart", props: { chartType: "mindmap" } });
+    node(editor, "shape:text", "ai-text");
+    connectShapes(editor, "shape:source", "shape:chart");
+    connectShapes(editor, "shape:chart", "shape:text");
+    await runWorkflow(editor, "shape:chart");
+    expect(mocks.chart.mock.calls[0][0]).toMatchObject({
+      inputs: [{ type: "text", text: '{"topic":"上游 JSON"}' }],
+      type: "mindmap",
+    });
+    expect(editor.getShape("shape:chart").props).toMatchObject({
+      result: "图表标题",
+      description: "图表摘要",
+      chartData: JSON.stringify({
+        content: "根节点",
+        children: [],
+        name: "图表标题",
+        description: "图表摘要",
+      }),
+    });
+    expect(editor.getShape("shape:text").props.text).toBe("图表标题");
+  });
+  it("stops at an intermediate start node until it is clicked, then reads through it", async () => {
+    const editor = board();
+    node(editor, "shape:task", "instruction", "生成网站内容");
+    node(editor, "shape:gate", "start");
+    node(editor, "shape:web", "website");
+    connectShapes(editor, "shape:task", "shape:gate");
+    connectShapes(editor, "shape:gate", "shape:web");
+    await runWorkflow(editor, "shape:task");
+    expect(mocks.website).not.toHaveBeenCalled();
+    await runWorkflow(editor, "shape:gate");
+    expect(mocks.website.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ text: "新的生成结果" }),
+    ]);
+    expect(mocks.instruction).toHaveBeenCalledTimes(1);
+  });
+  it("limits AI drawing context and screenshots to native shapes inside its own box", async () => {
+    const editor = board();
+    editor.createShape({
+      id: "shape:drawing",
+      type: "ai-draw",
+      x: 100,
+      y: 100,
+      props: { w: 600, h: 400, query: "整理框内图形" },
+    });
+    editor.createShape({
+      id: "shape:inside",
+      type: "geo",
+      x: 120,
+      y: 120,
+      props: { w: 100, h: 80, text: "框内" },
+    });
+    editor.createShape({
+      id: "shape:outside",
+      type: "geo",
+      x: 900,
+      y: 100,
+      props: { w: 100, h: 80 },
+    });
+    editor.createShape({
+      id: "shape:ai",
+      type: "instruction",
+      x: 300,
+      y: 120,
+      props: { w: 100, h: 80 },
+    });
+    const capture = vi.spyOn(editor, "toImage").mockResolvedValue({
+      blob: new Blob(["snapshot"]),
+      width: 100,
+      height: 100,
+    });
+    await runWorkflow(editor, "shape:drawing");
+    expect(capture.mock.calls[0]).toEqual([
+      ["shape:inside"],
+      { format: "png", background: false, padding: 10 },
+    ]);
+    expect(mocks.agent.mock.calls[0][0]).toMatchObject({
+      query: "整理框内图形",
+      viewport_bounds: { x: 100, y: 100, w: 600, h: 400 },
+      shapes: [
+        expect.objectContaining({ shapeId: "shape:inside", text: "框内" }),
+      ],
+    });
+    editor.updateShape({ id: "shape:outside", props: { text: "框外变化" } });
+    expect(resultIsStale(editor, "shape:drawing")).toBe(false);
+    editor.updateShape({ id: "shape:inside", props: { text: "框内变化" } });
+    expect(resultIsStale(editor, "shape:drawing")).toBe(true);
+  });
+  it("stops an active AI drawing request and allows it to run again", async () => {
+    const editor = board();
+    editor.createShape({
+      id: "shape:drawing",
+      type: "ai-draw",
+      props: { w: 600, h: 400, query: "画一个圆" },
+    });
+    let requestSignal: AbortSignal | undefined;
+    mocks.agent.mockImplementationOnce(
+      (_request, _onEvent, signal: AbortSignal) => {
+        requestSignal = signal;
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(signal.reason), {
+            once: true,
+          });
+        });
+      },
+    );
+    const running = runWorkflow(editor, "shape:drawing");
+    const cancelled = expect(running).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    await vi.waitFor(() => expect(requestSignal).toBeDefined());
+    await runWorkflow(editor, "shape:drawing");
+    await cancelled;
+    expect(requestSignal?.aborted).toBe(true);
+    expect(nodeExecution(editor, "shape:drawing").status).toBe("cancelled");
+    expect(editor.getShape("shape:drawing").props.generation).toBeUndefined();
+    await runWorkflow(editor, "shape:drawing");
+    expect(mocks.agent).toHaveBeenCalledTimes(2);
+    expect(nodeExecution(editor, "shape:drawing").status).toBe("success");
+  });
+  it("does not execute an external link as an AI workflow step", async () => {
+    const editor = board();
+    node(editor, "shape:link", "interactive-web");
+    editor.updateShape({
+      id: "shape:link",
+      props: {
+        url: "https://example.com",
+        webpageContent: "<h1>外部网站</h1>",
+      },
+    });
+    node(editor, "shape:task", "instruction", "不应自动触发");
+    connectShapes(editor, "shape:link", "shape:task");
+    await runWorkflow(editor, "shape:link");
+    expect(mocks.instruction).not.toHaveBeenCalled();
+    expect(editor.getShape("shape:link").props.generation).toBeUndefined();
+  });
   it("updates status labels when language changes without changing user content", async () => {
     const editor = board();
     node(editor, "shape:task", "instruction", "保留用户原文");
@@ -79,7 +471,7 @@ describe("workflow execution parity", () => {
       await inputForShape(editor, editor.getShape("shape:source"), new Set()),
     ).toEqual([]);
   });
-  it("keeps a manually edited image unchanged when running the rest of its workflow", async () => {
+  it("keeps a locked edited image unchanged when running the rest of its workflow", async () => {
     const editor = board();
     node(editor, "shape:original", "ai-image");
     editor.updateShape({
@@ -89,7 +481,7 @@ describe("workflow execution parity", () => {
     node(editor, "shape:cropped", "ai-image");
     editor.updateShape({
       id: "shape:cropped",
-      props: { src: "/api/assets/cropped", isUploaded: true },
+      props: { src: "/api/assets/cropped", isUploaded: true, isLocked: true },
     });
     node(editor, "shape:task", "instruction", "依据裁剪后的图片写配文");
     connectShapes(editor, "shape:original", "shape:cropped");
@@ -103,13 +495,19 @@ describe("workflow execution parity", () => {
       "/api/assets/cropped",
     );
   });
-  it("keeps a generated image fresh after replacing an uploaded reference and restores its status on reload", async () => {
+  it("regenerates an uploaded image from connected references and restores its status on reload", async () => {
     const editor = board();
     node(editor, "shape:image", "ai-image", "画一片安静的山谷");
     editor.updateShape({
       id: "shape:image",
       props: { src: "data:image/png;base64,reference", isUploaded: true },
     });
+    node(editor, "shape:reference", "ai-image");
+    editor.updateShape({
+      id: "shape:reference",
+      props: { src: "data:image/png;base64,connected" },
+    });
+    connectShapes(editor, "shape:reference", "shape:image");
     mocks.image.mockResolvedValue({
       src: "data:image/png;base64,result",
       text: "山谷",
@@ -118,7 +516,7 @@ describe("workflow execution parity", () => {
     await runWorkflow(editor, "shape:image");
     expect(mocks.image.mock.calls[0][0]).toContainEqual({
       type: "image",
-      src: "data:image/png;base64,reference",
+      src: "data:image/png;base64,connected",
     });
     expect(editor.getShape("shape:image").props.isUploaded).toBe(false);
     expect(resultIsStale(editor, "shape:image")).toBe(false);
@@ -272,7 +670,13 @@ describe("workflow execution parity", () => {
       type: "start",
       parentId: "shape:frame",
     });
-    node(editor, "shape:outside", "ai-text", "画框外未选择的内容");
+    editor.createShape({
+      id: "shape:outside",
+      type: "ai-text",
+      x: 1000,
+      y: 500,
+      props: { text: "画框外未选择的内容" },
+    });
     connectShapes(editor, "shape:outside", "shape:start");
     vi.spyOn(editor, "toImage").mockResolvedValue({
       blob: new Blob(["image"]),
@@ -363,6 +767,37 @@ describe("workflow execution parity", () => {
     ).toBe(false);
     expect(nodeExecution(editor, "shape:failed").status).toBe("error");
     expect(nodeExecution(editor, "shape:slow").status).toBe("cancelled");
+  });
+  it("keeps a completed upstream result reserved until the workflow finishes", async () => {
+    const editor = board();
+    node(editor, "shape:source", "ai-text", "源内容");
+    node(editor, "shape:next", "instruction", "处理源内容");
+    connectShapes(editor, "shape:source", "shape:next");
+    let finish!: (result: ReturnType<typeof value>) => void;
+    let started!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    mocks.instruction.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+          started();
+        }),
+    );
+    const running = runWorkflow(editor, "shape:source");
+    await entered;
+    expect(nodeExecution(editor, "shape:source").status).toBe("success");
+    expect(nodeIsBusy(editor, "shape:source")).toBe(true);
+    expect(() =>
+      saveResultEdit(editor, "shape:source", "源内容", "提前修改"),
+    ).toThrow("正在生成");
+    expect(editor.getShape("shape:source").props.text).toBe("源内容");
+    finish(value("完成"));
+    await running;
+    expect(nodeIsBusy(editor, "shape:source")).toBe(false);
+    saveResultEdit(editor, "shape:source", "源内容", "完成后修改");
+    expect(editor.getShape("shape:source").props.text).toBe("完成后修改");
   });
   it("keeps locked cached results and accepts native image and note inputs", async () => {
     const editor = board();

@@ -45,10 +45,12 @@ Use the shared rustfmt configuration. Do not introduce custom formatters or synt
 
 ## BeautifulRust
 
-Use the [BeautifulRust](https://github.com/morganlinton/BeautifulRust) skills `rust-best-practices`, `rust-review` and `rust-port` for writing, reviewing and porting Rust respectively. Project rules take precedence over external advice.
+Use the [BeautifulRust v1.5.0](https://github.com/morganlinton/BeautifulRust/tree/v1.5.0) skills `rust-best-practices`, `rust-review` and `rust-port` for writing, reviewing and porting Rust respectively. Project rules take precedence over external advice.
 
-The additional workspace checks and `clippy.toml` are adapted from upstream commit `c6f56d27a01739d404da2a554daaea023d7ddcca`, with the [MIT license](../../licenses/BeautifulRust-MIT.txt) retained. They check unwrap outside test functions, explicit panics in functions returning Result, unexplained lint suppressions, undocumented unsafe operations, redundant clones, string addition, debugging leftovers and potentially lossy conversions. Test functions may use unwrap; test helpers use expect with context.
+The additional workspace checks and `clippy.toml` are adapted from upstream commit `40db61c6fee84bd121cf288755f0e2f22a50e995`, with the [MIT license](../../licenses/BeautifulRust-MIT.txt) retained. They check unwrap outside test functions, explicit panics in functions returning Result, unexplained lint suppressions, undocumented unsafe operations, redundant clones, string addition, debugging leftovers and potentially lossy conversions. Test functions may use unwrap; test helpers use expect with context.
 
-All project crates are unpublished and maintained as application code. Do not enable the entire pedantic group or blanket requirements for public-item documentation, boolean parameters and shared-pointer cloning syntax. Apply that advice where it improves a real interface or readability.
+Enable `missing_assert_message` to give assertions outside test functions failure context. Assertions inside test functions retain Clippy's exemption.
+
+All project crates are unpublished and maintained as application code. Do not enable the entire pedantic group or blanket requirements for public-item documentation, exhaustive_enums, boolean parameters and shared-pointer cloning syntax. Apply that advice where it improves a real interface or readability.
 
 Run `vp run lint:rust` from the repository root to check all workspace members, targets and features with warnings treated as errors. CI uses the same command.

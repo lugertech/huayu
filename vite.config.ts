@@ -29,7 +29,16 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ["scripts/**/*.{mjs,ts}", "apps/site/*.mjs", "vite.config.ts"],
+        files: [
+          "apps/web/src/types/components.ts",
+          "apps/web/src/config/components.ts",
+        ],
+        rules: {
+          "typescript/no-explicit-any": "error",
+        },
+      },
+      {
+        files: ["scripts/**/*.ts", "apps/site/*.ts", "vite.config.ts"],
         rules: {
           "constructor-super": "error",
           "for-direction": "error",
@@ -185,7 +194,7 @@ export default defineConfig({
         plugins: ["react"],
       },
       {
-        files: ["**/*.{js,mjs,ts,tsx}"],
+        files: ["**/*.{js,ts,tsx}"],
         rules: {
           "one-var": ["error", "never"],
           "prefer-const": "error",

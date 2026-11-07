@@ -1,8 +1,7 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import type { PointerEvent } from "react";
 import { Plus } from "lucide-react";
-import { useEditor } from "@/canvas/editor";
-import type { AIComponentShape } from "@/types/components";
+import { useEditor, type CanvasShape } from "@/canvas/editor";
 import {
   CONNECT_EVENT,
   type ConnectionSide,
@@ -11,13 +10,17 @@ import {
 
 export function ComponentConnectionDots({
   shape,
+  inert,
 }: {
-  shape: AIComponentShape;
+  shape: Pick<CanvasShape, "id" | "type">;
+  inert?: boolean;
 }) {
-  useLocale();
+  const { t } = useTranslations();
   const editor = useEditor();
   const selected = editor.getSelectedShapeIds();
   if (selected.length !== 1 || selected[0] !== shape.id) return null;
+  const sides: ConnectionSide[] =
+    shape.type === "frame" ? ["right"] : ["left", "right"];
   function begin(side: ConnectionSide, event: PointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) return;
     event.preventDefault();
@@ -37,12 +40,13 @@ export function ComponentConnectionDots({
   }
   return (
     <>
-      {(["left", "right"] as const).map((side) => (
+      {sides.map((side) => (
         <button
           key={side}
           type="button"
+          inert={inert || undefined}
           className="connection-button board-connection-port absolute top-1/2 z-10 flex size-9 -translate-y-1/2 touch-none items-center justify-center"
-          style={{ [side]: -18 }}
+          style={{ [side]: shape.type === "frame" ? -34 : -18 }}
           data-connection-id={shape.id}
           data-connection-side={side}
           aria-label={

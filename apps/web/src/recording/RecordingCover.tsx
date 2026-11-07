@@ -8,10 +8,11 @@ export function RecordingCover({ recording }: { recording: Recording }) {
   useLocale();
   const root = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
-  const [cover, setCover] = useState("");
-  const [state, setState] = useState<
-    "loading" | "image" | "audio" | "unavailable"
-  >("loading");
+  const [resource, setResource] = useState<
+    | { status: "loading" | "audio" | "unavailable" }
+    | { status: "image"; url: string }
+  >({ status: "loading" });
+  const state = resource.status;
   const { id, asset_id } = recording;
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -27,6 +28,7 @@ export function RecordingCover({ recording }: { recording: Recording }) {
   }, []);
   useEffect(() => {
     if (!visible) return;
+    setResource({ status: "loading" });
     const controller = new AbortController();
     let objectUrl = "";
     loadRecordingCover({ id, asset_id }, controller.signal)
@@ -34,12 +36,11 @@ export function RecordingCover({ recording }: { recording: Recording }) {
         if (controller.signal.aborted) return;
         if (blob) {
           objectUrl = URL.createObjectURL(blob);
-          setCover(objectUrl);
-          setState("image");
-        } else setState("audio");
+          setResource({ status: "image", url: objectUrl });
+        } else setResource({ status: "audio" });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setState("unavailable");
+        if (!controller.signal.aborted) setResource({ status: "unavailable" });
       });
     return () => {
       controller.abort();
@@ -53,10 +54,10 @@ export function RecordingCover({ recording }: { recording: Recording }) {
     >
       {state === "image" ? (
         <img
-          src={cover}
+          src={resource.status === "image" ? resource.url : undefined}
           alt=""
-          className="h-full w-full object-contain"
-          onError={() => setState("unavailable")}
+          className="recording-cover-image h-full w-full object-contain"
+          onError={() => setResource({ status: "unavailable" })}
         />
       ) : state === "loading" ? (
         <span className="absolute inset-0 bg-muted motion-safe:animate-pulse" />

@@ -3,9 +3,29 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+interface Dependency {
+  path?: string;
+  version?: string;
+  dependencies?: Record<string, Dependency>;
+}
+
+interface PackageInfo {
+  name?: string;
+  version: string;
+  license?: string | { type?: string };
+  licenses?: { type: string }[];
+}
+
+interface Notice {
+  name: string;
+  version: string;
+  license: string;
+  path: string;
+}
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const projects = JSON.parse(
+const projects: { dependencies?: Record<string, Dependency> }[] = JSON.parse(
   execFileSync(
     command,
     ["list", "--recursive", "--prod", "--depth", "Infinity", "--json"],
@@ -17,11 +37,11 @@ const projects = JSON.parse(
     },
   ),
 );
-const packages = new Map();
-async function visit(dependencies = {}) {
+const packages = new Map<string, Notice>();
+async function visit(dependencies: Record<string, Dependency> = {}) {
   for (const [name, item] of Object.entries(dependencies)) {
     if (!item.path || item.version?.startsWith("link:")) continue;
-    const info = JSON.parse(
+    const info: PackageInfo = JSON.parse(
       await readFile(resolve(item.path, "package.json"), "utf8"),
     );
     const key = `${info.name || name}@${info.version}`;

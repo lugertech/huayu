@@ -6,9 +6,9 @@ import { AppearanceSwitcher, useAppearance } from "./AppearanceSwitcher";
 import { repositoryURL } from "./config";
 
 export function Logo() {
-  const { t, path: link, locale } = useSiteI18n();
+  const { path: link, locale } = useSiteI18n();
   return (
-    <a className="site-logo" href={link()} aria-label={t("app.homeLabel")}>
+    <a className="site-logo" href={link()}>
       <svg className="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
         <rect width="40" height="40" rx="12" fill="currentColor" />
         <g

@@ -1,13 +1,9 @@
 import { t } from "@/i18n";
 import type { CanvasShape, Editor } from "@/canvas/editor";
-import {
-  connectedShapes,
-  createConnectedComponent,
-} from "@/utils/connectionParser";
-import { nodeExecution } from "./execute";
+import { createConnectedComponent } from "@/utils/connectionParser";
+import { nodeIsBusy } from "./execute";
 
 export type ResultKind = "text" | "image" | "website";
-export type RevisionType = "instruction" | "ai-image" | "website";
 export const IMAGE_RATIOS = [
   "1:1",
   "3:2",
@@ -55,44 +51,13 @@ export function resultSource(editor: Editor, shape: CanvasShape): string {
     shape.props.src || editor.store.get(shape.props.assetId)?.props?.src || ""
   );
 }
-export function revisionType(shape: CanvasShape): RevisionType {
-  return resultKind(shape) === "image"
-    ? "ai-image"
-    : resultKind(shape) === "website"
-      ? "website"
-      : "instruction";
-}
-export function pendingRevision(
-  editor: Editor,
-  sourceId: string,
-  type: RevisionType,
-  prompt: string,
-) {
-  if (!prompt.trim()) return null;
-  return (
-    editor
-      .getCurrentPageShapes()
-      .filter(
-        (item) =>
-          item.meta.revisionOf === sourceId &&
-          item.type === type &&
-          item.props.text === prompt.trim() &&
-          !resultKind(item),
-      )
-      .sort(
-        (a, b) =>
-          Number(b.meta.revisionCreatedAt || 0) -
-          Number(a.meta.revisionCreatedAt || 0),
-      )[0]?.id || null
-  );
-}
 function editable(editor: Editor, id: string) {
   const shape = editor.getShape(id);
   if (!shape || editor.pageOf(id) !== editor.getCurrentPageId())
     throw new Error(t("workflow.thisWorkIsNoLongerOnTheCanvas"));
   if (shape.isLocked || shape.props.isLocked)
     throw new Error(t("workflow.unlockThisWorkBeforeEditing"));
-  if (["running", "queued"].includes(nodeExecution(editor, id).status))
+  if (nodeIsBusy(editor, id))
     throw new Error(t("workflow.thisWorkIsBeingGenerated"));
   return shape;
 }
@@ -124,65 +89,6 @@ export function saveResultEdit(
   );
 }
 
-/** Revisions are new branches: making another version never reruns or replaces its source. */
-export function createResultRevision(
-  editor: Editor,
-  sourceId: string,
-  type: RevisionType,
-  prompt: string,
-  options: { imageSize?: string } = {},
-) {
-  const source = editor.getShape(sourceId);
-  if (!source || editor.pageOf(sourceId) !== editor.getCurrentPageId())
-    throw new Error(t("workflow.theOriginalWorkIsNoLongerOnTheCanvas"));
-  if (!prompt.trim())
-    throw new Error(t("workflow.describeWhatYoudLikeToChangeFirst"));
-  let id: string | null = null;
-  editor.run(() => {
-    id = createConnectedComponent(editor, [sourceId], type, prompt.trim());
-    if (!id) throw new Error(t("workflow.cannotCreateANewVersion"));
-    editor.updateShape({
-      id,
-      meta: {
-        ...editor.getShape(id).meta,
-        revisionOf: sourceId,
-        revisionCreatedAt: Date.now(),
-      },
-      ...(type === "ai-image"
-        ? {
-            props: {
-              imageSize: IMAGE_RATIOS.includes(options.imageSize || "")
-                ? options.imageSize
-                : source.props.imageSize || "1:1",
-            },
-          }
-        : {}),
-    });
-  });
-  return id!;
-}
-export function completedRevision(editor: Editor, id: string): string {
-  const shape = editor.getShape(id);
-  if (!shape) throw new Error(t("workflow.theNewVersionWasRemoved"));
-  const output =
-    shape.type === "instruction"
-      ? connectedShapes(editor, id, "next").find(
-          (item) => item.type === "ai-text",
-        )
-      : undefined;
-  if (output && typeof shape.meta.revisionOf === "string")
-    editor.updateShape({
-      id: output.id,
-      props: { name: output.props.name || shape.props.name },
-      meta: {
-        ...output.meta,
-        revisionOf: shape.meta.revisionOf,
-        creationStep: id,
-        revisionCreatedAt: shape.meta.revisionCreatedAt,
-      },
-    });
-  return output?.id || id;
-}
 export function resultVersions(editor: Editor, shape: CanvasShape) {
   let root = shape;
   const seen = new Set<string>();
@@ -269,9 +175,6 @@ export function createImageRevision(
 export interface ResultDraft {
   base: string;
   content: string;
-  prompt: string;
-  type: RevisionType;
-  imageSize?: string;
 }
 export const resultDraftKey = (project: string, page: string, id: string) =>
   `huayu:result:v1:${encodeURIComponent(project)}:${encodeURIComponent(page)}:${encodeURIComponent(id)}`;
@@ -282,27 +185,17 @@ export function readResultDraft(
   const empty = {
     base: resultText(shape),
     content: resultText(shape),
-    prompt: "",
-    type: revisionType(shape),
   };
   try {
     const value = JSON.parse(raw || "null");
     if (
       value?.version !== 1 ||
-      !["base", "content", "prompt"].every(
-        (key) => typeof value[key] === "string",
-      ) ||
-      !["instruction", "ai-image", "website"].includes(value.type)
+      !["base", "content"].every((key) => typeof value[key] === "string")
     )
       return empty;
     return {
       base: value.base,
       content: value.content,
-      prompt: value.prompt,
-      type: value.type,
-      ...(IMAGE_RATIOS.includes(value.imageSize)
-        ? { imageSize: value.imageSize }
-        : {}),
     };
   } catch {
     return empty;

@@ -1,7 +1,6 @@
 import { t, useLocale } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
-  Check,
   CircleAlert,
   CircleCheck,
   Eye,
@@ -40,11 +39,15 @@ export function ModelSettings({
   const [draft, setDraft] = useState<Settings>(() => structuredClone(saved));
   const [capability, setCapability] = useState<Capability>(initialCapability);
   const [visible, setVisible] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<{
-    status: "success" | "warning" | "error";
-    message: string;
-  } | null>(null);
+  const [testState, setTestState] = useState<
+    | { status: "idle" | "testing" }
+    | {
+        status: "complete";
+        result: { status: "success" | "warning" | "error"; message: string };
+      }
+  >({ status: "idle" });
+  const testing = testState.status === "testing";
+  const result = testState.status === "complete" ? testState.result : null;
   const request = useRef<AbortController | null>(null);
   const { showToast } = useToast();
   const connection = draft.connections[capability];
@@ -64,8 +67,7 @@ export function ModelSettings({
   function resetTest() {
     request.current?.abort();
     request.current = null;
-    setTesting(false);
-    setResult(null);
+    setTestState({ status: "idle" });
   }
   function change(key: keyof typeof connection, value: string) {
     resetTest();
@@ -92,12 +94,15 @@ export function ModelSettings({
     }
   }
   async function test() {
-    if (testing) {
+    if (request.current) {
       resetTest();
       return;
     }
     if (issue) {
-      setResult({ status: "error", message: issue.message });
+      setTestState({
+        status: "complete",
+        result: { status: "error", message: issue.message },
+      });
       document
         .getElementById(
           { baseUrl: "model-url", model: "model-name", apiKey: "model-key" }[
@@ -109,28 +114,30 @@ export function ModelSettings({
     }
     const controller = new AbortController();
     request.current = controller;
-    setTesting(true);
-    setResult(null);
+    setTestState({ status: "testing" });
     try {
       const value = await testConnection(
         capability,
         connection,
         controller.signal,
       );
-      if (request.current === controller) setResult(value);
+      if (request.current === controller)
+        setTestState({ status: "complete", result: value });
     } catch (error) {
       if (request.current === controller && !controller.signal.aborted)
-        setResult({
-          status: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : t("settings.models.connectionFailed"),
+        setTestState({
+          status: "complete",
+          result: {
+            status: "error",
+            message:
+              error instanceof Error
+                ? error.message
+                : t("settings.models.connectionFailed"),
+          },
         });
     } finally {
       if (request.current === controller) {
         request.current = null;
-        setTesting(false);
       }
     }
   }
@@ -439,7 +446,6 @@ export function ModelSettings({
             {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={!dirty}>
-            <Check />
             {t("settings.models.saveSettings")}
           </Button>
         </div>

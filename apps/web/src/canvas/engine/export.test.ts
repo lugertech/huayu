@@ -33,7 +33,7 @@ describe("canvas card export", () => {
     const output = await exportSVG(editor, [
       ...editor.getCurrentPageShapeIds(),
     ]);
-    expect(output?.svg).toContain("描述想要的图片…");
+    expect(output?.svg).toContain("上传图片，或连接组件后运行生成");
     expect(output?.svg).toContain("lucide-image");
     expect(output?.svg).toContain("保留的素材");
     expect(output?.svg).toContain("输入指令，连接组件获取更多上下文…");

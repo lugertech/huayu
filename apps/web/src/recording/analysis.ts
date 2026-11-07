@@ -1,5 +1,4 @@
-import { t, useLocale, getLocale, type MessageKey, type Values } from "@/i18n";
-import { useSyncExternalStore } from "react";
+import { t, getLocale, type MessageKey, type Values } from "@/i18n";
 import { requireConnection, type Capability } from "@/ai/settings";
 import { ModelConnectionError } from "@/ai/errors";
 import { api, APIError, type Recording } from "@/api/client";
@@ -12,6 +11,11 @@ import {
 } from "@/ai/provider";
 import { extractRecordingAudio, type AudioChunk } from "./audio";
 import {
+  getAnalysisTask,
+  updateAnalysisTask,
+  type AnalysisPhase,
+} from "./analysis-task";
+import {
   readAnalysis,
   readCheckpoint,
   readTranscript,
@@ -22,50 +26,14 @@ import {
   type Transcript,
 } from "./report";
 export * from "./report";
+export { getAnalysisTask, useAnalysisTask } from "./analysis-task";
 
-interface AnalysisTask {
-  busy: boolean;
-  progress: string;
-  progressKey?: MessageKey;
-  progressValues?: Values;
-  error: string;
-  modelCapability?: Capability;
-  recording?: Recording;
-  completed?: number;
-  total?: number;
-}
-const idle: AnalysisTask = { busy: false, progress: "", error: "" };
-const tasks = new Map<string, AnalysisTask>();
 const controllers = new Map<string, AbortController>();
-const listeners = new Set<() => void>();
-function updateTask(id: string, value: AnalysisTask) {
-  tasks.set(id, value);
-  listeners.forEach((listener) => listener());
-}
-function taskFor(id?: string) {
-  return id ? tasks.get(id) || idle : idle;
-}
-export function getAnalysisTask(id?: string) {
-  const task = taskFor(id);
-  return task.progressKey
-    ? { ...task, progress: t(task.progressKey, task.progressValues) }
-    : task;
-}
-export function useAnalysisTask(id?: string) {
-  useLocale();
-  useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    () => taskFor(id),
-  );
-  return getAnalysisTask(id);
-}
 export function cancelAnalysis(id: string) {
-  controllers.get(id)?.abort();
+  const controller = controllers.get(id);
+  if (!controller) return;
+  updateAnalysisTask(id, { ...getAnalysisTask(id), phase: "cancelling" });
+  controller.abort();
 }
 
 interface AudioSource {
@@ -214,8 +182,8 @@ export async function analyzeRecording(
       requireConnection(capability);
   } catch (error) {
     if (error instanceof ModelConnectionError)
-      updateTask(initial.id, {
-        busy: false,
+      updateAnalysisTask(initial.id, {
+        phase: "failed",
         progress: "",
         error: error.message,
         modelCapability: error.capability,
@@ -244,15 +212,16 @@ export async function analyzeRecording(
     updatedAt: new Date().toISOString(),
   };
   function progress(
+    phase: AnalysisPhase,
     message: { key: MessageKey; values?: Values },
     completed?: number,
     total?: number,
   ) {
-    const phase = t(message.key, message.values);
-    checkpoint.phase = phase;
-    updateTask(initial.id, {
-      busy: true,
-      progress: phase,
+    const description = t(message.key, message.values);
+    checkpoint.phase = description;
+    updateAnalysisTask(initial.id, {
+      phase: signal.aborted ? "cancelling" : phase,
+      progress: description,
       progressKey: message.key,
       progressValues: message.values,
       error: "",
@@ -280,6 +249,7 @@ export async function analyzeRecording(
     )
       transcript = { version: 1, text: "", segments: [] };
     progress(
+      "preparing",
       transcript.text && transcript.complete !== false
         ? { key: "recordings.analysis.preparingContent" }
         : { key: "recordings.analysis.preparingAudio" },
@@ -304,6 +274,7 @@ export async function analyzeRecording(
       for (let index = completed; index < source.count; index++) {
         signal.throwIfAborted();
         progress(
+          "transcribing",
           {
             key: "recordings.analysis.transcribingAudio",
             values: {
@@ -364,8 +335,8 @@ export async function analyzeRecording(
         throw new Error(t("recordings.analysis.noSpeechWasRecognized"));
     }
     if (options.transcriptionOnly) {
-      updateTask(recording.id, {
-        busy: false,
+      updateAnalysisTask(recording.id, {
+        phase: "completed",
         progress: "",
         error: "",
         recording,
@@ -380,6 +351,7 @@ export async function analyzeRecording(
     for (let index = checkpoint.parts.length; index < batches.length; index++) {
       signal.throwIfAborted();
       progress(
+        "analyzing",
         batches.length > 1
           ? {
               key: "recordings.analysis.organizingContent",
@@ -415,7 +387,9 @@ export async function analyzeRecording(
     const parts = checkpoint.parts;
     let summary = parts[0]?.summary || "";
     if (parts.length > 1) {
-      progress({ key: "recordings.analysis.summarizingTheFullRecording" });
+      progress("summarizing", {
+        key: "recordings.analysis.summarizingTheFullRecording",
+      });
       summary = await chat(
         [
           {
@@ -451,12 +425,16 @@ export async function analyzeRecording(
         }),
     };
     signal.throwIfAborted();
+    updateAnalysisTask(recording.id, {
+      ...getAnalysisTask(recording.id),
+      phase: "saving",
+    });
     recording = await api<Recording>(`/api/recordings/${recording.id}`, {
       method: "PATCH",
       body: JSON.stringify({ analysis: JSON.stringify(report) }),
     });
-    updateTask(recording.id, {
-      busy: false,
+    updateAnalysisTask(recording.id, {
+      phase: "completed",
       progress: "",
       error: "",
       recording,
@@ -480,8 +458,8 @@ export async function analyzeRecording(
     } catch {
       /* Completed transcript chunks remain independently persisted. */
     }
-    updateTask(initial.id, {
-      busy: false,
+    updateAnalysisTask(initial.id, {
+      phase: cancelled ? "cancelled" : "failed",
       progress: "",
       error: checkpoint.error || t("recordings.analysis.analysisFailed"),
       modelCapability:

@@ -4,9 +4,13 @@
 
 Draw, write text, upload images and files. Click a component on the left to add instructions, web pages, audio or charts, or drag it to a position on the canvas. The bottom toolbar provides selection, hand, drawing, shapes and native connections.
 
-The component palette stays at the canvas's left edge and can collapse to icons. Drag a component to see the full card follow your pointer, then release to place it. Press Esc or drag back to the palette to cancel. Each placement can be undone in one step.
+The component palette sits at the canvas's left edge and shows icons by default. Hover to reveal names, then move away to collapse it. Keyboard focus also reveals names. Drag a component to see the full card follow your pointer, then release to place it. Press Esc or drag back to the palette to cancel. Each placement can be undone in one step.
 
-The canvas fills the content area's height. Its name and save status sit at the top left; recording, sharing, export and workflow controls sit at the top right.
+The canvas fills the content area's height. The top-left back arrow returns directly to the project list, with a tooltip explaining the action. The canvas name sits beside it. Edits save automatically in the background, without a persistent save label. Connection or saving problems appear at the bottom right with a retry action. The top right provides online members, invitations, recording, export and the whiteboard menu. Hover over icons for their labels. Narrow windows place these controls on separate rows.
+
+Click Run on any node to execute that node and its downstream steps in connection order. Nodes show progress while running. Click a node's Stop button to stop that run.
+
+Text components replace their body with preceding outputs. Image, speech, website, file and chart components receive generation inputs through connected steps; website components preview the generated page. Audio uploads are transcribed immediately, and document uploads are parsed immediately. A run that reaches another Run node pauses there until it is clicked. Downstream components can still read materials connected before that node.
 
 Use the button at the sidebar's top right to collapse it, then select the brand mark at the top to expand it again. Icons stay in place while labels appear as it opens. When collapsed, hover or focus an icon to read its name. Recent projects open in a menu and Settings stays at the bottom. On mobile, open the navigation drawer from the content area's top-left control.
 
@@ -14,7 +18,21 @@ Everything lives on one infinite canvas. When opening a legacy multi-page projec
 
 Ctrl + wheel zooms the canvas even while hovering over a card. Ordinary wheel scrolling still scrolls long text inside cards.
 
-Select one or more materials and choose **Create from this**. Review the material list, describe your request and submit. Drawings, shapes and frames are supplied as images; text and pages retain their actual content. Recording excerpts become editable text with source links.
+Connect materials to the component you want to run, and write requests in an instruction component. Image upload/download and ratio, web search, audio and file actions, page tools and chart type controls stay inside their components in the original MenteX positions. Text components have no extra action bar. Recording excerpts become editable text with source links.
+
+### Whiteboard menu and keyboard shortcuts
+
+- **Whiteboard menu**, at the end of the top-right icon group, provides import, export, search, commands, help, appearance and canvas background settings.
+- Select a shape or drawing tool to adjust strokes, fills and line styles on the canvas's right side. Wide canvases show the full panel; narrow desktops and tablets show a compact icon rail. Click an icon to open its settings, then click the canvas or press Esc to close them. Long panels scroll. On phones, the bottom style button opens settings; component and drawing tools return when settings close.
+- Click the zoom percentage at the bottom left to open the zoom menu, restore 100%, fit all content or focus the selection.
+- Select a shape or click a card header, then press **Delete / Backspace** to remove it. The **⌫** key on Mac keyboards is Backspace.
+- Use **Cmd / Ctrl + C, X, V** to copy, cut and paste selected content, or **Cmd / Ctrl + D** to duplicate it. Cards and native shapes can be selected together and copied to another canvas. Copies retain their content; the whiteboard handles bindings and groups.
+- Use **Cmd / Ctrl + Z** to undo and **Cmd / Ctrl + Shift + Z** to redo. Delete keys inside text inputs edit text without removing the card.
+- Right-click a card header, border or image to open the native whiteboard menu. Text inputs and reading areas keep the browser's text menu. Copy, paste, select all and undo inside text inputs only affect text.
+- **Copy as PNG / SVG** in the context menu includes actual card content. Use **Alt / Option + Shift + C** to copy as PNG. Locking a card through the context menu also locks its content and controls; use the context menu to unlock it.
+- Press **Enter** with a card selected, or double-click its header, to open its content. Native shapes, text and images retain the whiteboard's own editing and cropping interactions.
+- With the canvas focused, use **Cmd / Ctrl + A** to select all, **Cmd / Ctrl + G** to group, **Cmd / Ctrl + Shift + G** to ungroup, arrow keys to move elements and **Cmd / Ctrl + K** to edit an element link. The sidebar search icon still opens project search.
+- Open **Whiteboard menu → Help**, or the bottom-right help button, for the full shortcut list.
 
 ## Template library
 
@@ -60,19 +78,28 @@ Open an example on the website to zoom its workflow, select a card, and switch b
 
 To continue, change source material and run the steps you need. Text and pages use text generation; reading image inputs requires vision, and creating new images requires image generation. Missing connections show the relevant setup guidance and preserve existing example work. The original four quick starts and fourteen other scenario templates remain available. Existing projects are not rewritten.
 
-## Asset library
+## Project library
 
-Open **Asset library** from the left navigation. The folder tree is on the left; the current folder’s directories and images appear on the right. Use the breadcrumb path to return to a parent. Root shows ungrouped images; searching from root searches every folder. Scroll down to load more images.
+Open **Library** (`/library`) from the sidebar to browse files, generated web pages, images and speech audio included in each project's **Project attachments**. Ordinary text, instruction results, charts and external links are excluded.
 
-- **Organize folders:** choose **New folder**. Right-click a folder to create a subfolder, rename or delete it, or use its **…** button in the tree. Deleting a folder moves its images and subfolders to its parent; it does not delete the images.
-- **Move images:** drag an image onto a folder in the tree, a directory card, or the **Assets** root. The destination highlights. You can also right-click the image and choose **Move to folder**.
-- **View and edit:** click an image to preview it, move between images, zoom, view actual size, rotate or reset. Right-click or use **…** to rename, download the original or move it to Trash. Shift+F10 opens the menu, arrow keys select an action, and Escape closes it.
-- **Upload a batch:** choose **Upload**, or drop image files into the current directory or onto a destination folder. Review the queue, cancel individual files or clear pending files, then choose **Start upload** to see each result.
-- **Restore:** open **Trash** and choose **Restore asset** from the image menu. The image returns to its original folder. Existing canvas images remain available while the asset is in Trash.
+- **Find items:** search names, project names or text excerpts, and filter by type or project.
+- **Change the view:** switch between list and grid. Use **View options** to group by project or change the sort order. Expand groups with **Show more**.
+- **Preview and download:** click an attachment to preview it, or download it from its **…** menu. Document content, images and generated web pages have inline previews, speech audio can be played, and other files offer a download.
+- **Return to the source:** choose **View in project** to locate the original canvas component. Edit or remove the content in that project.
 
-Inside a canvas, the drawer initially shows all images. Use its folder filter, search and sort controls to find an image. Click to select, then choose **Insert on canvas**; alternatively, double-click it or drag it to an exact position. Images retain their aspect ratio, use native canvas elements and support a single undo. Dragging onto the canvas keeps the source in the library. Inserting from the management page lets you choose an existing canvas or create a new one.
+Attachments are ungrouped by default. Enable **Group by project** in **View options** to group them; the selected setting is remembered.
 
-**Shape library**, beside the drawer title, retains Excalidraw's reusable shapes. Image files and folder metadata live in the local runtime directory; reusable shapes retain browser storage.
+The library reflects current project attachments. Project renames, replacement attachments and removed components appear when you return to the library. Deleting a project removes its entries. After editing in another window, return to this window or use Refresh.
+
+## Standalone asset library
+
+The asset library manages uploaded files independently of projects. Its sidebar entry is hidden; it remains available at `/assets`. It does not automatically collect project content or offer canvas insertion.
+
+- **Organize folders:** use the folder tree or directory cards. Deleting a folder moves its files and subfolders to its parent without deleting them.
+- **Move files:** drag a file onto a folder or the Assets root, or choose **Move to folder** from its **…** menu.
+- **View and manage:** preview images or download other files. Menus support renaming, downloading, moving and Trash.
+- **Upload a batch:** select or drop files, review the queue, and start the upload. Images, documents, audio, video and other files are supported.
+- **Restore:** restore files from Trash. Deleting a project does not affect standalone library files.
 
 ## Connect and run
 
@@ -86,26 +113,48 @@ Collaborators use the same Huayu service and project data. No sign-in or model k
 
 ### Invite and join
 
-1. Open the canvas and choose **Share** at the top right.
+1. Open the canvas and choose **Invite** at the top right.
 2. Turn on **Allow collaboration through a link**, then choose **Copy link**.
 3. Send the link to someone who can reach this Huayu service. They open it directly; no import or separate project copy is needed.
-4. Added, moved, edited and deleted cards appear in the other browser. Wait for **Saved** beside the canvas name before closing the page.
-5. To end collaboration, turn off the switch in the original canvas's Share dialog. Open shared pages show **This collaboration link is disabled or no longer valid**. Turning it back on creates a new link; copy and send that link again. The previous link remains invalid.
+4. Strokes and shapes appear as they are being drawn. Card creation, movement, edits and deletion are also broadcast live, along with collaborator cursors and selection outlines. Edits save automatically without a manual save action.
+5. To end collaboration, turn off the switch in the original canvas's invitation dialog. Open shared pages show **This collaboration link is disabled or no longer valid**. Turning it back on creates a new link; copy and send that link again. The previous link remains invalid.
 
 Two browsers or tabs on one computer can try this locally. Other computers cannot use your `127.0.0.1` or `localhost` link: those addresses refer to their own computer. For multiple devices, follow [Local-network collaboration](./DEPLOYMENT.md#local-network-collaboration), open the original canvas through the local-network address, then copy its collaboration link.
+
+### Online members and removal
+
+- Each room accepts up to **15 simultaneous collaborators**, excluding the host. Multiple tabs in one browser count as one member; separate browsers or browser profiles count separately.
+- Overlapping avatars appear at the top right. After the first three, **+N** represents the others. Click the group for the full online list, with the host and yourself marked. Avatar colors match collaborator cursors. Anonymous members use a color and short identifier without accounts or avatar uploads.
+- The host can choose **⋯ → Remove from room** beside a collaborator and confirm. This disconnects all of that member's tabs, removes their cursors and selections, and frees their place. Saved canvas content stays intact; other members remain connected. Collaborators do not see removal or invitation management controls.
+- A full room explains why joining failed and offers **Try joining again** when a place is free. Removed members see a separate message without automatic reconnection; they cannot keep saving or accessing the canvas's attachments.
+- Membership is retained in the current browser. Removal survives a service restart, but is not an account ban: clearing site data, identity expiry or using another browser allows someone with a valid link to join as a new member. To invalidate the old invitation for everyone, turn collaboration off and back on, then send the new link only to the intended participants.
 
 ### Editing, saving and recovery
 
 - Edits to different cards retain each person's work. When both people edit one card, the last save received by the service wins; text is not merged character by character. Take turns on the same card.
-- Each person's zoom, pan and selection remain independent. Member lists, online counts and remote cursors are not currently provided.
-- **Waiting to reconnect** means unsubmitted changes remain in this browser. Huayu retries after recovery; you can also use **Retry** in the connection message. Wait for **Saved** before leaving. Do not clear site data or switch browsers while those changes remain unsaved.
+- Each person's zoom, pan and selection remain independent. Colored anonymous collaborator cursors and selection outlines show their activity without changing your selection or adding their edits to your undo history. Cursors hide when the pointer leaves the canvas or the window loses focus; collaborator indicators are removed when they leave or disconnect.
+- Live previews and autosave run independently. Seeing another person's drawing does not mean it has been saved yet. Changes are submitted automatically in the background. Resolve any connection or saving warning before leaving. Cursor positions, selections and presence are not written into projects, templates or exports.
+- A connection warning means unsubmitted changes remain in this browser. Huayu retries after recovery; you can also use **Retry** in the connection message. Wait for the warning to clear before leaving. Do not clear site data or switch browsers while those changes remain unsaved.
 - Model URLs, keys and selections are not shared through the link. Anyone running AI steps configures the required capabilities in **Settings → Model connections** in their own browser. Others can edit and view saved results without a key. Have one person run a workflow to avoid duplicate generation.
 
-Links provide shared editing, without read-only visitors, accounts or project isolation. Anyone who can reach this Huayu instance can also open its project list; disabling a link only revokes that link. Use a trusted access scope. See [Deployment and backups](./DEPLOYMENT.md).
+### Collaborator interface and permissions
+
+A link opens an independent canvas interface. Workspace navigation, recent projects, global search, the project library, global asset library and recording management are not rendered. The canvas name is plain text; rename, share management and publishing templates are unavailable.
+
+| Action | Service computer | Collaborator |
+| --- | --- | --- |
+| View, draw, edit cards and connections | Allowed | Current canvas only |
+| View results and export | Allowed | Current canvas only |
+| Upload and download attachments | Allowed | Current canvas attachments only |
+| Configure and use AI models | Own browser | Own browser |
+| Browse projects, global assets or recordings | Allowed | No interface; API access denied |
+| Rename/delete projects, manage sharing, publish templates, remove members | Allowed | No interface; API access denied |
+
+The server enforces the scope even when a visitor changes project IDs or calls APIs directly. Closing collaboration revokes that link and its attachment access. Management access is determined by a connection from the service computer, not an account system; direct workspace access on that computer remains privileged. See [Deployment and backups](./DEPLOYMENT.md).
 
 ## Text works
 
-Choose **View work** to read Markdown. **Edit text** changes the result, keeping original creation instructions available. Save before using your edits for another creation. Unsaved edits remain as a draft in this browser and are restored when you reopen the work.
+Double-click a text component header, or select it and press Enter, to read Markdown. **Edit text** changes the result, keeping original creation instructions available. Save before using your edits for another creation. Unsaved edits remain as a draft in this browser and are restored when you reopen the work.
 
 If the original changes elsewhere, Huayu reports the conflict and keeps your draft instead of silently overwriting the work. Check the current result before saving, or discard your draft to return to it.
 
@@ -113,21 +162,17 @@ If the original changes elsewhere, Huayu reports the conflict and keeps your dra
 
 Open an image to zoom, return to original size or fit the window. Pan after zooming to inspect details. **Crop and rotate** saves a new image while preserving the original.
 
-Copy places actual image data on the clipboard; download saves the file. Describe what to change or preserve for a new version, and choose a ratio supported by your service. Save cropping edits before generating another version.
+Copy places actual image data on the clipboard; download saves the file.
 
 ## Web works
 
 Interact with a page preview and check desktop or mobile sizes. **Edit HTML** updates the code; wide screens show a live preview alongside it, and small screens can switch back to preview.
 
-**Save and create** saves manual changes before using the updated page for the next version. Download exports HTML. The isolated preview restricts access to the parent page, network requests and form submission, so pages requiring remote scripts, fonts or APIs may not run fully.
+Download exports HTML. The isolated preview restricts access to the parent page, network requests and form submission, so pages requiring remote scripts, fonts or APIs may not run fully.
 
-## New directions and versions
+## Versions and undo
 
-Describe changes beside the work. The same output type is selected by default, or convert between text, images and web pages. A connected branch retains the new direction, and the completed version opens automatically. Use the previous-version button or version list to return.
-
-After failure or a stop, edit instructions and continue the unfinished step. Closing the work window does not cancel generation. Refreshing the browser ends the active request but keeps saved work and drafts; reopen to continue.
-
-The version list tracks explicitly derived works, not a snapshot of every text edit. Ordinary manual edits use undo and redo.
+Use the previous-version button or version list to view existing versions. Cropping and rotation save a new image while preserving the original. Manual text and HTML edits use undo and redo.
 
 ## Export and import
 

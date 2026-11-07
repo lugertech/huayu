@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import {
   useCallback,
   useEffect,
@@ -8,16 +8,18 @@ import {
 } from "react";
 import { EditorContext, useEditor, type Editor } from "@/canvas/editor";
 import { ComponentDrag, createCanvasShape } from "@/canvas/component-creation";
-import { NativeSVG } from "@/canvas/engine/visual";
 import { BoardComponents } from "@/canvas/excalidraw/BoardComponents";
-import { ChevronLeft, ChevronRight, Download, Images } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
-import { useIsMobile } from "@/lib/use-mobile";
-import { COMPONENT_CONFIGS, type ComponentType } from "@/config/components";
+import {
+  COMPONENT_CONFIGS,
+  componentConfig,
+  type ComponentType,
+} from "@/config/components";
 import { FileDownloadDrawer } from "./FileDownloadDrawer";
 
 function ComponentPreview() {
+  const { t } = useTranslations();
   const editor = useEditor();
   const shape = editor.getCurrentPageShapes()[0];
   const camera = editor.session.camera;
@@ -29,7 +31,22 @@ function ComponentPreview() {
           <g
             transform={`translate(${(shape.x + camera.x) * camera.z} ${(shape.y + camera.y) * camera.z}) scale(${camera.z})`}
           >
-            <NativeSVG shape={shape} dark={editor.theme === "dark"} />
+            <rect
+              width={shape.props.w}
+              height={shape.props.h}
+              rx={8 / camera.z}
+              fill="none"
+              stroke="#bbb"
+              strokeWidth={2 / camera.z}
+            />
+            <text
+              x={0}
+              y={-6 / camera.z}
+              fontSize={14 / camera.z}
+              fill={editor.theme === "dark" ? "#7a7a7a" : "#999"}
+            >
+              {t("canvas.frame")}
+            </text>
           </g>
         </svg>
       )}
@@ -37,18 +54,11 @@ function ComponentPreview() {
   );
 }
 
-export function ComponentPanel({
-  onOpenLibrary,
-  libraryOpen = false,
-}: {
-  onOpenLibrary?: () => void;
-  libraryOpen?: boolean;
-}) {
-  useLocale();
+export function ComponentPanel() {
+  const { t, locale } = useTranslations();
   const editor = useEditor();
-  const mobile = useIsMobile();
-  const [collapsed, setCollapsed] = useState<boolean | null>(null);
-  const compact = collapsed ?? mobile;
+  const [hovered, setHovered] = useState(false);
+  const [focusVisible, setFocusVisible] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false);
   const [preview, setPreview] = useState<Editor | null>(null);
   const gesture = useRef<{
@@ -132,100 +142,66 @@ export function ComponentPanel({
     <>
       <aside
         className="board-component-palette"
-        data-collapsed={compact}
+        data-expanded={hovered || focusVisible}
+        data-hovered={hovered}
         aria-label={t("canvas.components.palette")}
         data-canvas-ui
+        onPointerEnter={(event) => {
+          if (event.pointerType !== "touch") setHovered(true);
+        }}
+        onPointerLeave={(event) => {
+          if (event.pointerType !== "touch") setHovered(false);
+        }}
+        onFocusCapture={(event) =>
+          setFocusVisible(event.target.matches(":focus-visible"))
+        }
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+            setFocusVisible(false);
+        }}
       >
-        <Button
-          variant="ghost"
-          className="board-palette-toggle"
-          aria-expanded={!compact}
-          aria-label={
-            compact
-              ? t("canvas.components.expandPalette")
-              : t("canvas.components.collapsePalette")
-          }
-          title={
-            compact
-              ? t("canvas.components.expandPalette")
-              : t("canvas.components.collapsePalette")
-          }
-          onClick={() => setCollapsed(!compact)}
-        >
-          {!compact && <span>{t("canvas.components.hide")}</span>}
-          {compact ? <ChevronRight /> : <ChevronLeft />}
-        </Button>
         <div className="board-palette-items">
           {(Object.keys(COMPONENT_CONFIGS) as ComponentType[]).map((type) => {
-            const config = COMPONENT_CONFIGS[type];
+            const config = componentConfig(type, locale);
             const Icon = config.icon;
             return (
-              <Tooltip key={type} disabled={!!preview}>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      className="board-palette-item"
-                      aria-label={config.displayName}
-                      data-component-type={type}
-                      onPointerDown={(event) => pointerDown(event, type)}
-                      onPointerMove={pointerMove}
-                      onPointerUp={pointerUp}
-                      onPointerCancel={() => clearGesture()}
-                      onLostPointerCapture={(event) => {
-                        if (gesture.current?.pointerId === event.pointerId)
-                          clearGesture();
-                      }}
-                      onClick={(event) => {
-                        if (event.detail === 0) createCanvasShape(editor, type);
-                      }}
-                    >
-                      <span className="board-palette-label truncate">
-                        {config.displayName}
-                      </span>
-                      <Icon className="size-4 shrink-0" />
-                    </Button>
-                  }
-                />
-                <TooltipContent
-                  side="right"
-                  className="max-w-56 flex-col items-start gap-0"
-                >
-                  <p className="font-medium">{config.displayName}</p>
-                  <p className="mt-1 opacity-80">{config.description}</p>
-                  <p className="mt-1 opacity-80">
-                    {t("canvas.components.dragToCanvas")}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                key={type}
+                variant="ghost"
+                className="board-palette-item"
+                aria-label={config.displayName}
+                data-component-type={type}
+                onPointerDown={(event) => pointerDown(event, type)}
+                onPointerMove={pointerMove}
+                onPointerUp={pointerUp}
+                onPointerCancel={() => clearGesture()}
+                onLostPointerCapture={(event) => {
+                  if (gesture.current?.pointerId === event.pointerId)
+                    clearGesture();
+                }}
+                onClick={(event) => {
+                  if (event.detail === 0) createCanvasShape(editor, type);
+                }}
+              >
+                <Icon className="shrink-0" />
+                <span className="board-palette-label">
+                  {config.displayName}
+                </span>
+              </Button>
             );
           })}
         </div>
         <div className="board-palette-footer">
-          {onOpenLibrary && (
-            <Button
-              variant="ghost"
-              className="board-palette-item"
-              aria-label={t("assets.title")}
-              aria-pressed={libraryOpen}
-              onClick={onOpenLibrary}
-              title={t("assets.title")}
-            >
-              <span className="board-palette-label">{t("assets.title")}</span>
-              <Images className="size-4 shrink-0" />
-            </Button>
-          )}
           <Button
             variant="ghost"
             className="board-palette-item"
             aria-label={t("canvas.files.title")}
-            title={t("canvas.files.title")}
             onClick={() => setFilesOpen(true)}
           >
-            <span className="board-palette-label truncate">
+            <Download />
+            <span className="board-palette-label">
               {t("canvas.files.title")}
             </span>
-            <Download />
           </Button>
         </div>
       </aside>

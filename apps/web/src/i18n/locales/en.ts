@@ -2,6 +2,51 @@ import type { Message } from "../locale";
 import type { MessageKey } from "./zh-CN";
 
 export const en = {
+  "assets.emptyFilesHint": "Upload files or adjust the search and folder.",
+  "assets.restoreHint": "You can restore this file from Trash.",
+  "assets.dropFiles": "Drop files here to upload",
+  "assets.fileTypes": "Images, documents, audio, video and other files",
+  "library.title": "Library",
+  "library.search": "Search attachments or projects",
+  "library.clearSearch": "Clear search",
+  "library.filterType": "Attachment type",
+  "library.filterProject": "Filter by project",
+  "library.allProjects": "All projects",
+  "library.refresh": "Refresh library",
+  "library.viewOptions": "View options",
+  "library.groupByProject": "Group by project",
+  "library.viewMode": "Library view",
+  "library.view.grid": "Grid view",
+  "library.view.list": "List view",
+  "library.sort.newest": "Recently updated",
+  "library.sort.oldest": "Oldest first",
+  "library.sort.name": "Name",
+  "library.name": "Name",
+  "library.type": "Type",
+  "library.project": "Project",
+  "library.updated": "Project updated",
+  "library.showMore": "Show {count} more",
+  "library.showLess": "Show less",
+  "library.total": "{count} attachments",
+  "library.empty": "No project attachments yet",
+  "library.emptyHint": "Attachments from your projects will appear here.",
+  "library.noMatches": "No matching attachments",
+  "library.adjustFilters": "Try another search or adjust the filters.",
+  "library.clearFilters": "Clear filters",
+  "library.browseProjects": "Browse projects",
+  "library.preview": "Preview",
+  "library.previewNamed": "Preview {name}",
+  "library.actionsNamed": "Actions for {name}",
+  "library.download": "Download",
+  "library.openInProject": "View in project",
+  "library.retry": "Retry",
+  "library.removed": "This item or its project has been removed.",
+  "library.downloadToView": "Download this file to view its contents.",
+  "library.kind.all": "All",
+  "library.kind.image": "Images",
+  "library.kind.website": "Web pages",
+  "library.kind.document": "Documents",
+  "library.kind.audio": "Audio",
   "projects.templates.completeExample": "Complete example",
   "canvas.components.hide": "Hide",
   "canvas.components.expandPalette": "Show components",
@@ -38,7 +83,7 @@ export const en = {
   "assets.preview": "Preview",
   "assets.insert": "Insert on canvas",
   "assets.move": "Move to folder",
-  "assets.download": "Download original",
+  "assets.download": "Download file",
   "assets.restored": "Asset restored",
   "assets.trashed": "Asset moved to trash",
   "assets.restore": "Restore asset",
@@ -176,6 +221,8 @@ export const en = {
   "api.webSearchSourcesPreserveCitationsWhenUsingThem":
     "\nWeb search sources (preserve citations when using them):\n{arg0}",
   "app.brand": "Huayu",
+  "app.description":
+    "Huayu is an open-source AI canvas. Organize materials locally, connect your models, and create text, images, and websites.",
   "app.homeLabel": "Huayu home",
   "app.name": "Huayu",
   "canvas.aConnectedShapeNoLongerExists": "A connected shape no longer exists",
@@ -198,8 +245,28 @@ export const en = {
   "canvas.canvasActions": "Canvas actions",
   "canvas.canvasImage": "Canvas image",
   "canvas.canvasMenu": "Canvas menu",
+  "canvas.language.system": "System default",
+  "canvas.styles": "Styles",
+  "canvas.zoom.menu": "Zoom options",
+  "canvas.zoom.in": "Zoom in",
+  "canvas.zoom.out": "Zoom out",
+  "canvas.zoom.reset": "Zoom to 100%",
+  "canvas.zoom.fitContent": "Zoom to fit content",
+  "canvas.zoom.fitSelection": "Zoom to selection",
   "canvas.canvasName": "Canvas name",
   "canvas.canvasSyncFailed": "Canvas sync failed. Refresh to try again.",
+  "canvas.access.privateWorkspace": "Private workspace",
+  "canvas.access.openWithLink": "Open a canvas using a collaboration link",
+  "canvas.access.privateMessage":
+    "This workspace is private. Open a canvas using a collaboration link.",
+  "canvas.access.currentCanvasOnly":
+    "This collaboration link only grants access to its canvas",
+  "canvas.access.currentAssetsOnly":
+    "Use attachments from this canvas or upload a local file",
+  "canvas.access.editor": "Collaborative editing",
+  "canvas.access.editorHint":
+    "You can edit this canvas. Other projects and materials remain private.",
+  "canvas.collaborator": "Collaborator {id}",
   "canvas.cardPreviewsCannotBeGenerated":
     "Card previews couldn’t be generated. Try again shortly.",
   "canvas.chart.addChildNode": "Add child node",
@@ -219,17 +286,18 @@ export const en = {
   "canvas.chooseAnAudioFile": "Choose an audio file",
   "canvas.chooseAnImageFile": "Choose an image file",
   "canvas.components.aiDrawing": "AI drawing",
-  "canvas.components.aiImage": "AI image",
+  "canvas.components.aiImage": "Image",
   "canvas.components.chart.description":
     "Turn text into a mind map or flowchart",
   "canvas.components.chart.help":
-    "Generate an editable mind map or flowchart from connected text or JSON.",
-  "canvas.components.chart.placeholder": "Enter a topic or paste chart JSON…",
-  "canvas.components.creativeInstruction": "Creative instruction",
+    "Connect text or JSON from preceding steps, then run to generate an editable mind map or flowchart.",
+  "canvas.components.chart.placeholder":
+    "Connect a step, then run to generate a chart",
+  "canvas.components.creativeInstruction": "Instruction",
   "canvas.components.drawAndEditOnTheCanvasFromYourInstructions":
     "Draw and edit on the canvas from your instructions",
   "canvas.components.embedAnExternalPage":
-    "Embed an external page. Paste a URL to open it.",
+    "Paste a URL to open the page. You can preview it on the canvas if the site allows embedding.",
   "canvas.components.embedAPageOrUseItsContentAsMaterial":
     "Embed a page or use its content as material",
   "canvas.components.externalLink": "External link",
@@ -238,12 +306,13 @@ export const en = {
   "canvas.components.file.help":
     "Upload and read documents, or generate a file from a description. Supported inputs include text, Markdown, CSV, JSON, YAML, XML, HTML, CSS, JavaScript, PDF, DOCX and XLSX.",
   "canvas.components.file.placeholder":
-    "Describe the file and its format, or upload a document…",
+    "Upload a file, or connect a step and run to generate one",
   "canvas.components.image.description":
     "Create images from a description or reference",
   "canvas.components.image.help":
     "Generate an image or upload your own. Connected reference images are used when generating.",
-  "canvas.components.image.placeholder": "Describe the image you want…",
+  "canvas.components.image.placeholder":
+    "Upload an image, or connect a step and run to generate one",
   "canvas.components.instruction.description":
     "Create with AI using your materials and instructions",
   "canvas.components.instruction.help":
@@ -253,10 +322,12 @@ export const en = {
   "canvas.components.run": "Run",
   "canvas.components.runConnectedCreativeStepsFromHere":
     "Run connected creative steps from here",
+  "canvas.components.speech": "Speech",
   "canvas.components.speech.description": "Generate speech or transcribe audio",
   "canvas.components.speech.help":
     "Turn text into speech, or upload audio to transcribe it.",
-  "canvas.components.speech.placeholder": "Enter text to read aloud…",
+  "canvas.components.speech.placeholder":
+    "Upload audio, or connect a step and run to generate speech",
   "canvas.components.text.description":
     "Write material, or collect generated content",
   "canvas.components.text.help":
@@ -267,46 +338,11 @@ export const en = {
     "Use the contents of a frame as an image in the next step",
   "canvas.components.website": "Website",
   "canvas.components.website.description":
-    "Create a working page from a description",
+    "Generate and preview a page from preceding steps",
   "canvas.components.website.help":
-    "Generate a complete HTML page and preview it. Use a description or reference image to create styles and interactions.",
-  "canvas.components.website.placeholder": "Describe the web page you want…",
-  "canvas.composer.addSelected": "Add selected",
-  "canvas.composer.addStepOnly": "Add step only",
-  "canvas.composer.backToContent": "Back to content",
-  "canvas.composer.backToSelection": "Back to selection",
-  "canvas.composer.cannotAddACreativeStep": "Couldn’t add a creative step",
-  "canvas.composer.chooseAnOutputType": "Choose an output type",
-  "canvas.composer.closeCreationPanel": "Close creation panel",
-  "canvas.composer.continueUnfinishedCreation": "Continue unfinished creation",
-  "canvas.composer.createFromMaterials": "Create from materials",
-  "canvas.composer.creationIncomplete": "Creation incomplete",
-  "canvas.composer.creationInstructions": "Creation instructions",
-  "canvas.composer.ctrlEnterToStart": "⌘ / Ctrl + Enter to start",
-  "canvas.composer.describeTheContentToReadAloud":
-    "Describe the content to read aloud…",
-  "canvas.composer.describeTheDocumentAndItsFormat":
-    "Describe the document and its format…",
-  "canvas.composer.describeTheImageYoudLikeToCreate":
-    "Describe the image you’d like to create…",
-  "canvas.composer.describeThePagesContentAndInteractions":
-    "Describe the page’s content and interactions…",
-  "canvas.composer.document": "Document",
-  "canvas.composer.expandIntoAnArticle": "Expand into an article",
-  "canvas.composer.extractKeyPoints": "Extract key points",
-  "canvas.composer.materialsForThisCreation": "Materials for this creation",
-  "canvas.composer.removeMaterial": "Remove material: {arg0}",
-  "canvas.composer.selectContentOnTheCanvasThenAddItAsMaterial":
-    "Select content on the canvas, then add it as material.",
-  "canvas.composer.startCreating": "Start creating",
-  "canvas.composer.theseMaterialsAreNoLongerOnThisPage":
-    "These materials are no longer on this page. Select them again.",
-  "canvas.composer.whatStructureOrProcessWouldYouLikeToMapOut":
-    "What structure or process would you like to map out?",
-  "canvas.composer.whatWouldYouLikeToWriteFromTheseMaterials":
-    "What would you like to write from these materials?",
-  "canvas.composer.yourDraftHasntBeenSaved":
-    "Your draft hasn’t been saved. Keep this page open.",
+    "Receive text, images or a frame snapshot from preceding steps, then generate and preview an HTML page.",
+  "canvas.components.website.placeholder":
+    "Connect a preceding step, then run to generate a page",
   "canvas.connectionInterrupted":
     "Connection interrupted. Edits are temporarily saved in this browser.",
   "canvas.connections.chooseInputMaterial": "Choose input material",
@@ -327,7 +363,6 @@ export const en = {
     "Connection to the local service interrupted",
   "canvas.copyContent": "Copy content",
   "canvas.copyLink": "Copy link",
-  "canvas.createFromThisContent": "Create from this content",
   "canvas.creationComplete": "Creation complete",
   "canvas.creationStopped": "Creation stopped",
   "canvas.documentTxt": "document.txt",
@@ -340,12 +375,15 @@ export const en = {
   "canvas.drawing.generate": "Generate",
   "canvas.drawingActionsCannotBeApplied":
     "Drawing actions couldn’t be applied. Try again or revise your instructions.",
+  "canvas.embed.backToLinkCard": "Back to link card",
   "canvas.embed.cannotReadWebPage": "Couldn’t read web page",
   "canvas.embed.checkTheWebAddress": "Check the web address",
   "canvas.embed.enterAnAddressToOpenAPage": "Enter an address to open a page",
   "canvas.embed.enterAValidWebAddress": "Enter a valid web address",
   "canvas.embed.externalPage": "External page",
-  "canvas.embed.openPageInANewWindow": "Open page in a new window",
+  "canvas.embed.openPage": "Open page",
+  "canvas.embed.openPageInANewWindow": "Open page in a new tab",
+  "canvas.embed.previewOnCanvas": "Preview on canvas",
   "canvas.embed.readWebPage": "Read web page",
   "canvas.embed.webAddress": "Web address",
   "canvas.exampleDescription": "Example description",
@@ -365,10 +403,10 @@ export const en = {
   "canvas.exportProjectFile": "Export project file",
   "canvas.fileMaterial": "File material",
   "canvas.files.description":
-    "Download images, audio, web pages and documents from this canvas.",
+    "View, save, or download attachments from this project.",
   "canvas.files.downloadNamed": "Download {arg0}",
   "canvas.files.empty": "No files to download yet",
-  "canvas.files.label": "Canvas files",
+  "canvas.files.label": "Project attachments",
   "canvas.files.title": "Project files",
   "canvas.fileStep": "File step",
   "canvas.findContent": "Find content",
@@ -388,8 +426,7 @@ export const en = {
     one: "{count} input material",
     other: "{count} input materials",
   },
-  "canvas.inspector.readEditOrCreateSomethingNewFromThisContent":
-    "Read, edit, or create something new from this content.",
+  "canvas.inspector.readOrEditContent": "Read and edit the work.",
   "canvas.invalidCanvasData": "Invalid canvas data",
   "canvas.invalidCanvasRecordFormat": "Invalid canvas record format",
   "canvas.invalidCanvasRecordId": "Invalid canvas record ID",
@@ -402,23 +439,18 @@ export const en = {
   "canvas.keepAtLeastOnePage": "Keep at least one page",
   "canvas.legacyInputCount": "{arg0} input materials",
   "canvas.localSavingInterrupted": "Local saving interrupted",
-  "canvas.materialCount": {
-    one: "{count} material",
-    other: "{count} materials",
-  },
   "canvas.myExample": "My example",
-  "canvas.node.clearGeneratedResult": "Clear generated result",
   "canvas.node.closeEditor": "Close editor",
   "canvas.node.failed": "Failed",
   "canvas.node.lastRunCompleted": "Last run completed",
   "canvas.node.lockStep": "Lock step",
+  "canvas.node.showHelp": "Show help",
   "canvas.node.materialsOrInstructionsChanged":
     "Materials or instructions changed. Run again to update the result.",
   "canvas.node.needsUpdate": "Needs update",
   "canvas.node.openEditor": "Open editor",
   "canvas.node.running": "Running",
   "canvas.node.runStep": "Run step",
-  "canvas.node.stepOptions": "Step options",
   "canvas.node.stopRun": "Stop run",
   "canvas.node.unlockStep": "Unlock step",
   "canvas.node.viewWork": "View work",
@@ -505,6 +537,13 @@ export const en = {
   "canvas.topic":
     "Topic: A day in the city\nStyle: Warm and observant\nAudience: People who notice everyday life",
   "canvas.transcribeAudio": "Transcribe audio",
+  "canvas.tools.uploadImage": "Upload image",
+  "canvas.tools.uploadAudio": "Upload audio",
+  "canvas.tools.fullscreen": "Full screen",
+  "canvas.tools.popupBlocked":
+    "Couldn't open the preview. Allow pop-ups for this page and try again.",
+  "canvas.tools.uploaded": "Uploaded",
+  "canvas.tools.generated": "AI generated",
   "canvas.uploadFile": "Upload file",
   "canvas.viewImage": "View image",
   "canvas.viewInputCount": {
@@ -631,10 +670,10 @@ export const en = {
     "Create a blank canvas, or start from an example.",
   "projects.createBlankProject": "Create blank project",
   "projects.createFailed": "Couldn’t create project",
-  "projects.createFromThis": "Create from this",
   "projects.createProject": "Create project",
   "projects.deleteExample": "Delete example {arg0}",
   "projects.deleteProject": "Delete project",
+  "projects.actionsFor": "Project actions for {name}",
   "projects.duplicateProject": "Duplicate project",
   "projects.empty.title": "No projects yet",
   "projects.examples": "Examples",
@@ -652,6 +691,9 @@ export const en = {
   "projects.listTabs": "Projects and examples",
   "projects.open": "Open",
   "projects.view": "View",
+  "projects.viewMode": "Project view",
+  "projects.gridView": "Grid view",
+  "projects.listView": "List view",
   "projects.updatedOn": "Updated {date}",
   "projects.forkCount": "Copies: {count}",
   "projects.noMatchingExamples": "No matching examples",
@@ -846,11 +888,12 @@ export const en = {
     "Combine these chronological recording summaries into a concise, coherent English overview. Preserve key conclusions and disagreements. Return only the overview, adding no information absent from the input.",
   "recordings.prompts.createFromMaterials":
     "Extract the central ideas from these materials and organize them into clear, structured content. Preserve key facts.",
+  "recordings.recorder.boardUnavailable": "Selected board is unavailable",
   "recordings.recorder.cannotSave":
     "Couldn’t save. Try again or download the recording.",
   "recordings.recorder.cannotStartRecording": "Couldn’t start recording",
   "recordings.recorder.checkScreenRecordingPermissions":
-    "Check screen recording permissions",
+    "Check your browser or system screen recording permissions and try again.",
   "recordings.recorder.chooseAScreenWindowOrTab":
     "Choose a screen, window or tab. To capture system audio, enable audio sharing in the browser’s selection dialog.",
   "recordings.recorder.chooseWhatToRecord": "Choose what to record",
@@ -862,18 +905,24 @@ export const en = {
   "recordings.recorder.downloadToComputer": "Download to computer",
   "recordings.recorder.finishCapture": "Finish recording",
   "recordings.recorder.finishRecording": "Finish recording",
-  "recordings.recorder.paused": "Paused · ",
+  "recordings.recorder.linkBoard": "Link to board",
+  "recordings.recorder.microphoneUnavailable":
+    "Allow microphone access or turn off the microphone and try again.",
+  "recordings.recorder.noLinkedBoard": "No board",
+  "recordings.recorder.openLinkedBoard": "Open linked board",
+  "recordings.recorder.paused": "Paused",
   "recordings.recorder.pauseRecording": "Pause recording",
   "recordings.recorder.recorded":
     "Recorded {duration}. Review it, then continue with transcription and analysis.",
+  "recordings.recorder.recording": "Recording",
   "recordings.recorder.recordingInterrupted": "Recording interrupted",
   "recordings.recorder.recordingName": "Recording name",
-  "recordings.recorder.recordingPrefix": "Recording · ",
   "recordings.recorder.recordingSaved": "Recording saved",
   "recordings.recorder.recordMicrophone": "Record microphone",
   "recordings.recorder.recordScreen": "Record screen",
   "recordings.recorder.resumeRecording": "Resume recording",
   "recordings.recorder.saveAndReview": "Save and review",
+  "recordings.recorder.saveFromRecordings": "Open recordings to save",
   "recordings.recorder.saveOnly": "Save only",
   "recordings.recorder.saveRecording": "Save recording",
   "recordings.recorder.saveWhatYouveRecordedSoFar":
@@ -885,7 +934,9 @@ export const en = {
     "This browser doesn’t support screen recording",
   "recordings.recorder.thisRecordingHasntBeenSaved":
     "This recording hasn’t been saved. Discarding it can’t be undone. You can go back and download it first.",
-  "recordings.recorder.unsavedRecording": "Unsaved recording ·",
+  "recordings.recorder.tryAnotherSource":
+    "Try selecting a different tab, window, or screen.",
+  "recordings.recorder.unsavedRecording": "Unsaved recording",
   "recordings.rename": "Rename",
   "recordings.renameRecording": "Rename recording",
   "recordings.report.notes": "\n\n# Notes\n\n",
@@ -925,7 +976,6 @@ export const en = {
   "results.copyHtml": "Copy HTML",
   "results.copyImage": "Copy image",
   "results.copyWork": "Copy work",
-  "results.createAgain": "Create again",
   "results.createANewVersionFromThisWork":
     "Create a new version from this work. Keep this version, too.",
   "results.createNewVersion": "Create new version",
@@ -1129,34 +1179,22 @@ export const en = {
   "workflow.canvasContent": "Canvas content",
   "workflow.chooseADifferentCard": "Choose a different card",
   "workflow.chooseAvailableMaterial": "Choose available material",
-  "workflow.completed": "Workflow complete",
-  "workflow.completedCount": "Completed {arg0} / {arg1}",
   "workflow.connectToACreativeStep": "Connect to a creative step",
   "workflow.describeAChartOrConnectPrecedingSteps":
     "Describe a chart or connect preceding steps",
-  "workflow.describeAWebPageOrConnectPrecedingSteps":
-    "Describe a web page or connect preceding steps",
-  "workflow.describeTheFileOrConnectPrecedingSteps":
-    "Describe the file or connect preceding steps",
+  "workflow.connectWebsiteInput":
+    "Connect a preceding step, then run to generate a page",
+  "workflow.connectOrUploadInput":
+    "Connect a preceding step or upload content first",
   "workflow.describeWhatYoudLikeToChangeFirst":
     "Describe what you’d like to change first",
   "workflow.drawing": "Drawing",
   "workflow.edited": "{arg0} · Edited",
   "workflow.enterDrawingInstructions": "Enter drawing instructions",
-  "workflow.incomplete": "Run incomplete",
-  "workflow.lastRun": "Last run",
   "workflow.legacyOutdatedCount": "{arg0} results to update",
   "workflow.line": "Line",
-  "workflow.materialsChanged":
-    "Materials changed. These results need an update.",
-  "workflow.outdatedCount": {
-    one: "{count} result to update",
-    other: "{count} results to update",
-  },
   "workflow.prompts.organizeMaterials":
     "Organize the provided materials into a clear, complete result, preserving key information.",
-  "workflow.runHistory": "Run history",
-  "workflow.runTheEntireCanvasAgain": "Run the entire canvas again",
   "workflow.runWorkflow": "Run workflow",
   "workflow.selectedCanvasContent": "Selected canvas content",
   "workflow.shape": "Shape",
@@ -1195,8 +1233,6 @@ export const en = {
   "workflow.thisWorkWasUpdatedElsewhere":
     "This work was updated elsewhere. Your editing draft has been kept.",
   "workflow.unlockThisWorkBeforeEditing": "Unlock this work before editing",
-  "workflow.updateOutdatedResults": "Update outdated results",
-  "workflow.updateResults": "Update results",
   "workflow.viewRunDetails": "View run details",
   "workflow.writeInstructionsOrConnectMaterials":
     "Write instructions or connect materials",
@@ -1266,4 +1302,61 @@ export const en = {
   "projects.searchProjects.placeholder": "Search projects…",
   "projects.searchTemplates.label": "Search examples",
   "projects.searchTemplates.placeholder": "Search examples…",
+  "collaboration.host": "Host",
+  "collaboration.you": "(you)",
+  "collaboration.hostRole": "Manages this canvas and invitations",
+  "collaboration.editorRole": "Can edit this canvas",
+  "collaboration.viewMembers": "View all online members ({count})",
+  "collaboration.onlineMembers": "Online members",
+  "collaboration.capacity": "Collaborators {count} / {max} · host excluded",
+  "collaboration.connecting": "Connecting to the room…",
+  "collaboration.memberActions": "Manage {name}",
+  "collaboration.remove": "Remove from room",
+  "collaboration.removeTitle": "Remove {name} from this room?",
+  "collaboration.removeDescription":
+    "They will leave immediately and cannot rejoin with this invitation in their current browser. Other members will stay connected.",
+  "collaboration.memberRemoved": "Removed {name} from the room",
+  "collaboration.removeFailed": "Could not remove member",
+  "collaboration.manageInvitation": "Manage invitation",
+  "collaboration.fullTitle": "This room is full",
+  "collaboration.fullDescription":
+    "There are already 15 collaborators. Wait for someone to leave, or ask the host to make room.",
+  "collaboration.removedTitle": "You were removed from this room",
+  "collaboration.removedDescription":
+    "You can no longer view or edit this canvas. Contact the host if you need to join again.",
+  "collaboration.closedDescription":
+    "The host has closed collaboration or changed the invitation link. Ask them for a new invitation.",
+  "collaboration.tryJoining": "Try joining again",
+  "collaboration.apiFull":
+    "This room already has 15 collaborators. Try again later.",
+  "collaboration.apiRemoved":
+    "You were removed from this room. Contact the host.",
+  "collaboration.apiNotOpen": "Collaboration is not enabled",
+  "canvas.invite": "Invite",
+  "canvas.recordScreen": "Record",
+  "canvas.exportCanvas": "Export canvas",
+  "canvas.projectMenu": "Project menu",
+  "assets.saveToLibrary": "Save to library",
+  "assets.savedToLibrary": "Saved to library",
+  "assets.alreadySaved": "This image is already in your library",
+  "assets.fileName": "File name",
+  "assets.saveLocation": "Save location",
+  "assets.chooseFromLibrary": "Choose from library",
+  "assets.replaceImage": "Replace image",
+  "assets.useImage": "Use image",
+  "assets.imageTargetRequired": "Select an image component",
+  "assets.targetUnavailable":
+    "Unlock the component or wait for generation to finish",
+  "assets.locateOnCanvas": "Locate on canvas",
+  "assets.groupBySource": "Group by source project",
+  "assets.personalUploads": "Personal uploads",
+  "assets.viewOptions": "View options",
+  "assets.gridView": "Grid view",
+  "assets.listView": "List view",
+  "assets.showMore": "Show {count} more",
+  "assets.showLess": "Show less",
+  "assets.fileCount": "{count} files",
+  "assets.loadedFileCount": "{loaded}/{count} files loaded",
+  "assets.viewMode": "Asset view",
+  "assets.chooseAnImage": "Select an image",
 } satisfies Record<MessageKey, Message>;

@@ -130,6 +130,57 @@ describe("capability availability", () => {
   );
 });
 
+describe("image request sizes", () => {
+  it.each([
+    ["gpt-image-1.5", "2048x2048", "1024x1024", false],
+    ["gpt-image-1.5", "2496x1664", "1536x1024", false],
+    ["gpt-image-1.5", "1664x2496", "1024x1536", false],
+    ["gpt-image-1.5", "2048x2048", "1024x1024", true],
+    ["gpt-image-1.5", "2496x1664", "1536x1024", true],
+    ["gpt-image-1.5", "1664x2496", "1024x1536", true],
+    ["gpt-image-1", "2048x2048", "1024x1024", false],
+    ["gpt-image-1-mini", "2496x1664", "1536x1024", false],
+    ["gpt-image-1.5-2025-12-16", "1664x2496", "1024x1536", false],
+    ["gpt-image-1.5", "auto", "auto", false],
+    ["gpt-image-2", "2496x1664", "2496x1664", false],
+    ["local-model", "2048x2048", "2048x2048", true],
+  ])(
+    "sends %s size %s as %s (editing=%s)",
+    async (model, size, expected, editing) => {
+      const settings = await import("./settings");
+      const value = settings.defaultSettings();
+      value.connections.image = {
+        ...value.connections.image,
+        baseUrl: "http://localhost:11434/v1",
+        model,
+      };
+      settings.saveSettings(value);
+      const fetchMock = vi.fn(async (url, _options) =>
+        String(url).startsWith("data:")
+          ? new Response(new Blob(["image"], { type: "image/png" }))
+          : json({ data: [{ b64_json: "aW1hZ2U=" }] }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { generateImage } = await import("./provider");
+      await generateImage(
+        "draw",
+        size,
+        editing ? [new Blob(["reference"], { type: "image/png" })] : [],
+      );
+      const [url, request] = fetchMock.mock.calls.find(([url]) =>
+        String(url).includes("/images/"),
+      )!;
+      expect(url).toBe(
+        `http://localhost:11434/v1/images/${editing ? "edits" : "generations"}`,
+      );
+      const body = request.body;
+      expect(
+        body instanceof FormData ? body.get("size") : JSON.parse(body).size,
+      ).toBe(expected);
+    },
+  );
+});
+
 describe("SDK transport errors and bounded tests", () => {
   it.each([
     [401, "invalid_api_key", "密钥"],
@@ -335,8 +386,7 @@ describe("SDK transport errors and bounded tests", () => {
       onDelta: delta,
     });
     const assertion = expect(pending).rejects.toThrow("超时");
-    await vi.advanceTimersByTimeAsync(0);
-    expect(delta).toHaveBeenCalledWith("partial");
+    await vi.waitFor(() => expect(delta).toHaveBeenCalledWith("partial"));
     await vi.advanceTimersByTimeAsync(180_000);
     await assertion;
   });

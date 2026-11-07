@@ -14,6 +14,7 @@ import {
   Copy,
   Download,
   FileText,
+  Link2,
   ListMusic,
   Loader2,
   MessageSquare,
@@ -31,7 +32,7 @@ import {
   X,
   Settings2,
 } from "lucide-react";
-import { Shell, ShellSidebarTrigger } from "@/Components/Shell";
+import { ShellSidebarTrigger } from "@/Components/Shell";
 import { Markdown } from "@/Components/common/Markdown";
 import { useToast } from "@/Components/common/ToastProvider";
 import { api, downloadBlob, type Recording, type Project } from "@/api/client";
@@ -103,9 +104,25 @@ function AnalysisWorkspace({ id }: { id: string }) {
   const [time, setTime] = useState(0);
   const [search, setSearch] = useState("");
   const [follow, setFollow] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<Transcript | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [transcriptEdit, setTranscriptEdit] = useState<
+    { phase: "closed" } | { phase: "editing" | "saving"; draft: Transcript }
+  >({ phase: "closed" });
+  const editing = transcriptEdit.phase !== "closed";
+  const saving = transcriptEdit.phase === "saving";
+  const draft = transcriptEdit.phase === "closed" ? null : transcriptEdit.draft;
+  function setDraft(
+    update: Transcript | ((current: Transcript) => Transcript),
+  ) {
+    setTranscriptEdit((current) =>
+      current.phase === "editing"
+        ? {
+            ...current,
+            draft:
+              typeof update === "function" ? update(current.draft) : update,
+          }
+        : current,
+    );
+  }
   const [creatingCanvas, setCreatingCanvas] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -337,8 +354,8 @@ function AnalysisWorkspace({ id }: { id: string }) {
     }
   }
   async function saveTranscript() {
-    if (!recording || !draft) return;
-    setSaving(true);
+    if (!recording || transcriptEdit.phase !== "editing" || task.busy) return;
+    setTranscriptEdit({ ...transcriptEdit, phase: "saving" });
     try {
       const updated = {
         ...draft,
@@ -354,7 +371,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
         }),
       });
       setRecording(saved);
-      setEditing(false);
+      setTranscriptEdit({ phase: "closed" });
       window.dispatchEvent(new Event("huayu:recordings-changed"));
       showToast({
         title: t("recordings.analysis.transcriptUpdated"),
@@ -365,7 +382,9 @@ function AnalysisWorkspace({ id }: { id: string }) {
     } catch (error) {
       failed(error);
     } finally {
-      setSaving(false);
+      setTranscriptEdit((current) =>
+        current.phase === "saving" ? { ...current, phase: "editing" } : current,
+      );
     }
   }
   const canResume = !!checkpoint || transcript.complete === false;
@@ -387,6 +406,21 @@ function AnalysisWorkspace({ id }: { id: string }) {
       >
         <ArrowLeft className="size-4" />
       </Link>
+      {recording?.project_id && (
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
+          render={<Link to={`/drawing/${recording.project_id}`} />}
+          aria-label={t("recordings.recorder.openLinkedBoard")}
+          title={t("recordings.recorder.openLinkedBoard")}
+        >
+          <Link2 />
+          <span className="hidden md:inline">
+            {t("recordings.recorder.openLinkedBoard")}
+          </span>
+        </Button>
+      )}
       <Button
         variant="outline"
         size="sm"
@@ -515,8 +549,10 @@ function AnalysisWorkspace({ id }: { id: string }) {
           <DropdownMenuItem
             disabled={!transcript.text}
             onClick={() => {
-              setDraft(structuredClone(transcript));
-              setEditing(true);
+              setTranscriptEdit({
+                phase: "editing",
+                draft: structuredClone(transcript),
+              });
             }}
           >
             <Pencil />
@@ -532,7 +568,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
     </span>
   );
   return (
-    <Shell>
+    <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <ShellSidebarTrigger />
@@ -751,8 +787,10 @@ function AnalysisWorkspace({ id }: { id: string }) {
                     aria-label={t("recordings.analysis.editTranscript")}
                     disabled={!transcript.text || task.busy}
                     onClick={() => {
-                      setDraft(structuredClone(transcript));
-                      setEditing(true);
+                      setTranscriptEdit({
+                        phase: "editing",
+                        draft: structuredClone(transcript),
+                      });
                     }}
                   >
                     <Pencil />
@@ -872,6 +910,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
                     </p>
                     {!search && (
                       <Button
+                        variant="outline"
                         size="sm"
                         className="mt-4"
                         disabled={task.busy}
@@ -894,8 +933,10 @@ function AnalysisWorkspace({ id }: { id: string }) {
                         className="mt-2"
                         disabled={task.busy}
                         onClick={() => {
-                          setDraft({ version: 1, text: "", segments: [] });
-                          setEditing(true);
+                          setTranscriptEdit({
+                            phase: "editing",
+                            draft: { version: 1, text: "", segments: [] },
+                          });
                         }}
                       >
                         {t("recordings.analysis.enterText")}
@@ -1190,7 +1231,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
       <Dialog
         open={editing}
         onOpenChange={(open) => {
-          if (!saving) setEditing(open);
+          if (!saving && !open) setTranscriptEdit({ phase: "closed" });
         }}
       >
         <DialogContent className="flex max-h-[85dvh] flex-col gap-4 sm:max-w-2xl">
@@ -1239,7 +1280,11 @@ function AnalysisWorkspace({ id }: { id: string }) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(false)}>
+            <Button
+              variant="outline"
+              disabled={saving}
+              onClick={() => setTranscriptEdit({ phase: "closed" })}
+            >
               {t("common.cancel")}
             </Button>
             <Button disabled={saving} onClick={saveTranscript}>
@@ -1249,7 +1294,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Shell>
+    </>
   );
 }
 
@@ -1278,7 +1323,7 @@ function AnalysisEmpty({
           ? t("recordings.analysis.organizeDescription")
           : t("recordings.analysis.description")}
       </p>
-      <Button disabled={busy} onClick={onAnalyze}>
+      <Button variant="outline" disabled={busy} onClick={onAnalyze}>
         {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
         {busy
           ? t("recordings.analysis.processing")

@@ -43,19 +43,19 @@ export function CanvasPreview({
         role="tabpanel"
         aria-labelledby={`example-tab-${view}`}
       >
-        <button
-          className="hero-example-open"
-          onClick={() => onExplore(preset)}
-          aria-label={t("home.examples.open", {
-            name: locale === "en" ? preset.en.name : preset.name,
-          })}
-        >
+        <div className="hero-example-open">
           <ExampleCanvas preset={preset} compact />
-          <span className="hero-example-invite">
-            {t("home.examples.exploreCanvas")}
-            <ArrowUpRight size={15} />
-          </span>
-        </button>
+          <button
+            className="hero-example-trigger"
+            onClick={() => onExplore(preset)}
+            aria-label={`${t("home.examples.exploreCanvas")}: ${locale === "en" ? preset.en.name : preset.name}`}
+          >
+            <span className="hero-example-invite">
+              {t("home.examples.exploreCanvas")}
+              <ArrowUpRight size={15} />
+            </span>
+          </button>
+        </div>
       </div>
       <div className="canvas-bottom">
         <span>

@@ -4,6 +4,7 @@ import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/backend";
 import { createDocumentBlob } from "@/ai/documents";
 import type { NodeData } from "@/workflow/execute";
+import { resultSource } from "@/workflow/results";
 
 export interface DownloadableFile {
   id: string;
@@ -20,6 +21,16 @@ export function collectDownloadableFiles(editor: Editor): DownloadableFile[] {
   const files: DownloadableFile[] = [];
   for (const shape of editor.getCurrentPageShapes()) {
     const props = shape.props as NodeData;
+    const imageAsset =
+      shape.type === "image"
+        ? editor.store.get(String(shape.props.assetId))
+        : undefined;
+    const imageName =
+      props.name ||
+      (imageAsset?.typeName === "asset"
+        ? String(imageAsset.props.name || "")
+        : "") ||
+      t("common.image");
     if (shape.type === "file" && (props.src || props.result || props.text))
       files.push({
         id: shape.id,
@@ -43,17 +54,20 @@ export function collectDownloadableFiles(editor: Editor): DownloadableFile[] {
         sourceLabel: t("canvas.websiteStep"),
         content: props.htmlContent,
       });
-    else if (shape.type === "ai-image" && props.src)
+    else if (
+      ["ai-image", "image"].includes(shape.type) &&
+      resultSource(editor, shape)
+    )
       files.push({
         id: shape.id,
         shapeId: shape.id,
-        fileName: /\.(png|jpe?g|gif|webp)$/i.test(props.name || "")
-          ? props.name
-          : `${props.name || t("common.image")}.png`,
+        fileName: /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(imageName)
+          ? imageName
+          : `${imageName}.png`,
         fileType: "png",
         source: "image",
         sourceLabel: t("canvas.imageStep"),
-        downloadUrl: props.src,
+        downloadUrl: resultSource(editor, shape),
       });
     else if (shape.type === "speech" && props.src)
       files.push({

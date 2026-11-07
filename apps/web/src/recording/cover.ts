@@ -21,11 +21,10 @@ export async function loadRecordingCover(
   // The browser can read the original when the optional local decoder is absent.
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
-    let settled = false;
-    let capturing = false;
+    let phase: "loading" | "seeking" | "capturing" | "settled" = "loading";
     const finish = (cover: Blob | null, error?: Error) => {
-      if (settled) return;
-      settled = true;
+      if (phase === "settled") return;
+      phase = "settled";
       clearTimeout(timer);
       signal.removeEventListener("abort", abort);
       video.onloadedmetadata = null;
@@ -44,8 +43,8 @@ export async function loadRecordingCover(
       8000,
     );
     const capture = () => {
-      if (settled || capturing) return;
-      capturing = true;
+      if (phase === "settled" || phase === "capturing") return;
+      phase = "capturing";
       const canvas = document.createElement("canvas");
       const scale = Math.min(
         1,
@@ -72,6 +71,7 @@ export async function loadRecordingCover(
         finish(null);
         return;
       }
+      phase = "seeking";
       video.currentTime =
         Number.isFinite(video.duration) && video.duration > 0
           ? Math.min(1, video.duration / 10)

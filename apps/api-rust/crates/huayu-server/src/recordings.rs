@@ -13,6 +13,7 @@ use crate::{ApiError, ApiResult, AppState, error::ApiJson};
 pub(crate) struct CreateRecording {
     name: String,
     asset_id: String,
+    project_id: Option<String>,
     duration: f64,
 }
 
@@ -20,6 +21,7 @@ pub(crate) struct CreateRecording {
 #[serde(deny_unknown_fields)]
 pub(crate) struct UpdateRecording {
     name: Option<String>,
+    duration: Option<f64>,
     transcript: Option<String>,
     analysis: Option<String>,
 }
@@ -51,7 +53,7 @@ pub(crate) async fn create(
         Json(
             state
                 .store
-                .save_recording(&body.name, &asset, body.duration)
+                .save_recording(&body.name, &asset, body.duration, body.project_id)
                 .await?,
         ),
     ))
@@ -62,6 +64,12 @@ pub(crate) async fn update(
     Path(id): Path<String>,
     ApiJson(body): ApiJson<UpdateRecording>,
 ) -> ApiResult<Json<Recording>> {
+    if body
+        .duration
+        .is_some_and(|duration| !duration.is_finite() || duration < 0.0)
+    {
+        return Err(ApiError::invalid("录屏时长有误"));
+    }
     if body
         .transcript
         .as_ref()
@@ -76,7 +84,13 @@ pub(crate) async fn update(
     Ok(Json(
         state
             .store
-            .update_recording(&id, body.name.as_deref(), body.transcript, body.analysis)
+            .update_recording(
+                &id,
+                body.name.as_deref(),
+                body.duration,
+                body.transcript,
+                body.analysis,
+            )
             .await?,
     ))
 }

@@ -5,7 +5,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const vp = fileURLToPath(import.meta.resolve("vite-plus/bin"));
 const processOptions = {
   cwd: root,
-  stdio: "inherit",
+  stdio: "inherit" as const,
   detached: process.platform !== "win32",
 };
 const processes = [
@@ -38,8 +38,9 @@ function stop(code = 0) {
       try {
         process.kill(-child.pid, "SIGTERM");
       } catch (error) {
-        if (error.code !== "ESRCH") {
-          console.error(error.message);
+        const failure = error as NodeJS.ErrnoException;
+        if (failure.code !== "ESRCH") {
+          console.error(failure.message);
           process.exitCode = 1;
         }
       }

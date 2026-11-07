@@ -18,7 +18,7 @@ apps/
     crates/huayu-core/  无 I/O 的业务类型、文档记录校验与合并
     crates/huayu-store/ SQLite、SeaORM entity 与版本迁移
     crates/huayu-server/ Axum 路由、文件处理、WebSocket 与启动
-scripts/                本地开发、Cargo 入口、源码包检查与依赖许可生成
+scripts/                本地开发、Cargo 入口、安全与发布检查、Git 源码归档和依赖许可生成
 templates/              双语模板内容与生成的轻量索引
 var/dev/                运行数据，Git 忽略
 ```
@@ -29,7 +29,7 @@ Rust API 参考 timetable `apps/api-rust` 的 workspace、薄二进制入口、�
 
 `templates/catalog.json` 是新增 20 个内置模板的共享目录，包含中英文素材、指令与图连接。Rust 在启动时按 ID 增量补充模板元数据，前端在创建项目时按当前语言实例化画布，轻量模板使用透明流程封面，六个完整作品示例使用对应原创作品封面；原有模板、使用次数和项目内容不被覆盖。模板没有模型地址、密钥或模型选择。
 
-项目列表只加载 `templates/index.json` 中的元数据与本地封面地址；流程封面由目录预先生成，完整素材、指令与作品随画布模块按需加载。官网使用 `templates/showcase.json` 中的六份展示摘要，点开示例后才加载完整内容。原创 SVG 保存在 `templates/art/`，同包的 PNG 用于画布图片与模型参考输入。修改目录后运行 `node scripts/generate-template-index.mjs` 更新两份索引与流程封面，再运行格式化；Web 构建会检查生成物是否一致。
+项目列表只加载 `templates/index.json` 中的元数据与本地封面地址；流程封面由目录预先生成，完整素材、指令与作品随画布模块按需加载。官网使用 `templates/showcase.json` 中的六份展示摘要，点开示例后才加载完整内容。原创 SVG 保存在 `templates/art/`，同包的 PNG 用于画布图片与模型参考输入。修改目录后运行 `node scripts/generate-template-index.ts` 更新两份索引与流程封面，再运行格式化；Web 构建会检查生成物是否一致。
 
 MenteX 的 AI 节点、连接点及图表编辑器保留并适配主题。原 tldraw 依赖由 MIT 许可的 Excalidraw 替换。保留应用记录模型兼容旧项目，双向转换原生图形、箭头绑定、分组、页面和图片；原生扩展字段、压感和路径保存在记录中。React 组件覆盖在原生几何上，几何选择、拖动、缩放、绑定和历史操作由 Excalidraw 管理，不生成内部嵌入链接。执行流程统一到 `workflow`，避免事件递归导致循环调用或重复运行。tpk-admin 的 MenteX 业务迁移到 Rust；提示词和模型编排移动到前端。
 

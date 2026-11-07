@@ -1,44 +1,47 @@
-import { t, useLocale } from "@/i18n";
+import { t as appT, useTranslations } from "@/i18n";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
-  lazy,
-  Suspense,
   type ReactNode,
   type SyntheticEvent,
+  type ClipboardEvent as ReactClipboardEvent,
 } from "react";
 import {
   Excalidraw,
   CaptureUpdateAction,
   MainMenu,
+  useI18n,
   restoreElements,
+  reconcileElements,
+  newElementWith,
 } from "@excalidraw/excalidraw";
 import type {
   AppState,
   BinaryFiles,
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
+  Collaborator,
+  SocketId,
 } from "@excalidraw/excalidraw/types";
 import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
 } from "@excalidraw/excalidraw/element/types";
 import { Editor, EditorContext, type CanvasStore } from "@/canvas/editor";
+import type { ChangeEntry } from "@/canvas/engine/store";
+import type { CanvasSync } from "@/canvas/sync";
+import { memberColor, memberName } from "@/canvas/members";
 import { useToast } from "@/Components/common/ToastProvider";
 import { useTheme } from "@/lib/theme";
 import { blobAsDataURL, blobForSource } from "@/api/backend";
 import { uploadAsset, downloadBlob } from "@/api/client";
-import { api as localApi } from "@/api/client";
-import {
-  ASSET_DRAG_TYPE,
-  insertLibraryImage,
-  type LibraryAsset,
-} from "@/features/asset-library/assets";
 import {
   applyNativeScene,
   INTERNAL_EMBED_PREFIX,
+  isComponent,
   isCustomElement,
   sceneFromEditor,
   shapeIdForElement,
@@ -46,23 +49,22 @@ import {
   withoutTransientMetadata,
   sceneBeforeLocalChange,
 } from "./scene";
-import { BoardTools } from "./BoardTools";
+import { fitBoardElements, ZoomMenu } from "./ZoomMenu";
+import { ToolbarTools } from "./ToolbarTools";
+import { StylesPanel } from "./StylesPanel";
 import { BoardComponents } from "./BoardComponents";
-import { SelectionComposer } from "./SelectionComposer";
+import { componentAtDropPoint } from "./image-drop";
+import { nodeExecution } from "@/workflow/execute";
+import { uploadComponentFile } from "@/workflow/uploads";
 import { NodeInspector } from "./NodeInspector";
 import { BoardConnections } from "./BoardConnections";
+import { repairFrameArrowMembership } from "./frame-bindings";
 import { BoardExecution } from "./BoardExecution";
-import { resultKind } from "@/workflow/results";
-import { requestInspection } from "@/workflow/context";
+import { canInspect } from "@/workflow/context";
 import { nativeExporter, exportScene } from "./export";
+import { boardLanguages, type BoardLanguage } from "./board-language";
 import "@excalidraw/excalidraw/index.css";
 import "./whiteboard.css";
-
-const AssetBrowser = lazy(() =>
-  import("@/features/asset-library/AssetBrowser").then((module) => ({
-    default: module.AssetBrowser,
-  })),
-);
 
 const fingerprint = (elements: readonly ExcalidrawElement[]) =>
   JSON.stringify(elements.map(withoutTransientMetadata));
@@ -73,36 +75,93 @@ const toolMap: Record<string, string> = {
   ellipse: "geo",
   diamond: "geo",
 };
+const textOrUiTarget =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role=textbox], [role=combobox], [role=spinbutton], [role=dialog], [role=menu], [role=listbox], [data-content-reading], [data-canvas-ui]';
+// The native language subscription must live inside Excalidraw's provider.
+function NativeMenuItems({
+  language,
+  onLanguageChange,
+  onExport,
+  children,
+}: {
+  language: string;
+  onLanguageChange: (value: string) => void;
+  onExport: (format: "excalidraw" | "png" | "svg") => Promise<void>;
+  children?: ReactNode;
+}) {
+  const { t: nativeT, langCode } = useI18n();
+  const systemLabel =
+    langCode === "zh-CN" || langCode === "en"
+      ? appT("canvas.language.system", undefined, langCode)
+      : nativeT("buttons.systemMode");
+  return (
+    <>
+      <MainMenu.Item onSelect={() => void onExport("excalidraw")}>
+        {nativeT("buttons.exportJSON")} (.excalidraw)
+      </MainMenu.Item>
+      <MainMenu.Item onSelect={() => void onExport("png")}>
+        {nativeT("imageExportDialog.title.exportToPng")}
+      </MainMenu.Item>
+      <MainMenu.Item onSelect={() => void onExport("svg")}>
+        {nativeT("imageExportDialog.title.exportToSvg")}
+      </MainMenu.Item>
+      {children}
+      <MainMenu.Separator />
+      <MainMenu.ItemCustom className="board-menu-language">
+        <select
+          aria-label={nativeT("buttons.selectLanguage")}
+          value={language}
+          onChange={(event) => onLanguageChange(event.target.value)}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <option value="system">{systemLabel}</option>
+          {boardLanguages.map(({ code, label }) => (
+            <option key={code} value={code}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </MainMenu.ItemCustom>
+      <MainMenu.DefaultItems.Help />
+      <MainMenu.Separator />
+      <MainMenu.DefaultItems.ChangeCanvasBackground />
+    </>
+  );
+}
 
 export function ExcalidrawSurface({
+  boardLanguage,
   store,
   projectId,
+  collaboration,
   initialInspectId,
   onMount,
   onReady,
   children,
-  topLeft,
-  topRight,
-  assetsOpen = false,
-  onAssetsOpenChange,
+  menuItems,
+  toolbar,
 }: {
+  boardLanguage: BoardLanguage;
   store: CanvasStore;
   projectId: string;
+  collaboration?: CanvasSync;
   initialInspectId?: string;
   onMount: (editor: Editor) => void;
   onReady?: () => void;
   children?: ReactNode;
-  topLeft?: ReactNode;
-  topRight?: ReactNode;
-  assetsOpen?: boolean;
-  onAssetsOpenChange?: (open: boolean) => void;
+  menuItems?: ReactNode;
+  toolbar?: ReactNode;
 }) {
-  const locale = useLocale();
+  const { preference, langCode, setPreference } = boardLanguage;
+  const { t, locale } = useTranslations();
   const [editor] = useState(() => new Editor(store));
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [initialData, setInitialData] =
     useState<Promise<ExcalidrawInitialDataState> | null>(null);
   const [tool, setTool] = useState<AppState["activeTool"]["type"]>("selection");
+  const [collaboratorCount, setCollaboratorCount] = useState(0);
+  const [imageDropTarget, setImageDropTarget] = useState<string | null>(null);
+  const pendingImageDrops = useRef(new Set<string>());
   const { resolved } = useTheme();
   const { showToast } = useToast();
   const [mountOptions] = useState(() => ({
@@ -114,21 +173,50 @@ export function ExcalidrawSurface({
   const workspace = useRef<HTMLDivElement>(null);
   const feedback = useRef<HTMLCanvasElement>(null);
   const apiRef = useRef(api);
-  const applying = useRef(false);
-  const initialized = useRef(false);
+  const bridgePhase = useRef<
+    "initializing" | "ready" | "applying-store" | "applying-native"
+  >("initializing");
+  const repaintFromStore = useRef<(() => void) | null>(null);
   const lastFingerprint = useRef("");
   const page = useRef(editor.getCurrentPageId());
   const cachedFiles = useRef<BinaryFiles>({});
   const loadingFiles = useRef(new Map<string, Promise<void>>());
   const uploaded = useRef(new Map<string, Promise<void>>());
+  const resourceT = useRef(t);
+  useLayoutEffect(() => {
+    // Keep resource callbacks stable so a language change does not remount the editor.
+    resourceT.current = t;
+  }, [t]);
   apiRef.current = api;
   useEffect(() => {
-    if (assetsOpen && api?.getAppState().openSidebar)
+    if (!api || !collaboration) return;
+    const paintPresence = () => {
+      const collaborators = new Map<SocketId, Collaborator>();
+      for (const peer of collaboration.getPeers().values()) {
+        if (peer.member_id === collaboration.getRoomMembers().self?.member_id)
+          continue;
+        const color = memberColor(peer).stroke;
+        collaborators.set(peer.id as SocketId, {
+          id: peer.id,
+          socketId: peer.id as SocketId,
+          username: memberName(peer, locale),
+          pointer: peer.pointer || undefined,
+          button: peer.button,
+          selectedElementIds: peer.selectedElementIds,
+          color: { stroke: color, background: color },
+          isCurrentUser: false,
+        });
+      }
       api.updateScene({
-        appState: { openSidebar: null },
+        collaborators,
         captureUpdate: CaptureUpdateAction.NEVER,
       });
-  }, [api, assetsOpen]);
+      setCollaboratorCount(collaborators.size);
+    };
+    const unsubscribe = collaboration.subscribePresence(paintPresence);
+    paintPresence();
+    return unsubscribe;
+  }, [api, collaboration, locale]);
   const [compact, setCompact] = useState(false);
   useEffect(() => {
     const element = workspace.current;
@@ -223,8 +311,10 @@ export function ExcalidrawSurface({
                 })().catch(() => {
                   loadingFiles.current.delete(id);
                   showToast({
-                    title: t("results.image.imageCannotBeLoaded"),
-                    description: t("canvas.youCanKeepEditing"),
+                    title: resourceT.current(
+                      "results.image.imageCannotBeLoaded",
+                    ),
+                    description: resourceT.current("canvas.youCanKeepEditing"),
                     variant: "destructive",
                   });
                 }),
@@ -298,16 +388,94 @@ export function ExcalidrawSurface({
     };
   }, [editor, filesForScene, mountOptions]);
 
-  useEffect(() => {
-    root.current
-      ?.querySelector(".main-menu-trigger")
-      ?.setAttribute("aria-label", t("canvas.canvasMenu"));
-  }, [api, locale]);
+  useLayoutEffect(() => {
+    const stage = root.current;
+    const native = stage?.querySelector<HTMLElement>(".excalidraw");
+    const slot = stage?.querySelector<HTMLElement>(
+      ".board-toolbar-native-menu-slot",
+    );
+    if (!api || !stage || !native || !slot) return;
+    let menuParent: HTMLElement | null = null;
+    const positionMenu = () => {
+      const button =
+        native.querySelector<HTMLButtonElement>(".main-menu-trigger");
+      const host = button?.parentElement;
+      if (!button || !host) return;
+      const anchor = slot.getBoundingClientRect();
+      const bounds = stage.getBoundingClientRect();
+      const parent = button.offsetParent;
+      if (!(parent instanceof HTMLElement)) return;
+      if (parent !== menuParent) {
+        if (menuParent) resize.unobserve(menuParent);
+        menuParent = parent;
+        resize.observe(parent);
+      }
+      const origin = parent.getBoundingClientRect();
+      stage.style.setProperty("--board-stage-height", `${bounds.height}px`);
+      button.style.left = `${anchor.left - origin.left - parent.clientLeft + parent.scrollLeft}px`;
+      button.style.top = `${anchor.top - origin.top - parent.clientTop + parent.scrollTop}px`;
+      button.style.width = `${anchor.width}px`;
+      button.style.height = `${anchor.height}px`;
+      host.style.setProperty(
+        "--board-menu-available-height",
+        `${Math.max(0, bounds.bottom - anchor.bottom - 20)}px`,
+      );
+      button.dataset.huayuMenuPositioned = "true";
+      button.setAttribute("aria-label", t("canvas.canvasMenu"));
+      button.title = t("canvas.canvasMenu");
+      const popup = host.querySelector<HTMLElement>(".dropdown-menu");
+      if (popup) {
+        const popupParent = popup.offsetParent;
+        if (!(popupParent instanceof HTMLElement)) return;
+        const popupOrigin = popupParent.getBoundingClientRect();
+        const width = popup.getBoundingClientRect().width;
+        const left = Math.max(
+          bounds.left + 12,
+          Math.min(anchor.right - width, bounds.right - width - 12),
+        );
+        popup.style.left = `${left - popupOrigin.left - popupParent.clientLeft + popupParent.scrollLeft}px`;
+        popup.style.top = `${anchor.bottom + 8 - popupOrigin.top - popupParent.clientTop + popupParent.scrollTop}px`;
+      }
+    };
+    let frame = 0;
+    const scheduleMenuPosition = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(positionMenu);
+    };
+    let width = stage.clientWidth;
+    let height = stage.clientHeight;
+    const resize = new ResizeObserver(() => {
+      if (stage.clientWidth !== width || stage.clientHeight !== height) {
+        width = stage.clientWidth;
+        height = stage.clientHeight;
+        api.updateScene({
+          appState: { openMenu: null, openPopup: null },
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+      }
+      scheduleMenuPosition();
+    });
+    resize.observe(stage);
+    resize.observe(slot);
+    const actions = slot.closest(".board-toolbar-actions");
+    if (actions) resize.observe(actions);
+    const mutations = new MutationObserver(scheduleMenuPosition);
+    mutations.observe(native, { childList: true, subtree: true });
+    stage.addEventListener("board-tool-dock-layout", scheduleMenuPosition);
+    positionMenu();
+    return () => {
+      stage.removeEventListener("board-tool-dock-layout", scheduleMenuPosition);
+      resize.disconnect();
+      mutations.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [api, langCode, t]);
+
   useEffect(() => {
     if (!api) return;
     let generation = 0;
-    const unsubscribe = store.listen((entry) => {
-      if (applying.current || !initialized.current) return;
+    const paintScene = (entry: ChangeEntry) => {
+      if (bridgePhase.current !== "ready") return;
       if (entry.scope === "session") {
         const state = api.getAppState();
         const selected = Object.fromEntries(
@@ -364,88 +532,137 @@ export function ExcalidrawSurface({
       const nextPage = editor.getCurrentPageId();
       if (entry.scope !== "document" && nextPage === page.current) return;
       const current = ++generation;
+      const preview =
+        entry.source === "remote" && collaboration?.isApplyingPreview;
       const next = sceneFromEditor(editor);
       void filesForScene(next)
         .then((files) => {
           if (current !== generation) return;
           const changedPage = page.current !== nextPage;
           page.current = nextPage;
-          const restored = restoreElements(next, null, {
-            repairBindings: true,
-          });
-          lastFingerprint.current = fingerprint(restored);
-          applying.current = true;
-          api.addFiles(Object.values(files));
-          if (!changedPage && entry.source === "user") {
-            const changedIds = new Set(
-              [
-                ...Object.values(entry.changes.added),
-                ...Object.values(entry.changes.updated).map(
-                  ([, record]) => record,
-                ),
-                ...Object.values(entry.changes.removed),
-              ].flatMap((record) =>
-                record.typeName === "shape"
-                  ? [record.id]
-                  : record.typeName === "binding"
-                    ? [record.fromId]
-                    : [],
-              ),
+          const localScene = api.getSceneElementsIncludingDeleted();
+          const removed = new Set(
+            Object.values(entry.changes.removed)
+              .filter(
+                (record) =>
+                  record.typeName === "shape" && !editor.getShape(record.id),
+              )
+              .map((record) => record.id),
+          );
+          const tombstones = preview
+            ? localScene
+                .filter(
+                  (element) =>
+                    removed.has(element.customData?.huayu?.id || element.id) ||
+                    (element.type === "text" &&
+                      element.containerId &&
+                      removed.has(element.customData?.huayuLabelFor)),
+                )
+                .map((element) => newElementWith(element, { isDeleted: true }))
+            : [];
+          let restored = restoreElements(
+            [...sceneFromEditor(editor), ...tombstones],
+            preview ? localScene : null,
+            {
+              repairBindings: true,
+            },
+          );
+          if (preview)
+            restored = reconcileElements(
+              localScene,
+              restored as unknown as Parameters<typeof reconcileElements>[1],
+              api.getAppState(),
             );
-            api.updateScene({
-              elements: sceneBeforeLocalChange(
-                api.getSceneElements(),
-                restored,
-                changedIds,
-              ),
-              captureUpdate: CaptureUpdateAction.NEVER,
-            });
-          }
-          api.updateScene({
-            elements: restored,
-            appState: changedPage
-              ? {
-                  scrollX: editor.session.camera.x,
-                  scrollY: editor.session.camera.y,
-                  zoom: {
-                    value: editor.session.camera.z as AppState["zoom"]["value"],
-                  },
-                  selectedElementIds: {},
-                }
-              : {
-                  scrollX: api.getAppState().scrollX,
-                  scrollY: api.getAppState().scrollY,
-                  zoom: api.getAppState().zoom,
-                  selectedElementIds: Object.fromEntries(
-                    editor
-                      .getSelectedShapeIds()
-                      .map((id) => [
-                        editor.getShape(id)?.props.excalidraw?.id || id,
-                        true,
-                      ]),
+          lastFingerprint.current = fingerprint(restored);
+          bridgePhase.current = "applying-store";
+          try {
+            if (preview)
+              store.mergeRemoteChanges(() =>
+                applyNativeScene(editor, restored),
+              );
+            api.addFiles(Object.values(files));
+            if (!changedPage && entry.source === "user") {
+              const changedIds = new Set(
+                [
+                  ...Object.values(entry.changes.added),
+                  ...Object.values(entry.changes.updated).map(
+                    ([, record]) => record,
                   ),
-                },
-            captureUpdate:
-              changedPage || entry.source === "remote"
-                ? CaptureUpdateAction.NEVER
-                : CaptureUpdateAction.IMMEDIATELY,
-          });
-          if (changedPage) api.history.clear();
-          applying.current = false;
+                  ...Object.values(entry.changes.removed),
+                ].flatMap((record) =>
+                  record.typeName === "shape"
+                    ? [record.id]
+                    : record.typeName === "binding"
+                      ? [record.fromId]
+                      : [],
+                ),
+              );
+              api.updateScene({
+                elements: sceneBeforeLocalChange(
+                  api.getSceneElements(),
+                  restored,
+                  changedIds,
+                ),
+                captureUpdate: CaptureUpdateAction.NEVER,
+              });
+            }
+            api.updateScene({
+              elements: restored,
+              appState: changedPage
+                ? {
+                    scrollX: editor.session.camera.x,
+                    scrollY: editor.session.camera.y,
+                    zoom: {
+                      value: editor.session.camera
+                        .z as AppState["zoom"]["value"],
+                    },
+                    selectedElementIds: {},
+                  }
+                : {
+                    scrollX: api.getAppState().scrollX,
+                    scrollY: api.getAppState().scrollY,
+                    zoom: api.getAppState().zoom,
+                    selectedElementIds: Object.fromEntries(
+                      editor
+                        .getSelectedShapeIds()
+                        .map((id) => [
+                          editor.getShape(id)?.props.excalidraw?.id || id,
+                          true,
+                        ]),
+                    ),
+                  },
+              captureUpdate:
+                changedPage || entry.source === "remote"
+                  ? CaptureUpdateAction.NEVER
+                  : CaptureUpdateAction.IMMEDIATELY,
+            });
+            if (changedPage) api.history.clear();
+          } finally {
+            bridgePhase.current = "ready";
+          }
         })
         .catch((error) =>
           showToast({
-            title: t("canvas.cannotLoadCanvasResources"),
+            title: resourceT.current("canvas.cannotLoadCanvasResources"),
             description: error.message,
             variant: "destructive",
           }),
         );
-    });
+    };
+    const unsubscribe = store.listen(paintScene);
+    repaintFromStore.current = () =>
+      paintScene({
+        source: "remote",
+        scope: "document",
+        changes: { added: {}, updated: {}, removed: {} },
+      });
+    if (bridgePhase.current === "ready") repaintFromStore.current();
     return () => {
       generation++;
       unsubscribe();
+      repaintFromStore.current = null;
     };
-  }, [api, store, editor, filesForScene, showToast]);
+  }, [api, store, editor, filesForScene, showToast, collaboration]);
 
   async function exportPage(format: "png" | "svg" | "excalidraw") {
     if (!api) return;
@@ -453,7 +670,7 @@ export function ExcalidrawSurface({
       const ids = [...editor.getCurrentPageShapeIds()];
       const name =
         editor.pages.find((page) => page.id === editor.getCurrentPageId())
-          ?.name || t("canvas.canvas");
+          ?.name || appT("canvas.canvas");
       if (format === "png")
         downloadBlob(
           (
@@ -530,6 +747,7 @@ export function ExcalidrawSurface({
       ".excalidraw__canvas.interactive",
     );
     if (!source) return;
+    source.closest<HTMLElement>(".excalidraw")?.focus({ preventScroll: true });
     event.preventDefault();
     event.stopPropagation();
     source.dispatchEvent(
@@ -539,21 +757,164 @@ export function ExcalidrawSurface({
     );
   }
 
+  function boardEventTarget(event: Pick<Event, "target" | "defaultPrevented">) {
+    const target = event.target;
+    if (
+      !api ||
+      event.defaultPrevented ||
+      !(target instanceof Element) ||
+      !root.current?.contains(target) ||
+      target.closest(textOrUiTarget)
+    )
+      return;
+    return target;
+  }
+
+  function prepareNativeClipboard(event: ReactClipboardEvent<HTMLDivElement>) {
+    const target = boardEventTarget(event);
+    const stage = root.current;
+    if (!target || !stage) return;
+    const native = stage.querySelector<HTMLElement>(".excalidraw");
+    if (!native) return;
+    const selection = window.getSelection();
+    if (
+      event.type !== "paste" &&
+      selection &&
+      !selection.isCollapsed &&
+      selection.anchorNode?.parentElement?.closest(".board-component")
+    ) {
+      // Let the browser copy selected card text instead of the selected shapes.
+      event.stopPropagation();
+      return;
+    }
+    const state = api!.getAppState();
+    if (
+      state.openDialog ||
+      state.openMenu ||
+      state.openPopup ||
+      state.contextMenu ||
+      state.editingTextElement
+    )
+      return;
+    native.focus({ preventScroll: true });
+    if (event.type === "paste") {
+      // The native paste handler checks elementFromPoint before reading the clipboard.
+      // Cards temporarily yield hit testing so the original event can reach that handler.
+      stage.dataset.nativePaste = "true";
+    }
+  }
+
+  function copyCardVisual(format: "png" | "svg") {
+    if (!api) return false;
+    const selected = editor.getSelectedShapeIds();
+    const ids = selected.length
+      ? selected
+      : [...editor.getCurrentPageShapeIds()];
+    if (
+      !ids.some((id) => {
+        const shape = editor.getShape(id);
+        return (
+          (shape && isCustomElement(shape)) ||
+          editor.descendants(id).some(isCustomElement)
+        );
+      })
+    )
+      return false;
+    const state = api.getAppState();
+    api.updateScene({
+      appState: { contextMenu: null },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    root.current
+      ?.querySelector<HTMLElement>(".excalidraw")
+      ?.focus({ preventScroll: true });
+    void (async () => {
+      if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined")
+        throw new Error(t("results.thisBrowserCannotCopyImages"));
+      // Pass a promise to ClipboardItem while the original user gesture is active.
+      const content =
+        format === "png"
+          ? editor
+              .toImage(ids, {
+                format: "png",
+                background: state.exportBackground,
+                scale: state.exportScale,
+              })
+              .then((value) => value.blob)
+          : editor
+              .getSvgString(ids, { background: state.exportBackground })
+              .then((value) => {
+                if (!value)
+                  throw new Error(
+                    t("canvas.theresNothingOnTheCanvasToExportYet"),
+                  );
+                return new Blob([value.svg], { type: "text/plain" });
+              });
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [format === "png" ? "image/png" : "text/plain"]: content,
+        }),
+      ]);
+      showToast({
+        title: t(
+          format === "png" ? "results.imageCopied" : "results.contentCopied",
+        ),
+      });
+    })().catch((error) =>
+      showToast({
+        title: t("results.cannotCopy"),
+        description: error.message,
+        variant: "destructive",
+      }),
+    );
+    return true;
+  }
+
   function onChange(
     elements: readonly ExcalidrawElement[],
     state: AppState,
     files: BinaryFiles,
   ) {
-    if (state.isLoading || applying.current) return;
+    if (
+      state.isLoading ||
+      bridgePhase.current === "applying-store" ||
+      bridgePhase.current === "applying-native"
+    )
+      return;
+    const repaired =
+      !state.newElement &&
+      !state.multiElement &&
+      !state.selectedElementsAreBeingDragged &&
+      !state.selectedLinearElement?.isDragging &&
+      !state.isResizing &&
+      !state.isRotating
+        ? repairFrameArrowMembership(elements)
+        : null;
+    if (repaired) elements = repaired;
+    collaboration?.updatePresence({
+      selectedElementIds: { ...state.selectedElementIds },
+    });
     cachedFiles.current = { ...cachedFiles.current, ...files };
     const value = fingerprint(elements);
-    if (!initialized.current) {
+    if (
+      root.current &&
+      (value !== lastFingerprint.current || state.errorMessage)
+    )
+      delete root.current.dataset.nativePaste;
+    if (bridgePhase.current === "initializing") {
       lastFingerprint.current = value;
-      initialized.current = true;
+      bridgePhase.current = "ready";
+      // The socket may receive a scene while Excalidraw is still loading.
+      repaintFromStore.current?.();
       mountOptions.onReady?.();
     }
-    applying.current = true;
+    bridgePhase.current = "applying-native";
     try {
+      if (repaired)
+        api?.updateScene({
+          elements: repaired,
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
       if (lastFingerprint.current !== value) {
         lastFingerprint.current = value;
         for (const element of elements)
@@ -579,7 +940,7 @@ export function ExcalidrawSurface({
                   type: "image",
                   props: {
                     src: file.dataURL,
-                    name: t("canvas.canvasImage"),
+                    name: appT("canvas.canvasImage"),
                     mimeType: file.mimeType,
                   },
                   meta: {},
@@ -655,7 +1016,7 @@ export function ExcalidrawSurface({
           true,
         );
     } finally {
-      applying.current = false;
+      bridgePhase.current = "ready";
     }
   }
 
@@ -666,42 +1027,85 @@ export function ExcalidrawSurface({
         className="huayu-board h-full w-full"
         data-compact={compact || undefined}
         data-tool={tool}
+        role="main"
         aria-label={t("canvas.canvas")}
         onDragOverCapture={(event) => {
-          if ((event.target as Element).closest("[data-canvas-ui]")) return;
-          if (event.dataTransfer.types.includes(ASSET_DRAG_TYPE)) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = root.current?.contains(
-              event.target as Node,
-            )
-              ? "copy"
-              : "none";
+          if ((event.target as Element).closest("[data-canvas-ui]")) {
+            setImageDropTarget(null);
+            return;
           }
-        }}
-        onDropCapture={(event) => {
-          if ((event.target as Element).closest("[data-canvas-ui]")) return;
-          const assetId = event.dataTransfer.getData(ASSET_DRAG_TYPE);
-          if (assetId) {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          const target = componentAtDropPoint(editor, {
+            x: event.clientX,
+            y: event.clientY,
+          });
+          if (target) {
             event.preventDefault();
             event.stopPropagation();
-            if (!root.current?.contains(event.target as Node)) return;
-            const point = editor.screenToPage({
-              x: event.clientX,
-              y: event.clientY,
-            });
-            void localApi<LibraryAsset>(
-              `/api/library/assets/${encodeURIComponent(assetId)}`,
-            )
-              .then((asset) => {
-                insertLibraryImage(editor, asset, point);
+            const allowed =
+              target.type === "ai-image" &&
+              !target.isLocked &&
+              !target.props.isLocked &&
+              !pendingImageDrops.current.has(target.id) &&
+              !["queued", "running"].includes(
+                nodeExecution(editor, target.id).status,
+              );
+            event.dataTransfer.dropEffect = allowed ? "copy" : "none";
+            setImageDropTarget(allowed ? target.id : null);
+          } else setImageDropTarget(null);
+        }}
+        onDragLeaveCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            setImageDropTarget(null);
+        }}
+        onDropCapture={(event) => {
+          setImageDropTarget(null);
+          if ((event.target as Element).closest("[data-canvas-ui]")) return;
+          const file = event.dataTransfer.files[0];
+          const target = file
+            ? componentAtDropPoint(editor, {
+                x: event.clientX,
+                y: event.clientY,
               })
-              .catch((error) =>
+            : undefined;
+          if (target) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (
+              target.type !== "ai-image" ||
+              target.isLocked ||
+              target.props.isLocked ||
+              pendingImageDrops.current.has(target.id) ||
+              ["queued", "running"].includes(
+                nodeExecution(editor, target.id).status,
+              )
+            )
+              return;
+            pendingImageDrops.current.add(target.id);
+            void (async () => {
+              if (file) {
+                const props = await uploadComponentFile("ai-image", file);
+                const current = editor.getShape(target.id);
+                if (
+                  !current ||
+                  current.isLocked ||
+                  current.props.isLocked ||
+                  ["queued", "running"].includes(
+                    nodeExecution(editor, target.id).status,
+                  )
+                )
+                  throw new Error(t("assets.targetUnavailable"));
+                editor.updateShape({ id: target.id, props });
+              }
+            })()
+              .catch((error: Error) =>
                 showToast({
                   title: t("assets.insertFailed"),
                   description: error.message,
                   variant: "destructive",
                 }),
-              );
+              )
+              .finally(() => pendingImageDrops.current.delete(target.id));
             return;
           }
         }}
@@ -710,7 +1114,171 @@ export function ExcalidrawSurface({
           <div
             ref={root}
             className="board-stage"
+            onCopyCapture={prepareNativeClipboard}
+            onCutCapture={prepareNativeClipboard}
+            onPasteCapture={prepareNativeClipboard}
+            onKeyDownCapture={(event) => {
+              const target = boardEventTarget(event);
+              if (!target || event.nativeEvent.isComposing) return;
+              if (
+                event.key === "Enter" &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                !event.altKey &&
+                !target.closest("button, a, [role=button], [role=toolbar]")
+              ) {
+                const selected = editor.getSelectedShapes();
+                const shape = selected.length === 1 ? selected[0] : undefined;
+                if (
+                  shape &&
+                  !shape.isLocked &&
+                  isCustomElement(shape) &&
+                  canInspect(shape)
+                ) {
+                  // The native rectangle behind the card only handles geometry.
+                  event.preventDefault();
+                  event.stopPropagation();
+                  return;
+                }
+              }
+              if (
+                event.code === "KeyC" &&
+                event.altKey &&
+                event.shiftKey &&
+                copyCardVisual("png")
+              ) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
+            onClickCapture={(event) => {
+              const stage = root.current;
+              const target = event.target;
+              if (
+                !stage ||
+                !(target instanceof Element) ||
+                !stage.contains(target)
+              )
+                return;
+              delete stage.dataset.nativePaste;
+              const visual = target.closest(
+                '.excalidraw .context-menu [data-testid="copyAsPng"], .excalidraw .context-menu [data-testid="copyAsSvg"]',
+              );
+              if (
+                visual &&
+                copyCardVisual(
+                  visual.getAttribute("data-testid") === "copyAsPng"
+                    ? "png"
+                    : "svg",
+                )
+              ) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+              }
+              if (
+                target.closest(
+                  '.excalidraw .context-menu [data-testid="paste"]',
+                )
+              )
+                stage.dataset.nativePaste = "true";
+            }}
+            onKeyDown={(event) => {
+              if (root.current) delete root.current.dataset.nativePaste;
+              const target = boardEventTarget(event);
+              if (
+                event.nativeEvent.isComposing ||
+                !target ||
+                target.closest(".excalidraw") ||
+                [
+                  "Tab",
+                  "Shift",
+                  "Control",
+                  "Meta",
+                  "Alt",
+                  "AltGraph",
+                  "CapsLock",
+                ].includes(event.key) ||
+                // Keep keyboard activation and navigation on custom controls.
+                ([
+                  " ",
+                  "Enter",
+                  "ArrowUp",
+                  "ArrowDown",
+                  "ArrowLeft",
+                  "ArrowRight",
+                ].includes(event.key) &&
+                  !event.ctrlKey &&
+                  !event.metaKey &&
+                  !event.altKey &&
+                  target.closest("button, a, [role=button], [role=toolbar]"))
+              )
+                return;
+              const selection = window.getSelection();
+              if (
+                (event.ctrlKey || event.metaKey) &&
+                ["a", "c", "x"].includes(event.key.toLowerCase()) &&
+                selection &&
+                !selection.isCollapsed &&
+                selection.anchorNode?.parentElement?.closest(".board-component")
+              )
+                return;
+              const state = api!.getAppState();
+              if (
+                state.openDialog ||
+                state.openMenu ||
+                state.openPopup ||
+                state.contextMenu ||
+                state.editingTextElement
+              )
+                return;
+              const native =
+                root.current?.querySelector<HTMLElement>(".excalidraw");
+              if (!native) return;
+              native.focus({ preventScroll: true });
+              const forwarded = new KeyboardEvent("keydown", {
+                key: event.key,
+                code: event.code,
+                location: event.location,
+                repeat: event.repeat,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                altKey: event.altKey,
+                shiftKey: event.shiftKey,
+                bubbles: true,
+                cancelable: true,
+              });
+              native.dispatchEvent(forwarded);
+              // C/V still need the browser to issue the real clipboard event.
+              if (forwarded.defaultPrevented) event.preventDefault();
+              event.stopPropagation();
+            }}
+            onPointerMoveCapture={(event) => {
+              if (root.current) delete root.current.dataset.nativePaste;
+              if (
+                !(event.target instanceof Element) ||
+                !event.target.closest(".board-component")
+              )
+                return;
+              collaboration?.updatePresence({
+                pointer: {
+                  ...editor.screenToPage({
+                    x: event.clientX,
+                    y: event.clientY,
+                  }),
+                  tool: "pointer",
+                },
+                button: event.buttons ? "down" : "up",
+              });
+            }}
+            onPointerUpCapture={() =>
+              collaboration?.updatePresence({ button: "up" })
+            }
+            onPointerLeave={() =>
+              collaboration?.updatePresence({ pointer: null, button: "up" })
+            }
             onPointerDownCapture={(event) => {
+              if (root.current) delete root.current.dataset.nativePaste;
               const target = event.target;
               const canvas = feedback.current;
               if (
@@ -718,7 +1286,7 @@ export function ExcalidrawSurface({
                 !canvas ||
                 !(target instanceof Element) ||
                 !target.closest(".board-component") ||
-                target.closest(".connection-button, .node-actionbar")
+                target.closest(".connection-button, [data-node-controls]")
               )
                 return;
 
@@ -753,34 +1321,71 @@ export function ExcalidrawSurface({
               forwardNativeEvent(event);
             }}
             onContextMenuCapture={(event) => {
+              const target = boardEventTarget(event);
               if (
-                event.target instanceof Element &&
-                event.target.closest(".node-header") &&
-                !event.target.closest("button")
+                target?.closest(".board-component") &&
+                !target.closest(
+                  ".connection-button, [data-node-controls], a[href], audio, video, iframe",
+                )
               )
                 forwardNativeEvent(event);
             }}
             onDoubleClickCapture={(event) => {
+              const { currentTarget, target } = event;
               if (
-                event.target instanceof Element &&
-                event.target.closest(".node-header") &&
-                !event.target.closest("button")
+                !(target instanceof Element) ||
+                !currentTarget.contains(target)
+              )
+                return;
+              // Forwarding pointerdown lets the native canvas capture the click.
+              const hit = currentTarget.ownerDocument.elementFromPoint(
+                event.clientX,
+                event.clientY,
+              );
+              if (
+                hit?.closest(".node-header") &&
+                currentTarget.contains(hit) &&
+                !hit.closest("button")
               ) {
-                forwardNativeEvent(event);
+                const id = hit.closest<HTMLElement>("[data-component-id]")
+                  ?.dataset.componentId;
+                const shape = id ? editor.getShape(id) : undefined;
+                if (!api || !shape || shape.isLocked || !isComponent(shape))
+                  return;
+                const elementId = shape.props.excalidraw?.id || shape.id;
+                const element = api
+                  .getSceneElements()
+                  .find((item) => item.id === elementId);
+                if (!element) return;
+                event.preventDefault();
+                event.stopPropagation();
+                api.updateScene({
+                  appState: {
+                    selectedElementIds: { [element.id]: true },
+                    selectedGroupIds: {},
+                  },
+                  captureUpdate: CaptureUpdateAction.NEVER,
+                });
+                fitBoardElements(currentTarget, api, [element]);
                 return;
               }
               if (
-                !(event.target instanceof HTMLCanvasElement) ||
+                !(target instanceof HTMLCanvasElement) ||
                 editor.getCurrentToolId() !== "select"
               )
                 return;
               const ids = editor.getSelectedShapeIds();
               const shape =
                 ids.length === 1 ? editor.getShape(ids[0]) : undefined;
-              if (shape && resultKind(shape)) {
+              if (
+                shape &&
+                !shape.isLocked &&
+                isCustomElement(shape) &&
+                canInspect(shape)
+              ) {
+                // Keep the native rectangle from entering text editing.
                 event.preventDefault();
                 event.stopPropagation();
-                requestInspection(editor, shape.id);
               }
             }}
           >
@@ -789,8 +1394,54 @@ export function ExcalidrawSurface({
                 initialData={initialData}
                 excalidrawAPI={setApi}
                 onChange={onChange}
+                onPaste={() => {
+                  if (root.current) delete root.current.dataset.nativePaste;
+                  return true;
+                }}
+                onDuplicate={(next, previous) => {
+                  const existing = new Set(
+                    previous.map((element) => element.id),
+                  );
+                  const elements = new Map(
+                    next.map((element) => [element.id, element]),
+                  );
+                  return next.map((element) => {
+                    if (existing.has(element.id)) return element;
+                    const metadata = element.customData;
+                    if (!metadata) return element;
+                    let customData = metadata;
+                    if (metadata.huayu)
+                      customData = {
+                        ...customData,
+                        huayu: {
+                          ...metadata.huayu,
+                          id: shapeIdForElement(editor, element),
+                        },
+                      };
+                    if (metadata.huayuLabelFor && element.type === "text") {
+                      const container = element.containerId
+                        ? elements.get(element.containerId)
+                        : undefined;
+                      customData = { ...customData };
+                      if (container)
+                        customData.huayuLabelFor = shapeIdForElement(
+                          editor,
+                          container,
+                        );
+                      else delete customData.huayuLabelFor;
+                    }
+                    return customData === metadata
+                      ? element
+                      : newElementWith(element, { customData });
+                  });
+                }}
+                isCollaborating={collaboratorCount > 0}
+                onPointerUpdate={({ pointer, button, pointersMap }) => {
+                  if (pointersMap.size < 2)
+                    collaboration?.updatePresence({ pointer, button });
+                }}
                 theme={resolved}
-                langCode={locale}
+                langCode={langCode}
                 autoFocus
                 aiEnabled={false}
                 handleKeyboardGlobally={false}
@@ -822,6 +1473,8 @@ export function ExcalidrawSurface({
                 UIOptions={{
                   dockedSidebarBreakpoint: Number.MAX_SAFE_INTEGER,
                   canvasActions: {
+                    loadScene: false,
+                    clearCanvas: false,
                     toggleTheme: false,
                     export: false,
                     saveAsImage: false,
@@ -830,50 +1483,20 @@ export function ExcalidrawSurface({
                 }}
               >
                 <MainMenu>
-                  <MainMenu.DefaultItems.LoadScene />
-                  <MainMenu.Item onSelect={() => void exportPage("excalidraw")}>
-                    {t("canvas.exportExcalidrawFile")}
-                  </MainMenu.Item>
-                  <MainMenu.Item onSelect={() => void exportPage("png")}>
-                    {t("canvas.export.pngImage")}
-                  </MainMenu.Item>
-                  <MainMenu.Item onSelect={() => void exportPage("svg")}>
-                    {t("canvas.export.svgImage")}
-                  </MainMenu.Item>
-                  <MainMenu.Separator />
-                  <MainMenu.Item
-                    onSelect={() =>
-                      api?.updateScene({
-                        appState: { openDialog: { name: "commandPalette" } },
-                        captureUpdate: CaptureUpdateAction.NEVER,
-                      })
-                    }
+                  <NativeMenuItems
+                    language={preference}
+                    onExport={exportPage}
+                    onLanguageChange={setPreference}
                   >
-                    {t("canvas.quickCommands")}
-                  </MainMenu.Item>
-                  <MainMenu.Item
-                    onSelect={() =>
-                      api?.updateScene({
-                        appState: {
-                          openSidebar:
-                            api.getAppState().openSidebar?.name === "default" &&
-                            api.getAppState().openSidebar?.tab === "search"
-                              ? null
-                              : { name: "default", tab: "search" },
-                        },
-                        captureUpdate: CaptureUpdateAction.NEVER,
-                      })
-                    }
-                  >
-                    {t("canvas.findContent")}
-                  </MainMenu.Item>
-                  <MainMenu.DefaultItems.ClearCanvas />
-                  <MainMenu.DefaultItems.ChangeCanvasBackground />
+                    {menuItems}
+                  </NativeMenuItems>
                 </MainMenu>
+                {api && <StylesPanel stage={root} api={api} disabled={false} />}
+                {api && <ToolbarTools stage={root} api={api} tool={tool} />}
               </Excalidraw>
             )}
             {children}
-            {api && <BoardComponents />}
+            {api && <BoardComponents imageDropTarget={imageDropTarget} />}
             {api && (
               <canvas
                 ref={feedback}
@@ -883,61 +1506,31 @@ export function ExcalidrawSurface({
             )}
             {api && <BoardExecution />}
             {api && <BoardConnections />}
-            {api && <BoardTools api={api} tool={tool} />}
+            {api && (
+              <ZoomMenu
+                stage={root}
+                api={api}
+                boardEventTarget={boardEventTarget}
+              />
+            )}
             {api && (
               <NodeInspector
                 projectId={projectId}
                 initialId={initialInspectId}
               />
             )}
-            {topLeft && (
+            {toolbar && (
               <div
-                className="board-corner-tools board-corner-left"
+                className="board-toolbar"
                 data-canvas-ui
+                role="group"
+                aria-label={t("canvas.canvasActions")}
               >
-                {topLeft}
+                {toolbar}
               </div>
-            )}
-            {topRight && (
-              <div
-                className="board-corner-tools board-corner-right"
-                data-canvas-ui
-              >
-                {topRight}
-              </div>
-            )}
-            {assetsOpen && (
-              <aside
-                className="board-asset-panel"
-                data-canvas-ui
-                aria-label={t("assets.title")}
-              >
-                <Suspense
-                  fallback={
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      {t("common.loading")}
-                    </div>
-                  }
-                >
-                  <AssetBrowser
-                    picker
-                    onClose={() => onAssetsOpenChange?.(false)}
-                    onInsert={(asset) => {
-                      insertLibraryImage(editor, asset);
-                      onAssetsOpenChange?.(false);
-                      showToast({ title: t("assets.inserted") });
-                    }}
-                    onShapeLibrary={() => {
-                      onAssetsOpenChange?.(false);
-                      api?.toggleSidebar({ name: "default", tab: "library" });
-                    }}
-                  />
-                </Suspense>
-              </aside>
             )}
           </div>
         </div>
-        {api && <SelectionComposer projectId={projectId} />}
       </div>
     </EditorContext>
   );

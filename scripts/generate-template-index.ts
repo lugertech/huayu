@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import type { TemplatePreset } from "../templates/types.ts";
 
-const catalog = JSON.parse(
+const catalog: TemplatePreset[] = JSON.parse(
   await readFile(new URL("../templates/catalog.json", import.meta.url), "utf8"),
 );
 const illustrations = new Map(
@@ -8,7 +9,7 @@ const illustrations = new Map(
     [
       ...new Set(
         catalog.flatMap((preset) =>
-          preset.nodes.map((node) => node.artwork).filter(Boolean),
+          preset.nodes.flatMap((node) => (node.artwork ? [node.artwork] : [])),
         ),
       ),
     ].map(async (name) => {
@@ -26,7 +27,7 @@ const illustrations = new Map(
           zh: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(zh)}`,
           en: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(en)}`,
         },
-      ];
+      ] as const;
     }),
   ),
 );
@@ -59,8 +60,8 @@ const richIndex = catalog.map((template) => ({
             enImage: node.en.props?.src || node.props.src,
             ...(node.artwork
               ? {
-                  image: illustrations.get(node.artwork).zh,
-                  enImage: illustrations.get(node.artwork).en,
+                  image: illustrations.get(node.artwork)!.zh,
+                  enImage: illustrations.get(node.artwork)!.en,
                 }
               : {}),
           }
@@ -69,7 +70,7 @@ const richIndex = catalog.map((template) => ({
   })),
   edges: template.edges,
 }));
-function templatePreview(preset, locale) {
+function templatePreview(preset: TemplatePreset, locale: string) {
   if (preset.showcase)
     return locale === "en" ? preset.showcase.en.cover : preset.showcase.cover;
   const width =
@@ -81,6 +82,10 @@ function templatePreview(preset, locale) {
     .map(([from, to]) => {
       const source = nodes.get(from);
       const target = nodes.get(to);
+      if (!source || !target)
+        throw new Error(
+          `Template ${preset.id} has a connection to a missing node.`,
+        );
       const x1 = source.column * 180 + 160;
       const y1 = source.row * 106 + 56;
       const x2 = target.column * 180 + 16;
@@ -169,7 +174,7 @@ for (const [name, data] of [
     const current = JSON.parse(await readFile(path, "utf8"));
     if (JSON.stringify(current) !== JSON.stringify(data))
       throw new Error(
-        `Template ${name} is stale. Run node scripts/generate-template-index.mjs, then format the template JSON files.`,
+        `Template ${name} is stale. Run node scripts/generate-template-index.ts, then format the template JSON files.`,
       );
   } else await writeFile(path, JSON.stringify(data, null, 2) + "\n");
 }

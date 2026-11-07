@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import { useEditor, type Editor, type CanvasShape } from "@/canvas/editor";
 import { CanvasNode } from "@/Components/canvas/CanvasNode";
 import { StartComponent } from "@/Components/shapes/StartShape/StartComponent";
@@ -6,6 +6,7 @@ import { DrawComponent } from "@/Components/shapes/DrawShape/DrawComponent";
 import { InteractiveWebComponent } from "@/Components/shapes/InteractiveWebShape/InteractiveWebComponent";
 import { NativeSVG } from "@/canvas/engine/visual";
 import { useTheme } from "@/lib/theme";
+import { canInspect } from "@/workflow/context";
 import { isComponent, isCustomElement } from "./scene";
 
 function frameClip(editor: Editor, shape: CanvasShape) {
@@ -41,8 +42,12 @@ function frameClip(editor: Editor, shape: CanvasShape) {
 }
 
 /** Native geometry owns selection, transforms, bindings and history; React owns card content. */
-export function BoardComponents() {
-  useLocale();
+export function BoardComponents({
+  imageDropTarget,
+}: {
+  imageDropTarget?: string | null;
+}) {
+  const { t } = useTranslations();
   const editor = useEditor();
   const { resolved } = useTheme();
   const camera = editor.session.camera;
@@ -56,6 +61,7 @@ export function BoardComponents() {
         .map((shape) => {
           const transform = editor.getPageTransform(shape);
           const props = shape.props;
+          const overview = camera.z < 1 && canInspect(shape);
           let content;
           if (shape.type === "start")
             content = <StartComponent shape={shape as any} />;
@@ -64,7 +70,7 @@ export function BoardComponents() {
           else if (shape.type === "interactive-web")
             content = <InteractiveWebComponent shape={shape as any} />;
           else if (isComponent(shape))
-            content = <CanvasNode shape={shape as any} />;
+            content = <CanvasNode shape={shape as any} overview={overview} />;
           else if (shape.type === "video")
             content = (
               <video
@@ -89,7 +95,14 @@ export function BoardComponents() {
               key={shape.id}
               className="board-component"
               data-component-id={shape.id}
+              data-image-drop={imageDropTarget === shape.id || undefined}
+              data-drop-label={t(
+                props.src ? "assets.replaceImage" : "assets.useImage",
+              )}
               data-selected={selected.has(shape.id) || undefined}
+              data-locked={shape.isLocked || undefined}
+              data-overview={overview || undefined}
+              inert={shape.isLocked || undefined}
               style={{
                 width: props.w,
                 height: props.h,
@@ -99,7 +112,7 @@ export function BoardComponents() {
                 transform: `translate(${(transform.x + camera.x) * camera.z}px, ${(transform.y + camera.y) * camera.z}px) scale(${camera.z}) rotate(${transform.rotation}rad)`,
               }}
             >
-              {content}
+              <div className="board-component-content">{content}</div>
             </div>
           );
         })}

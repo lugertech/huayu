@@ -1,5 +1,5 @@
-import { t, useLocale } from "@/i18n";
-import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/i18n";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useEditor } from "@/canvas/editor";
 import { CanvasNode } from "@/Components/canvas/CanvasNode";
 import {
@@ -10,7 +10,6 @@ import {
 } from "@/ui/dialog";
 import {
   canInspect,
-  COMPOSE_EVENT,
   INSPECT_EVENT,
   materialLabel,
   focusShapes,
@@ -18,7 +17,11 @@ import {
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
 import type { AIComponentShape } from "@/types/components";
 import { resultKind } from "@/workflow/results";
-import { ResultWorkbench } from "@/Components/results/ResultWorkbench";
+const ResultWorkbench = lazy(() =>
+  import("@/Components/results/ResultWorkbench").then((module) => ({
+    default: module.ResultWorkbench,
+  })),
+);
 
 export function NodeInspector({
   initialId,
@@ -27,10 +30,9 @@ export function NodeInspector({
   initialId?: string;
   projectId: string;
 }) {
-  useLocale();
+  const { t, locale } = useTranslations();
   const editor = useEditor();
   const [id, setId] = useState<string | null>(initialId || null);
-  const [refine, setRefine] = useState(false);
   const returnFocus = useRef<HTMLElement | null>(null);
   const panel = useRef<HTMLDivElement>(null);
   const settingsHandoff = useRef(false);
@@ -45,10 +47,7 @@ export function NodeInspector({
   useEffect(() => {
     const container = editor.container;
     function open(event: Event) {
-      const detail = (
-        event as CustomEvent<string | { id: string; refine?: boolean }>
-      ).detail;
-      const value = typeof detail === "string" ? detail : detail?.id;
+      const value = (event as CustomEvent<string>).detail;
       const shape = editor.getShape(value);
       if (shape && canInspect(shape)) {
         settingsHandoff.current = false;
@@ -56,23 +55,19 @@ export function NodeInspector({
           document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
-        setRefine(typeof detail === "object" && !!detail.refine);
         setId(value);
         editor.select(value);
         focusShapes(editor, [value]);
       }
     }
-    const close = () => setId(null);
     const closeForSettings = () => {
       settingsHandoff.current = true;
       setId(null);
     };
     container?.addEventListener(INSPECT_EVENT, open);
-    container?.addEventListener(COMPOSE_EVENT, close);
     window.addEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
     return () => {
       container?.removeEventListener(INSPECT_EVENT, open);
-      container?.removeEventListener(COMPOSE_EVENT, close);
       window.removeEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
     };
   }, [editor]);
@@ -87,6 +82,7 @@ export function NodeInspector({
       }}
     >
       <DialogContent
+        data-canvas-ui
         ref={panel}
         showCloseButton={false}
         className={`flex flex-col gap-0 overflow-hidden rounded-xl p-0 ${visible && resultKind(visible) ? "h-[min(52rem,calc(100dvh-2rem))] sm:max-w-[min(78rem,calc(100vw-3rem))]" : "h-[min(42rem,calc(100dvh-2rem))] sm:max-w-3xl"}`}
@@ -109,45 +105,39 @@ export function NodeInspector({
             ? false
             : returnFocus.current?.isConnected
               ? returnFocus.current
-              : [
-                  ...(editor.container?.querySelectorAll<HTMLElement>(
-                    "[data-component-id]",
-                  ) || []),
-                ]
-                  .find(
-                    (element) =>
-                      element.dataset.componentId ===
-                      editor.getSelectedShapeIds()[0],
-                  )
-                  ?.querySelector<HTMLElement>("[data-inspect-work]") ||
-                editor.container
-                  ?.closest(".huayu-board")
-                  ?.querySelector<HTMLElement>("[data-composer-input]") ||
-                editor.container?.querySelector<HTMLElement>(".excalidraw") ||
+              : editor.container?.querySelector<HTMLElement>(".excalidraw") ||
                 false
         }
       >
         <DialogTitle className="sr-only">
-          {visible ? materialLabel(visible) : t("canvas.node.openEditor")}
+          {visible
+            ? materialLabel(visible, locale)
+            : t("canvas.node.openEditor")}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          {t("canvas.inspector.readEditOrCreateSomethingNewFromThisContent")}
+          {t("canvas.inspector.readOrEditContent")}
         </DialogDescription>
         {visible && resultKind(visible) ? (
-          <ResultWorkbench
-            key={visible.id}
-            shape={visible}
-            projectId={projectId}
-            initialRefining={refine}
-            onInspect={(id) => {
-              returnFocus.current = null;
-              editor.select(id);
-              focusShapes(editor, [id]);
-              setRefine(false);
-              setId(id);
-            }}
-            onClose={() => setId(null)}
-          />
+          <Suspense
+            fallback={
+              <div role="status" className="p-6 text-sm text-muted-foreground">
+                {t("common.loading")}
+              </div>
+            }
+          >
+            <ResultWorkbench
+              key={visible.id}
+              shape={visible}
+              projectId={projectId}
+              onInspect={(id) => {
+                returnFocus.current = null;
+                editor.select(id);
+                focusShapes(editor, [id]);
+                setId(id);
+              }}
+              onClose={() => setId(null)}
+            />
+          </Suspense>
         ) : (
           visible && (
             <CanvasNode

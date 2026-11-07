@@ -1,10 +1,14 @@
 import { readFile, writeFile, mkdir, cp, readdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
-import { render, routes, publicSiteURL, base } from "./.render/render.js";
+import type * as Renderer from "./src/render";
+
+const { render, routes, publicSiteURL, base }: typeof Renderer = await import(
+  new URL("./.render/render.js", import.meta.url).href
+);
 
 const root = import.meta.dirname;
 const template = await readFile(resolve(root, "dist/index.html"), "utf8");
-const escape = (value) =>
+const escape = (value: string) =>
   value
     .replaceAll("&", "&amp;")
     .replaceAll('"', "&quot;")

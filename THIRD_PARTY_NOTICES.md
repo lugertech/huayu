@@ -12,6 +12,8 @@ MenteX 的根包声明作者为 `flowerdance`、许可为 MIT。tpk-admin 的 `c
 
 白板使用 [`@excalidraw/excalidraw` 0.18.1](https://github.com/excalidraw/excalidraw/tree/v0.18.1)，采用 MIT 许可，允许免费商用，无许可证密钥要求。完整原版权与许可保存在 [excalidraw-MIT.txt](./licenses/excalidraw-MIT.txt)。本项目使用开源编辑器库，不接入 Excalidraw 的云端房间、账号、分析统计或付费服务。
 
+[本地补丁](./patches/@excalidraw__excalidraw@0.18.1.patch) 将编辑器的交互状态重置事件由 `unload` 改为 `pagehide`，保留原回调及卸载清理逻辑；开发与生产构建均应用该修改。升级依赖时需重新核对补丁及页面离开、返回后的编辑行为。
+
 随包字体保持原文件，全部从本机提供。各字体原版权与许可见 [excalidraw-fonts-NOTICE.md](./licenses/excalidraw-fonts-NOTICE.md) 及同目录 OFL 正文；Comic Shanns 使用 MIT，其余随包字体使用 SIL Open Font License。Helvetica 与 Segoe UI Emoji 仅使用系统字体，不分发对应商业字体文件。
 
 ## React Flow / xyflow
@@ -37,7 +39,7 @@ React Markdown、remark-gfm、Excalidraw 的间接依赖及其他运行包的固
 
 ## BeautifulRust
 
-Rust 开发约定与附加 Clippy 配置参考 [BeautifulRust](https://github.com/morganlinton/BeautifulRust/tree/c6f56d27a01739d404da2a554daaea023d7ddcca)，版权归 Morgan Linton，采用 MIT 许可。项目按应用代码的需要选取检查项，完整版权和许可保存在 [BeautifulRust-MIT.txt](./licenses/BeautifulRust-MIT.txt)。
+Rust 开发约定与附加 Clippy 配置参考 [BeautifulRust](https://github.com/morganlinton/BeautifulRust/tree/40db61c6fee84bd121cf288755f0e2f22a50e995)，版权归 Morgan Linton，采用 MIT 许可。项目按应用代码的需要选取检查项，完整版权和许可保存在 [BeautifulRust-MIT.txt](./licenses/BeautifulRust-MIT.txt)。
 
 ## Rust 依赖
 

@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub mod project_library;
+
 const MAX_DOCUMENT_RECORDS: usize = 50_000;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
@@ -187,6 +189,7 @@ pub struct Recording {
     pub id: String,
     pub name: String,
     pub asset_id: String,
+    pub project_id: Option<String>,
     pub duration: f64,
     pub size: i64,
     pub transcript: Option<String>,

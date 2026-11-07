@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vp dev",
     "check": "vp check --no-fmt --no-lint",
-    "build": "vp check --no-fmt --no-lint && vp build && vp build --ssr src/render.tsx --outDir .render && node prerender.mjs",
+    "build": "vp check --no-fmt --no-lint && vp build && vp build --ssr src/render.tsx --outDir .render && node prerender.ts",
     "preview": "vp preview"
   },
   "dependencies": {

@@ -48,10 +48,12 @@
 
 ## BeautifulRust
 
-Rust 编写、审查和语言迁移分别参考 [BeautifulRust](https://github.com/morganlinton/BeautifulRust) 的 `rust-best-practices`、`rust-review` 和 `rust-port` 技能。项目约定优先于外部建议。
+Rust 编写、审查和语言迁移分别参考 [BeautifulRust v1.5.0](https://github.com/morganlinton/BeautifulRust/tree/v1.5.0) 的 `rust-best-practices`、`rust-review` 和 `rust-port` 技能。项目约定优先于外部建议。
 
-workspace 的附加检查与 `clippy.toml` 改编自上游提交 `c6f56d27a01739d404da2a554daaea023d7ddcca`，保留 [MIT 许可](../../licenses/BeautifulRust-MIT.txt)。检查覆盖非测试代码的 `unwrap`、返回 `Result` 的函数中的显式 panic、未说明原因的 lint 抑制、未说明安全前提的 unsafe、无效克隆、字符串拼接、调试残留和可能丢失信息的类型转换。测试函数可使用 `unwrap`；测试辅助函数使用带上下文的 `expect`。
+workspace 的附加检查与 `clippy.toml` 改编自上游提交 `40db61c6fee84bd121cf288755f0e2f22a50e995`，保留 [MIT 许可](../../licenses/BeautifulRust-MIT.txt)。检查覆盖非测试代码的 `unwrap`、返回 `Result` 的函数中的显式 panic、未说明原因的 lint 抑制、未说明安全前提的 unsafe、无效克隆、字符串拼接、调试残留和可能丢失信息的类型转换。测试函数可使用 `unwrap`；测试辅助函数使用带上下文的 `expect`。
 
-本项目的 crate 均不发布，按应用代码维护；不整体启用 `pedantic` 或面向通用库的全量公开项文档、布尔参数和共享指针写法限制。这些建议按实际接口与可读性逐项判断。
+启用 `missing_assert_message`，为测试函数外的断言提供失败上下文。测试函数内的断言沿用 Clippy 的例外。
+
+本项目的 crate 均不发布，按应用代码维护；不整体启用 `pedantic` 或面向通用库的全量公开项文档、`exhaustive_enums`、布尔参数和共享指针写法限制。这些建议按实际接口与可读性逐项判断。
 
 在仓库根目录运行 `vp run lint:rust`，对所有 workspace 成员、target 和 feature 执行 Clippy，并将警告视为错误。CI 使用同一命令。

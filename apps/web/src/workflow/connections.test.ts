@@ -36,10 +36,28 @@ function board() {
   return editor;
 }
 describe("workflow connection gestures", () => {
-  it("creates a labelled connection and removes the arrow and both bindings in one undo", () => {
+  it("allows a manual run gate but rejects embedded pages and drawing boxes as processing targets", () => {
+    const editor = board();
+    for (const type of ["start", "interactive-web", "ai-draw"]) {
+      editor.createShape({
+        id: `shape:${type}`,
+        type,
+        x: 1400,
+        props: { w: 300, h: 200 },
+      });
+    }
+    expect(connectionProblem(editor, "shape:source", "shape:start")).toBeNull();
+    expect(linkWorkflow(editor, "shape:source", "shape:start")).toBeDefined();
+    for (const type of ["interactive-web", "ai-draw"]) {
+      expect(
+        connectionProblem(editor, "shape:source", `shape:${type}`),
+      ).not.toBeNull();
+    }
+  });
+  it("creates an unlabelled connection and removes the arrow and both bindings in one undo", () => {
     const editor = board();
     const id = linkWorkflow(editor, "shape:source", "shape:task")!;
-    expect(editor.getShape(id).props.text).toBe("文字素材");
+    expect(editor.getShape(id).props.text).toBe("");
     expect(editor.getShape(id).props).toMatchObject({
       color: "black",
       size: "m",
@@ -129,6 +147,49 @@ describe("workflow connection gestures", () => {
     expect(editor.arrowPoints(editor.getShape(id)).end.x).toBeCloseTo(
       connectionPort(editor, "shape:task", "left").x,
     );
+  });
+  it("keeps a frame as one material source while its contents and output binding move together", () => {
+    const editor = board();
+    editor.createShape({
+      id: "shape:frame",
+      type: "frame",
+      x: 50,
+      y: 300,
+      props: { w: 800, h: 500 },
+    });
+    editor.createShape({
+      id: "shape:child",
+      type: "ai-text",
+      x: 100,
+      y: 350,
+      props: { text: "画框内的素材" },
+    });
+    const id = linkWorkflow(editor, "shape:frame", "shape:task")!;
+    expect(editor.getShape(id).props.text).toBe("");
+    expect(editor.getShape("shape:child").parentId).toBe("shape:frame");
+    applyNativeScene(editor, sceneFromEditor(editor));
+    expect(
+      connectedShapes(editor, "shape:task", "previous").map(
+        (shape) => shape.id,
+      ),
+    ).toEqual(["shape:frame"]);
+    const child = editor.getShapePageBounds("shape:child")!.point;
+    const end = editor.arrowPoints(editor.getShape(id)).end;
+    editor.updateShape({ id: "shape:frame", x: 170, y: 360 });
+    const scene = sceneFromEditor(editor);
+    applyNativeScene(editor, scene);
+    expect(editor.getShapePageBounds("shape:child")!.point).toEqual({
+      x: child.x + 120,
+      y: child.y + 60,
+    });
+    const arrow = editor.arrowPoints(editor.getShape(id));
+    expect(arrow.start).toEqual(connectionPort(editor, "shape:frame", "right"));
+    expect(arrow.end).toEqual(end);
+    expect(
+      connectedShapes(editor, "shape:task", "previous").map(
+        (shape) => shape.id,
+      ),
+    ).toEqual(["shape:frame"]);
   });
   it("places a new connected step near the drop without overlapping existing content and undoes it atomically", () => {
     const editor = board();

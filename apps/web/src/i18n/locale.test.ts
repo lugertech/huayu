@@ -103,15 +103,15 @@ describe("language detection and persistence", () => {
       formatDate(new Date(2026, 9, 26), { month: "long", day: "numeric" }),
     ).toBe("October 26");
     expect(formatNumber(12345)).toBe("12,345");
+    expect(translate(messages, "en", "search.resultCount", { count: 1 })).toBe(
+      "1 result",
+    );
+    expect(translate(messages, "en", "search.resultCount", { count: 2 })).toBe(
+      "2 results",
+    );
     expect(
-      translate(messages, "en", "canvas.materialCount", { count: 1 }),
-    ).toBe("1 material");
-    expect(
-      translate(messages, "en", "canvas.materialCount", { count: 2 }),
-    ).toBe("2 materials");
-    expect(
-      translate(messages, "zh-CN", "canvas.materialCount", { count: 1 }),
-    ).toBe("1 份素材");
+      translate(messages, "zh-CN", "search.resultCount", { count: 1 }),
+    ).toBe("1 项结果");
   });
   it("interpolates without interpreting dollar signs, HTML, or JSON braces", () => {
     expect(

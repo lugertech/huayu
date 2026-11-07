@@ -18,7 +18,7 @@ apps/
     crates/huayu-core/     Pure domain types, record validation and merge
     crates/huayu-store/    SQLite, SeaORM entities and migrations
     crates/huayu-server/   Axum routes, files, WebSockets and startup
-scripts/                   Development, Cargo, release and license tools
+scripts/                Development, Cargo entry point, security/release checks, Git source archives and dependency notices
 templates/                 Bilingual presets and a generated lightweight index
 var/dev/                   Ignored runtime data
 ```
@@ -29,7 +29,7 @@ Rust follows a workspace with a thin binary entry point, business modules, extra
 
 `templates/catalog.json` is the shared catalog for 20 additional bilingual templates, including source material, instructions and graph connections. Rust seeds missing metadata by ID at startup; the browser instantiates a canvas in the current language. Lightweight templates use transparent workflow covers; six complete examples show original artwork. Existing templates, fork counts and projects are retained. Templates contain no service URLs, API keys or model selections.
 
-The project list loads metadata and local cover addresses from `templates/index.json`. Workflow covers are generated ahead of time; full materials, instructions and authored outputs load with the canvas module. The website uses six previews from `templates/showcase.json` and loads full content when an example opens. Editable SVGs live in `templates/art/`, with bundled PNGs for canvas and model image inputs. After editing the catalog, run `node scripts/generate-template-index.mjs`, then format the template files. The Web build checks both indexes and generated covers.
+The project list loads metadata and local cover addresses from `templates/index.json`. Workflow covers are generated ahead of time; full materials, instructions and authored outputs load with the canvas module. The website uses six previews from `templates/showcase.json` and loads full content when an example opens. Editable SVGs live in `templates/art/`, with bundled PNGs for canvas and model image inputs. After editing the catalog, run `node scripts/generate-template-index.ts`, then format the template files. The Web build checks both indexes and generated covers.
 
 MenteX AI cards, ports and chart editors were adapted. MIT-licensed Excalidraw replaces tldraw. Application records retain legacy import compatibility; native shapes, bindings, groups, pages, images, pressure and path data round-trip through the scene adapter. React card content overlays native geometry. Excalidraw owns selection, movement, resizing, bindings and undo history. Workflow execution is centralized to avoid recursive or duplicate runs. Necessary tpk-admin behavior moved to Rust, with prompts and model orchestration in the browser.
 

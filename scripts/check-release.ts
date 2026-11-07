@@ -1,13 +1,14 @@
 import { readFile, stat } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { sourceFiles, checkSources } from "./release-files.mjs";
+import { projectFiles } from "./project-files.ts";
 
-export async function checkRelease(root) {
-  const files = await sourceFiles(root);
-  const issues = await checkSources(root, files);
+export async function checkRelease(root: string) {
+  const files = await projectFiles(root);
+  const issues: string[] = [];
   const required = [
     "LICENSE",
+    ".gitattributes",
     "README.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
@@ -60,21 +61,18 @@ export async function checkRelease(root) {
   if (issues.length) throw new Error([...new Set(issues)].join("\n"));
   return { version: packageInfo.version, files };
 }
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   const root = fileURLToPath(new URL("..", import.meta.url));
   try {
     const result = await checkRelease(root);
     console.log(
-      `Source hygiene passed: ${result.files.length} files, version ${result.version}.`,
+      `Release checks passed: ${result.files.length} files, version ${result.version}.`,
     );
     console.log(
       "Publication readiness still follows docs/RELEASE.md, including source authorization and real-device/model acceptance.",
     );
   } catch (error) {
-    console.error(error.message);
+    console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   }
 }

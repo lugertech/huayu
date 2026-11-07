@@ -1,4 +1,5 @@
 import { t } from "@/i18n";
+import { COMPONENT_CONFIGS } from "@/config/components";
 import { CanvasStore } from "./store";
 import {
   defaultProps,
@@ -134,9 +135,13 @@ export function normalizeSession(
   return base;
 }
 export class Editor {
-  private tool = "select";
+  private interaction:
+    | { phase: "tool"; tool: string }
+    | { phase: "editing"; tool: string; id: string } = {
+    phase: "tool",
+    tool: "select",
+  };
   private bridge?: RenderBridge;
-  private editingId: string | null = null;
   theme: "light" | "dark" = "light";
   styles = {
     color: "black",
@@ -321,18 +326,20 @@ export class Editor {
     return this.select(...this.getCurrentPageShapeIds());
   }
   setEditingShape(id: string | null) {
-    this.editingId = id;
+    this.interaction =
+      id === null
+        ? { phase: "tool", tool: this.interaction.tool }
+        : { phase: "editing", tool: this.interaction.tool, id };
     this.store.notifySession();
   }
   getEditingShapeId() {
-    return this.editingId;
+    return this.interaction.phase === "editing" ? this.interaction.id : null;
   }
   getCurrentToolId() {
-    return this.tool;
+    return this.interaction.tool;
   }
   setCurrentTool(tool: string) {
-    this.tool = tool;
-    this.editingId = null;
+    this.interaction = { phase: "tool", tool };
     this.store.notifySession();
     return this;
   }
@@ -372,6 +379,40 @@ export class Editor {
         ...input.props,
       },
     };
+    if (
+      !input.parentId &&
+      input.type !== "frame" &&
+      input.type in COMPONENT_CONFIGS
+    ) {
+      const cos = Math.cos(shape.rotation);
+      const sin = Math.sin(shape.rotation);
+      const center = {
+        x: shape.x + (shape.props.w * cos - shape.props.h * sin) / 2,
+        y: shape.y + (shape.props.w * sin + shape.props.h * cos) / 2,
+      };
+      const frames = this.getCurrentPageShapes()
+        .filter(
+          (candidate) => candidate.type === "frame" && !candidate.isLocked,
+        )
+        .sort((a, b) => b.index.localeCompare(a.index));
+      for (const frame of frames) {
+        const origin = this.getPageTransform(frame);
+        const c = Math.cos(origin.rotation);
+        const s = Math.sin(origin.rotation);
+        const dx = center.x - origin.x;
+        const dy = center.y - origin.y;
+        const x = dx * c + dy * s;
+        const y = -dx * s + dy * c;
+        if (x < 0 || y < 0 || x > frame.props.w || y > frame.props.h) continue;
+        const offsetX = shape.x - origin.x;
+        const offsetY = shape.y - origin.y;
+        shape.parentId = frame.id;
+        shape.x = offsetX * c + offsetY * s;
+        shape.y = -offsetX * s + offsetY * c;
+        shape.rotation -= origin.rotation;
+        break;
+      }
+    }
     this.store.put([shape]);
     return this;
   }

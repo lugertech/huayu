@@ -1,0 +1,30 @@
+diff --git a/dist/index.js b/dist/index.js
+index c32ae5e88436058706258fda930dce94e1d0c30a..d26a78a427dcb7506c8d231ad16a5473d067a2f7 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -178,6 +178,10 @@ var TabsTrigger = /* @__PURE__ */ React.forwardRef(
+               if (disabled || event.target !== event.currentTarget) {
+                 return;
+               }
++              // Excalidraw 0.18.1 also handles tab keys as canvas shortcuts.
++              if (event.key !== "Escape" && event.currentTarget.closest(".excalidraw")) {
++                event.stopPropagation();
++              }
+               if ([" ", "Enter"].includes(event.key)) {
+                 context.onValueChange(value);
+               }
+diff --git a/dist/index.mjs b/dist/index.mjs
+index e5b247372fbaed7070c513c4697452d7deec6b0e..8c3ab1a86d0f14c2a635058f305364f5d75182d6 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -136,6 +136,10 @@ var TabsTrigger = /* @__PURE__ */ React.forwardRef(
+               if (disabled || event.target !== event.currentTarget) {
+                 return;
+               }
++              // Excalidraw 0.18.1 also handles tab keys as canvas shortcuts.
++              if (event.key !== "Escape" && event.currentTarget.closest(".excalidraw")) {
++                event.stopPropagation();
++              }
+               if ([" ", "Enter"].includes(event.key)) {
+                 context.onValueChange(value);
+               }

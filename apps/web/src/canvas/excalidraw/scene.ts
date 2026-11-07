@@ -1,6 +1,8 @@
 import { t } from "@/i18n";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { COMPONENT_CONFIGS } from "@/config/components";
+import { isLegacyConnectionLabel } from "@/utils/connectionParser";
+import { repairFrameArrowMembership } from "./frame-bindings";
 import {
   Editor,
   plainText,
@@ -242,11 +244,11 @@ export function sceneFromEditor(editor: Editor): ExcalidrawElement[] {
       angle: transform.rotation,
       opacity: shape.opacity * 100,
       locked: shape.isLocked,
+      frameId: family.frameId,
     });
     if (cached) {
       if (color(p.color) !== cached.strokeColor && p.color)
         base.strokeColor = color(p.color);
-      if (family.frameId) base.frameId = family.frameId;
       const baseline = p.excalidrawStyle;
       if (baseline && p.fill !== baseline.fill)
         base.backgroundColor =
@@ -402,6 +404,21 @@ export function sceneFromEditor(editor: Editor): ExcalidrawElement[] {
     }
     if (isCustomElement(shape))
       base.customData.huayu.contentHash = hash(JSON.stringify(cleanProps(p)));
+    let text = p.text || plainText(p.richText);
+    if (
+      shape.type === "arrow" &&
+      text &&
+      isLegacyConnectionLabel(editor, shape.id, text)
+    ) {
+      text = "";
+      const labelId = p.excalidrawLabel?.id || `${id}-label`;
+      const boundElements =
+        base.boundElements as ExcalidrawElement["boundElements"];
+      base.boundElements =
+        boundElements?.filter(
+          (item) => item.type !== "text" || item.id !== labelId,
+        ) ?? null;
+    }
     const signature = JSON.stringify({
       ...withoutTransientMetadata(base),
       version: 0,
@@ -417,7 +434,6 @@ export function sceneFromEditor(editor: Editor): ExcalidrawElement[] {
       base.updated = cached ? Date.now() : 1;
     }
     elements.push(base);
-    const text = p.text || plainText(p.richText);
     if (
       ["geo", "note", "arrow"].includes(shape.type) &&
       !isCustomElement(shape) &&
@@ -490,7 +506,7 @@ export function sceneFromEditor(editor: Editor): ExcalidrawElement[] {
           { id: arrow.id, type: "arrow" },
         ];
     }
-  return elements;
+  return repairFrameArrowMembership(elements) ?? elements;
 }
 
 export function shapeIdForElement(editor: Editor, element: ExcalidrawElement) {
@@ -522,6 +538,12 @@ export function withoutTransientMetadata(
     const { props, ...reference } = copy.customData.huayu;
     copy.customData.huayu = reference;
   }
+  if (
+    copy.type === "text" &&
+    !copy.containerId &&
+    copy.customData?.huayuLabelFor
+  )
+    delete copy.customData.huayuLabelFor;
   return copy;
 }
 
@@ -533,7 +555,9 @@ export function sceneBeforeLocalChange(
 ): ExcalidrawElement[] {
   const changed = (element: ExcalidrawElement) =>
     changedShapeIds.has(
-      element.customData?.huayuLabelFor ||
+      (element.type === "text" &&
+        element.containerId &&
+        element.customData?.huayuLabelFor) ||
         element.customData?.huayu?.id ||
         (element.id.startsWith("shape:") ? element.id : `shape:${element.id}`),
     );
@@ -561,7 +585,11 @@ export function selectedShapesFromScene(
       (element) =>
         selected[element.id] &&
         !element.isDeleted &&
-        !element.customData?.huayuLabelFor,
+        !(
+          element.type === "text" &&
+          element.containerId &&
+          element.customData?.huayuLabelFor
+        ),
     )
     .map((element) => shapeIdForElement(editor, element));
   const nativeIds = new Set(elements.map((element) => element.id));
@@ -580,9 +608,8 @@ export function applyNativeScene(
   editor: Editor,
   incoming: readonly ExcalidrawElement[],
 ) {
-  const elements = incoming.filter(
-    (element) => !element.isDeleted,
-  ) as Element[];
+  const live = incoming.filter((element) => !element.isDeleted) as Element[];
+  const elements = (repairFrameArrowMembership(live) ?? live) as Element[];
   const ids = new Map(
     elements.map((element) => [element.id, shapeIdForElement(editor, element)]),
   );
@@ -590,7 +617,12 @@ export function applyNativeScene(
   const records: CanvasRecord[] = [];
   const active = new Set<string>();
   for (const [index, element] of elements.entries()) {
-    if (element.customData?.huayuLabelFor) continue;
+    if (
+      element.type === "text" &&
+      element.containerId &&
+      element.customData?.huayuLabelFor
+    )
+      continue;
     const id = ids.get(element.id)!;
     const previous = editor.getShape(id);
     const hint = element.customData?.huayu;
@@ -608,7 +640,8 @@ export function applyNativeScene(
         iframe: "embed",
       }[nativeType] ||
       nativeType;
-    const p = { ...(previous?.props || {}), ...(hint?.props || {}) };
+    // Card metadata contains a complete content snapshot, including property removals.
+    const p = { ...(hint?.props || previous?.props || {}) };
     const origin = canonicalOrigin(element);
     const frame = element.frameId
       ? elements.find(
@@ -712,6 +745,15 @@ export function applyNativeScene(
         richText: richText(label.text),
         excalidrawLabel: withoutTransientMetadata(label),
       });
+    else if (
+      p.excalidrawLabel &&
+      !isCustomElement({ type, props: p } as CanvasShape)
+    ) {
+      // A deleted or unbound caption must not reappear on the next editor update.
+      p.text = "";
+      p.richText = richText("");
+      delete p.excalidrawLabel;
+    }
     p.excalidrawStyle = {
       color: p.color,
       fill: p.fill,

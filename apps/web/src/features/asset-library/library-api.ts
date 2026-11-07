@@ -1,7 +1,7 @@
 import { api } from "@/api/client";
 import {
   folderTree,
-  importLibraryImage,
+  importLibraryFile,
   type AssetFolder,
   type LibraryAsset,
 } from "./assets";
@@ -65,7 +65,7 @@ export function uploadAsset({
   name?: string;
   folder_id: string | null;
 }) {
-  return importLibraryImage(file, folder_id);
+  return importLibraryFile(file, folder_id);
 }
 export function updateAsset(
   asset: LibraryAsset,

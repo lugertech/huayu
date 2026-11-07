@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { createReadStream, readdirSync, readFileSync } from "node:fs";
 import { externalFontWasm } from "./build/external-font-wasm";
+import { precompressAssets } from "./build/precompress-assets.ts";
 import { bundleBudget } from "../../scripts/build/bundle-budget";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
@@ -90,6 +91,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     whiteboardAssets(),
+    precompressAssets(),
     externalFontWasm(
       resolve(
         root,
@@ -100,6 +102,10 @@ export default defineConfig({
       initialGzipLimit: 219_000,
       // These dependencies each ship one indivisible ES module.
       vendorLimits: [
+        {
+          test: /[\\/]node_modules[\\/]@excalidraw[\\/]excalidraw[\\/]/,
+          bytes: 520_000,
+        },
         {
           test: /[\\/]node_modules[\\/]@pdf-lib[\\/]fontkit[\\/]/,
           bytes: 750_000,
@@ -129,7 +135,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://127.0.0.1:5858", ws: true },
+      "/api": { target: "http://127.0.0.1:5858", ws: true, xfwd: true },
       "/uploads": "http://127.0.0.1:5858",
     },
     fs: { allow: [resolve(root, "../..")] },

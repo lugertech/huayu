@@ -27,6 +27,7 @@ import {
   readAnalysis,
   getAnalysisTask,
   recordingCapabilities,
+  cancelAnalysis,
 } from "./analysis";
 import { ModelConnectionError } from "@/ai/errors";
 import type { Recording } from "@/api/client";
@@ -71,6 +72,49 @@ beforeEach(() => {
   mocks.chat.mockResolvedValue(report("整理结果"));
 });
 describe("recording analysis recovery", () => {
+  it("keeps cancellation distinct from a stopped checkpoint and permits resuming", async () => {
+    saved.transcript = JSON.stringify({
+      version: 1,
+      text: "已转写",
+      segments: [],
+      complete: true,
+    });
+    let started!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    let finish!: (value: string) => void;
+    mocks.chat.mockImplementationOnce(() => {
+      started();
+      return new Promise<string>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const running = analyzeRecording(saved);
+    await ready;
+    expect(getAnalysisTask(saved.id)).toMatchObject({
+      phase: "analyzing",
+      busy: true,
+    });
+    cancelAnalysis(saved.id);
+    expect(getAnalysisTask(saved.id)).toMatchObject({
+      phase: "cancelling",
+      busy: true,
+    });
+    finish(report("已完成的片段"));
+    await expect(running).rejects.toThrow();
+    expect(getAnalysisTask(saved.id)).toMatchObject({
+      phase: "cancelled",
+      busy: false,
+    });
+    expect(readCheckpoint(saved.analysis)?.status).toBe("cancelled");
+    await analyzeRecording(saved);
+    expect(getAnalysisTask(saved.id)).toMatchObject({
+      phase: "completed",
+      busy: false,
+    });
+    expect(readAnalysis(saved.analysis)?.summary).toBe("已完成的片段");
+  });
   it("only needs transcription for transcribing and only text for an existing transcript", () => {
     expect(recordingCapabilities(saved, { transcriptionOnly: true })).toEqual([
       "transcription",

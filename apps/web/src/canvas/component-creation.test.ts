@@ -95,7 +95,58 @@ describe("pointer component creation", () => {
     expect(editor.getShape(id)).toEqual(placed);
   });
 
-  it("retains defaults for every existing component, including native frames", () => {
+  it("places a dropped card inside the frame and moves it with its parent", () => {
+    const editor = new Editor(createCanvasStore());
+    editor.setViewport({ x: 0, y: 0, zoom: 1 });
+    editor.createShape({
+      id: "shape:frame",
+      type: "frame",
+      x: 100,
+      y: 80,
+      props: { w: 900, h: 700 },
+    });
+    const drag = new ComponentDrag(editor, "ai-text", { x: 20, y: 100 });
+    drag.move({ x: 400, y: 260 });
+    const id = drag.finish({ x: 450, y: 300 }, true)!;
+    expect(editor.getShape(id)!.parentId).toBe("shape:frame");
+    expect(editor.getShapePageBounds(id)!.point).toEqual({ x: 290, y: 280 });
+    editor.updateShape({ id: "shape:frame", x: 220, y: 130 });
+    expect(editor.getShapePageBounds(id)!.point).toEqual({ x: 410, y: 330 });
+  });
+
+  it("preserves page placement when creating inside a rotated frame and respects explicit parents", () => {
+    const editor = new Editor(createCanvasStore());
+    editor.createShape({
+      id: "shape:frame",
+      type: "frame",
+      x: 200,
+      y: 100,
+      rotation: Math.PI / 6,
+      props: { w: 900, h: 700 },
+    });
+    const point = { x: 400, y: 450 };
+    const id = createCanvasShape(editor, "ai-text", point);
+    expect(editor.getShape(id)!.parentId).toBe("shape:frame");
+    const position = editor.getPageTransform(editor.getShape(id)!);
+    expect(position.x).toBeCloseTo(240);
+    expect(position.y).toBeCloseTo(340);
+    expect(position.rotation).toBeCloseTo(0);
+    editor.createShape({
+      id: "shape:explicit",
+      type: "ai-text",
+      parentId: editor.getCurrentPageId(),
+      x: 240,
+      y: 340,
+    });
+    expect(editor.getShape("shape:explicit")!.parentId).toBe(
+      editor.getCurrentPageId(),
+    );
+    editor.updateShape({ id: "shape:frame", isLocked: true });
+    const outside = createCanvasShape(editor, "ai-text", point);
+    expect(editor.getShape(outside)!.parentId).toBe(editor.getCurrentPageId());
+  });
+
+  it("inherits the canvas theme and keeps each component's preview props on placement", () => {
     for (const type of Object.keys(COMPONENT_CONFIGS) as ComponentType[]) {
       const editor = new Editor(createCanvasStore());
       editor.theme = "dark";

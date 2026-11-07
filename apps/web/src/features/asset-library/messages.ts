@@ -1,4 +1,5 @@
-import { getLocale, translate, type Values } from "@/i18n";
+import { useCallback } from "react";
+import { translate, useTranslations, type Values } from "@/i18n";
 
 const messages = {
   "zh-CN": {
@@ -92,7 +93,7 @@ const messages = {
       "可以在回收站中恢复，已有画布中的图片不受影响。",
     取消: "取消",
     移动: "移动",
-    确定: "确定",
+    创建: "创建",
     "上传文件到【": "上传到 · ",
     未知: "未知",
     文件名: "文件名",
@@ -102,6 +103,7 @@ const messages = {
     清空列表: "清空列表",
     关闭: "关闭",
     开始上传: "开始上传",
+    继续上传: "继续上传",
     取消上传: "取消上传",
     "是否取消上传，取消后将清空上传列表？":
       "是否取消上传，取消后将清空上传列表？",
@@ -204,7 +206,7 @@ const messages = {
       "You can restore it from Trash. Images already on a canvas will remain available.",
     取消: "Cancel",
     移动: "Move",
-    确定: "Confirm",
+    创建: "Create",
     "上传文件到【": "Upload to: ",
     未知: "Unknown",
     文件名: "File name",
@@ -214,6 +216,7 @@ const messages = {
     清空列表: "Clear list",
     关闭: "Close",
     开始上传: "Start upload",
+    继续上传: "Continue upload",
     取消上传: "Cancel upload",
     "是否取消上传，取消后将清空上传列表？":
       "Discard these files? The upload list will be cleared.",
@@ -227,6 +230,12 @@ const messages = {
   },
 } as const;
 
-export function at(key: keyof (typeof messages)["zh-CN"], values?: Values) {
-  return translate(messages, getLocale(), key, values);
+export function useAssetTranslations() {
+  const { locale, t } = useTranslations();
+  const at = useCallback(
+    (key: keyof (typeof messages)["zh-CN"], values?: Values) =>
+      translate(messages, locale, key, values),
+    [locale],
+  );
+  return { t, at };
 }

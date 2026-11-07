@@ -1,9 +1,11 @@
 //! Local Axum application. The server never receives model connection settings or API keys.
 
+mod access;
 mod error;
 mod files;
 mod library;
 mod media;
+mod project_library;
 mod projects;
 mod recordings;
 mod unfurl;
@@ -18,16 +20,18 @@ use std::{
 
 use axum::{
     Router,
-    extract::{DefaultBodyLimit, Request, State},
+    extract::{ConnectInfo, DefaultBodyLimit, OriginalUri, Request, State},
     http::{HeaderValue, StatusCode, header, uri::Authority},
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
 };
 use huayu_store::Store;
 use serde::Serialize;
-use tokio::sync::{Mutex, broadcast};
+use tokio::sync::Mutex;
+use tower::ServiceBuilder;
 use tower_http::{
+    compression::CompressionLayer,
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
@@ -67,7 +71,7 @@ pub(crate) struct AppState {
     data_dir: PathBuf,
     address: SocketAddr,
     mutations: Arc<Mutex<()>>,
-    rooms: Arc<Mutex<HashMap<String, broadcast::Sender<projects::RoomEvent>>>>,
+    rooms: Arc<Mutex<HashMap<String, projects::Room>>>,
 }
 
 pub struct Application {
@@ -99,7 +103,13 @@ impl Application {
         };
         let api = Router::new()
             .route("/health", get(health))
+            .route("/access", get(workspace_access))
             .route("/projects", get(projects::list).post(projects::create))
+            .route("/library", get(project_library::list))
+            .route(
+                "/projects/{id}/attachments/{shape_id}",
+                get(project_library::detail),
+            )
             .route(
                 "/projects/{id}",
                 get(projects::detail)
@@ -112,6 +122,10 @@ impl Application {
                 post(projects::collaborative),
             )
             .route("/projects/{id}/events", get(projects::events))
+            .route(
+                "/projects/{id}/collaborators/{member_id}",
+                delete(projects::remove_member),
+            )
             .route("/projects/{id}/template", post(projects::promote))
             .route("/templates", get(projects::templates))
             .route(
@@ -153,8 +167,13 @@ impl Application {
         let router = Router::new()
             .nest("/api", api)
             .fallback_service(
-                ServeDir::new(&config.web_dir)
-                    .fallback(ServeFile::new(config.web_dir.join("index.html"))),
+                ServiceBuilder::new()
+                    .layer(CompressionLayer::new())
+                    .service(
+                        ServeDir::new(&config.web_dir)
+                            .precompressed_br()
+                            .fallback(ServeFile::new(config.web_dir.join("index.html"))),
+                    ),
             )
             .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
             .layer(middleware::from_fn_with_state(state.clone(), local_request))
@@ -170,11 +189,15 @@ impl Application {
     pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         let listener = tokio::net::TcpListener::bind(self.config.address).await?;
         tracing::info!(address = %listener.local_addr()?, "画语已启动");
-        axum::serve(listener, self.router)
-            .with_graceful_shutdown(async {
-                let _ = tokio::signal::ctrl_c().await;
-            })
-            .await?;
+        axum::serve(
+            listener,
+            self.router
+                .into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .with_graceful_shutdown(async {
+            let _ = tokio::signal::ctrl_c().await;
+        })
+        .await?;
         Ok(())
     }
 }
@@ -192,8 +215,21 @@ async fn health() -> axum::Json<Health> {
     })
 }
 
+#[derive(Serialize)]
+struct WorkspaceAccess {
+    owner: bool,
+}
+
+async fn workspace_access() -> axum::Json<WorkspaceAccess> {
+    axum::Json(WorkspaceAccess { owner: true })
+}
+
 // Host validation also prevents DNS rebinding against the local, account-free API.
-async fn local_request(State(state): State<AppState>, request: Request, next: Next) -> Response {
+async fn local_request(
+    State(state): State<AppState>,
+    mut request: Request,
+    next: Next,
+) -> Response {
     let host = request
         .headers()
         .get(header::HOST)
@@ -227,7 +263,45 @@ async fn local_request(State(state): State<AppState>, request: Request, next: Ne
                 .into_response();
         }
     }
+    let uri = request
+        .extensions()
+        .get::<OriginalUri>()
+        .map(|uri| uri.0.clone())
+        .unwrap_or_else(|| request.uri().clone());
+    let path = uri.path();
+    let mut cookies = Vec::new();
+    if path.starts_with("/api/") && path != "/api/health" {
+        let connection = request
+            .extensions()
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|info| info.0);
+        let access = match access::authorize(
+            &state,
+            request.method(),
+            &uri,
+            request.headers(),
+            connection,
+        )
+        .await
+        {
+            Ok(access) => access,
+            Err(error) => return error.into_response(),
+        };
+        if access
+            .project_id()
+            .is_some_and(|id| path == format!("/api/projects/{id}"))
+        {
+            cookies.extend(access.asset_cookie());
+        }
+        cookies.extend(access.member_cookie());
+        request.extensions_mut().insert(access);
+    }
     let mut response = next.run(request).await;
+    for cookie in cookies {
+        if let Ok(cookie) = HeaderValue::from_str(&cookie) {
+            response.headers_mut().append(header::SET_COOKIE, cookie);
+        }
+    }
     response.headers_mut().insert(
         header::X_CONTENT_TYPE_OPTIONS,
         HeaderValue::from_static("nosniff"),

@@ -1,5 +1,81 @@
 # Local verification
 
+## Canvas component language (pending manual verification) — 2026-11-05
+
+Native menus followed the English canvas language while Huayu cards still read the application language, leaving default titles and input hints in Chinese. The canvas now provides a scoped locale shared by cards, the component palette, connection actions, zoom/style menus, expanded editors, web previews and chart controls. Default component names, help, placeholders, execution labels and editing controls follow this locale; screens without an override retain the application language.
+
+Language changes update interface copy without rewriting content, custom names, generated results or existing frame names, remounting cards, or modifying project snapshots. Web-card address drafts update independently of translated callbacks so changing language preserves unsubmitted input. Application-owned component translations currently support Chinese and English, with English fallback for other native canvas languages; native tools retain the SDK's selected language pack.
+
+Only source and call relationships were inspected. As requested, no tests, builds or browser verification were run. Default card labels/hints, switching between Chinese and English, expanded editing, unsubmitted drafts and content preservation remain pending user verification.
+
+## Restore the native canvas menu (pending manual verification) — 2026-11-05
+
+Following the native-first preference, removed `CanvasMenu.tsx`, which had been added to unify animations, and restored Excalidraw's `MainMenu`, Help and canvas background controls. Open, Sticky note, Command palette, Search, theme choices and Reset canvas remain removed. Export retains the project's complete-canvas export path through native menu items.
+
+Removed the added popover animations, recreated preferences and their extra state adapters. The website's native preferences shown in the reference are not part of the installed 0.18.1 SDK; npm's current latest stable release is also 0.18.1. No dependency upgrade or website implementation copy was made.
+
+Subsequently added CSS entrance motion only to the native main menu, reusing the zoom menu's `enter` keyframes: 100ms duration, opacity starting at zero, 95% initial scale and an 8px slide relative to the trigger. Motion targets the inner content while preserving the outer position and existing width, with RTL transform origins and reduced-motion support. Closing retains the SDK's native unmount behavior, without another component or DOM-retention logic.
+
+Language uses the SDK's supported `MainMenu.ItemCustom` extension with a browser-native select, without a redundant visible Language label; its accessible name remains. Options come directly from the SDK's public language list, excluding development test entries. System default follows an explicit application language, or matches browser language preferences when the application uses automatic detection, including regional fallback and Simplified/Traditional Chinese matching. The automatic mode listens for `languagechange`. Manual canvas choices are stored only in the browser under `huayu:board-language`, synchronized across tabs and cleared when returning to automatic mode. Application-owned copy retains its existing Chinese and English catalogs.
+
+The main menu now uses 15rem instead of 18rem (240px instead of 288px at the default root size). Rows can grow and wrap so Chinese, English and longer translations remain readable. Export labels previously used application translations and did not follow the canvas language; their native menu-item content now lives inside the SDK language provider and uses `useI18n` to subscribe to completed language loads, using the SDK's file, PNG and SVG export translations. The language control's accessible name and automatic option also follow the canvas language; the latter retains accurate existing Chinese/English copy and uses SDK translations with its English fallback for other locales. Native menus, Help, background controls and export execution remain in place.
+
+Restored native menu placement in the top-right toolbar while retaining the earlier responsive bottom-tool layout and zoom-menu adjustments. Only source, installed dependency types and official menu documentation were read, and npm version metadata was queried. As requested, no tests, builds or browser verification were run. Menu placement, language changes and popover interaction remain pending manual verification.
+
+## Bottom-control sizing (pending manual verification) — 2026-11-05
+
+Bottom-left zoom and Undo/Redo now match the top controls' 36px frames, 28px button heights and 16px icons, with their vertical centers aligned to the drawing toolbar. The bottom-right Help entry and its reserved space were removed; layout now uses the canvas's right edge.
+
+The zoom menu is now 200px wide with more space around items and separators. Narrow layouts measure both drawing tools and auxiliary actions: when one row fits but centering would overlap actions, drawing tools align right; otherwise, drawing tools stay centered at the bottom with auxiliary actions above their left edge. Native mobile lock and Hand controls sit beside Undo/Redo and other actions instead of occupying a detached bottom-right corner. The native menu anchor follows action-row movement, while open phone properties retain their original in-panel actions.
+
+As requested, no tests, builds or browser regression were run for this adjustment. Manual verification is left to the user. The records below describe the preceding version.
+
+## Bottom-toolbar alignment and narrow layouts — 2026-11-05
+
+Fixed drawing tools overlapping Undo/Redo in a 1181 × 843 window with the sidebar expanded, together with mismatched heights and positions across the bottom controls. Layout uses actual canvas and control measurements and updates when the window or sidebar changes.
+
+- Desktop zoom, Undo/Redo, drawing and Help groups share a 44px height and bottom baseline. Drawing tools remain centered where possible, clear the side groups when space is constrained, and use a separate row when necessary, retaining at least 12px gaps.
+- Production checks covered 15 viewport sizes and another 9 collapsed-sidebar cases. These include widths from 320 to 1440px, short landscape windows and the default-font row boundary at canvas widths of 842px and 841px. Controls and the component palette have no overlap, out-of-bounds positions or page-level horizontal overflow.
+- Hand/lock controls now occupy the bottom action row beside Undo/Redo on narrow mobile layouts. At 320 × 568 they are no longer covered by the component palette. Opening native properties hides these auxiliary controls; closing properties restores them.
+- Actual clicks checked lock, Hand, More tools, the zoom menu, Help and properties. Drawing, undo, redo and a final undo produced shape counts of 3/2/3/2 while preserving the original shapes' positions, dimensions and contents. Popovers close with Escape.
+- Seven layout regressions were added. Full `vp run check`, `vp run test` and the Web build passed: 12 script tests, 282 frontend tests and 22 Rust tests. Security and release checks passed.
+
+Tests reused independent data under `var/dev/radix-react19-pODlkV/` without writing to the main instance. Screenshots, geometry results and logs are under `output/playwright/bottom-tools/`. Browser coverage used Chromium development and production builds; Firefox, WebKit and physical touch devices were not checked.
+
+## React 19-compatible Excalidraw dependencies — 2026-11-05
+
+Scoped overrides for Excalidraw 0.18.1 now select Radix Tabs 1.2.1 and Popover 1.3.1, replacing the older transitive dependencies. React and React DOM remain at 19.3.1. Dependency notices were regenerated.
+
+- `vp install --frozen-lockfile` passed. `pnpm peers check` reports `No peer dependency issues found`; no React peer-ignore rules were added.
+- Real Chromium checks covered the native Search/Library tabs with pointer selection, arrow-key looping, Home/End, Tab/Shift+Tab and Enter. Search receives focus automatically, preserves the query across tab switches and displays matching text.
+- With shapes selected, tab arrow keys previously also nudged shapes, and letter keys changed canvas tools. A versioned pnpm patch contains tab key events inside Excalidraw while retaining Radix navigation and existing Escape behavior. Saved positions, dimensions, colors, text and fonts remain equal after the regression sequence.
+- Stroke, background and font popovers passed pointer selection, Tab/Shift+Tab, arrows, font search followed by Enter, Escape and outside-click checks. Closing a properties popover returns focus to the canvas by Excalidraw's existing design. Canvas nudging, the text tool and undo/redo of color edits work. Development and production pages produced no React/Radix console warnings or errors.
+- Full `vp run check`, `vp run test`, Web and website builds passed: 12 script tests, 275 frontend tests and 22 Rust tests. The website prerendered 46 pages. Security, release and license checks for 384 production package versions passed.
+
+Future Excalidraw or Radix upgrades must retain the regression sequence: select existing shapes, navigate tabs by keyboard, then confirm shapes and the canvas tool are unchanged. Once upstream contains these events, remove `patches/@radix-ui__react-tabs@1.2.1.patch` and its `patchedDependencies` entry. The patch changes event handling in the dependency's two module entries and adds no helper scripts.
+
+Tests used independent data under `var/dev/radix-react19-pODlkV/`, without writing to the main instance. Logs and screenshots are under `output/playwright/radix-react19/`. Browser coverage is desktop Chromium with development and production builds; Firefox, WebKit and a second device were not checked. Test processes still emit Node.js 26's experimental `localStorage` notice, unrelated to the React/Radix peer issue.
+
+## Vite+ 1.5.0 — 2026-11-05
+
+The workspace's Vite+ and `@voidzero-dev/vite-plus-core` moved from 1.4.0 to 1.5.0, with Vitest pinned to the bundled 5.1.0. Both CI installation steps and the Chinese and English setup instructions now use 1.5.0. Existing application dependency declarations, Vite configuration and bundle budgets were retained.
+
+- Frozen-lockfile installation and full `vp run check` passed, including script types and Rust compilation.
+- `vp run test` passed: 12 script tests, 275 frontend tests and 22 Rust tests, with no reduction in test count.
+- Web and site builds passed within the existing bundle budgets; the site prerendered 46 pages.
+- Security, release and license checks for 394 frontend production dependency versions passed.
+- The migrator generated exact-version `minimumReleaseAgeExclude` entries for Vite+ 1.5.0 and its native packages. Existing transitive Radix packages declare React 16–18 support, so `pnpm peers check` still reports the React 19 range mismatch. React and React DOM versions were unchanged by this upgrade.
+
+## TypeScript helper scripts and Git source archives — 2026-11-05
+
+Node.js helper scripts now use TypeScript. Security scanning, release structure checks and source archiving run independently. Archives use the selected commit's contents, version and `.gitattributes`, with a SHA-256 file for the archive.
+
+- Script type checks and scoped formatting, lint and type checks passed. Security, release and production-license checks passed. Working-tree deletions no longer block project checks.
+- `vp run test` passed: 12 script tests, 275 frontend tests and 22 Rust tests. Script coverage includes deletions, new files, secret-safe diagnostics, selected commits, export rules, checksums and the TypeScript command-line entry point.
+- Web and site builds passed; TypeScript prerendering produced 46 pages. The quick-start generator produced eight SVG covers in an isolated temporary directory.
+- The current 465 project files were copied into an independent temporary Git repository, committed there, archived with `git archive` and extracted. The archive contained no `.mjs` files, and security and release checks passed in the extracted directory. The main repository was not committed for this verification.
+- The project page now uses `useEffectEvent` for its initial refresh on mount, retaining manual retries and cancellation on unmount. Full `vp run check` passed, including formatting, lint, types, script types and Rust compilation. The complete tests, security checks, release checks and Web build passed again.
+
 ## Manus-style collapsed sidebar — 2026-11-03
 
 The desktop sidebar now collapses to a 56px icon rail with expand, creation, main navigation, quick search, recent projects and bottom Settings. Hover and keyboard focus reveal labels; the active destination uses a muted background. Mobile retains the full navigation drawer.

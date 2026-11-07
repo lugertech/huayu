@@ -1,15 +1,17 @@
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
   type AnimationEvent,
 } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ContextMenu } from "@base-ui/react/context-menu";
 import { Tabs as ProjectTabs } from "@base-ui/react/tabs";
 import {
   ArrowRight,
@@ -18,6 +20,8 @@ import {
   FilePenLine,
   FolderOpen,
   Import,
+  LayoutGrid,
+  List,
   Loader2,
   Pencil,
   Plus,
@@ -33,9 +37,16 @@ import {
 } from "lucide-react";
 import { ShellSidebarTrigger } from "@/Components/Shell";
 import { useToast } from "@/Components/common/ToastProvider";
-import { api, type Project, type Template } from "@/api/client";
+import {
+  api,
+  PROJECTS_CHANGED_EVENT,
+  type ProjectChange,
+  type Project,
+  type Template,
+} from "@/api/client";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
+import { LoadingRegion } from "@/ui/loading-region";
 import { Card, CardContent } from "@/ui/card";
 import { searchScore } from "@/lib/search";
 import {
@@ -52,7 +63,26 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/ui/alert-dialog";
+import type { ProjectCardMenuProps } from "./ProjectCardMenu";
 import "./projects.css";
+
+const ProjectViewTooltip = lazy(() =>
+  import("./ProjectViewTooltip").then((module) => ({
+    default: module.ProjectViewTooltip,
+  })),
+);
+const DeferredProjectCardMenu = lazy(() =>
+  import("./ProjectCardMenu").then((module) => ({
+    default: module.ProjectCardMenu,
+  })),
+);
+function ProjectCardMenu(props: ProjectCardMenuProps) {
+  return (
+    <Suspense fallback={props.children}>
+      <DeferredProjectCardMenu {...props} />
+    </Suspense>
+  );
+}
 
 const recipeIcons = {
   writing: Workflow,
@@ -125,6 +155,9 @@ export function ProjectsPage() {
       : "",
   );
   const [tag, setTag] = useState("all");
+  const [view, setView] = useState<"grid" | "list">(() =>
+    localStorage.getItem("huayu:projects-view") === "list" ? "list" : "grid",
+  );
   const [renaming, setRenaming] = useState<Project | null>(null);
   const [renamingBusy, setRenamingBusy] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -279,9 +312,25 @@ export function ProjectsPage() {
     setHasLoaded(true);
     setLoading(false);
   }
+  const refreshOnMount = useEffectEvent(refresh);
   useEffect(() => {
-    void refresh();
+    void refreshOnMount();
     return () => refreshRequest.current?.abort();
+  }, []);
+  useEffect(() => {
+    const changed = (event: Event) => {
+      const change = (event as CustomEvent<ProjectChange | undefined>).detail;
+      if (!change) return;
+      setProjects((current) =>
+        change.type === "deleted"
+          ? current.filter((project) => project.id !== change.id)
+          : current.map((project) =>
+              project.id === change.project.id ? change.project : project,
+            ),
+      );
+    };
+    window.addEventListener(PROJECTS_CHANGED_EVENT, changed);
+    return () => window.removeEventListener(PROJECTS_CHANGED_EVENT, changed);
   }, []);
   useEffect(() => {
     if (!initialLoading && requestedExample) {
@@ -508,7 +557,11 @@ export function ProjectsPage() {
   );
   return (
     <>
-      <main ref={pageRef} className="projects-page w-full px-4 py-8 sm:px-6">
+      <main
+        ref={pageRef}
+        className="projects-page w-full px-4 py-8 sm:px-6"
+        data-view={view}
+      >
         <div className="project-page-content">
           <section aria-label={t("projects.quickStart")}>
             <div className="mb-5 flex md:hidden">
@@ -516,12 +569,7 @@ export function ProjectsPage() {
             </div>
             <div className="quick-start-scroll">
               <button
-                className="project-quick-card project-card-enter"
-                data-card-entry="quick:blank"
-                data-entered={
-                  enteredCards.current.has("quick:blank") || undefined
-                }
-                onAnimationEnd={finishCardEntrance}
+                className="project-quick-card"
                 aria-busy={pending === "blank"}
                 onClick={create}
                 disabled={busy}
@@ -540,13 +588,7 @@ export function ProjectsPage() {
               {quickStartTemplates.map((template) => (
                 <button
                   key={template.id}
-                  className="project-quick-card project-card-enter"
-                  data-card-entry={`quick:${template.id}`}
-                  data-entered={
-                    enteredCards.current.has(`quick:${template.id}`) ||
-                    undefined
-                  }
-                  onAnimationEnd={finishCardEntrance}
+                  className="project-quick-card"
                   aria-busy={pending === template.id}
                   disabled={busy}
                   onClick={() => fork(template)}
@@ -612,279 +654,363 @@ export function ProjectsPage() {
                         ? "projects.searchProjects.placeholder"
                         : "projects.searchTemplates.placeholder",
                     )}
-                    className="project-list-search"
+                    className="project-list-search pr-9 pl-9"
                     value={activeSearch}
                     onChange={(event) => setActiveSearch(event.target.value)}
                   />
                   {activeSearch && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       aria-label={t("recordings.clearSearch")}
                       className="project-search-clear"
                       onClick={() => setActiveSearch("")}
                     >
                       <X />
-                    </button>
+                    </Button>
                   )}
+                </div>
+                <div
+                  className="project-view-toggle"
+                  role="group"
+                  aria-label={t("projects.viewMode")}
+                >
+                  {(["grid", "list"] as const).map((mode) => {
+                    const Icon = mode === "grid" ? LayoutGrid : List;
+                    const label = t(
+                      mode === "grid"
+                        ? "projects.gridView"
+                        : "projects.listView",
+                    );
+                    const button = (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="project-view-button border-0 text-muted-foreground aria-pressed:bg-card aria-pressed:text-foreground dark:aria-pressed:bg-accent"
+                        aria-label={label}
+                        aria-pressed={view === mode}
+                        onClick={() => {
+                          if (view === mode) return;
+                          settleListEntrance();
+                          preservePanelSpace();
+                          setView(mode);
+                          localStorage.setItem("huayu:projects-view", mode);
+                        }}
+                      >
+                        <Icon aria-hidden="true" />
+                      </Button>
+                    );
+                    return (
+                      <Suspense key={mode} fallback={button}>
+                        <ProjectViewTooltip label={label}>
+                          {button}
+                        </ProjectViewTooltip>
+                      </Suspense>
+                    );
+                  })}
                 </div>
               </div>
             </div>
             <div ref={panelAreaRef} className="project-library-panels">
               <ProjectTabs.Panel
-                id="projects-recent"
                 className="project-list-panel"
                 value="projects"
                 hidden={activeTab !== "projects"}
                 aria-busy={loading}
                 keepMounted
               >
-                {initialLoading ? (
-                  <ProjectListLoading />
-                ) : error && !projects.length ? (
-                  <div
-                    role="alert"
-                    className="rounded-xl border p-8 text-center"
-                  >
-                    <p className="mb-4 text-sm text-muted-foreground">
-                      {error}
-                    </p>
-                    <Button
-                      variant="outline"
-                      disabled={loading}
-                      onClick={refresh}
+                <LoadingRegion
+                  id={
+                    view === "grid"
+                      ? "huayu:project-list"
+                      : "huayu:project-list:rows"
+                  }
+                  loading={initialLoading}
+                  empty={!shownProjects.length}
+                  error={!!error && !projects.length}
+                  placeholder={
+                    <div className="project-card-grid">
+                      {["72%", "56%", "84%", "64%"].map((width) => (
+                        <div className="project-card-slot" key={width}>
+                          <Card className="project-list-card">
+                            <div
+                              skullet-block=""
+                              className="project-card-cover"
+                            />
+                            <CardContent className="project-card-content">
+                              <div className="project-card-heading items-center">
+                                <span
+                                  skullet-block=""
+                                  className="h-4 rounded"
+                                  style={{ width }}
+                                />
+                              </div>
+                              <div className="project-card-meta">
+                                <span
+                                  skullet-block=""
+                                  className="h-3 w-28 rounded"
+                                />
+                                <span
+                                  skullet-block=""
+                                  className="h-3 w-8 rounded"
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
+                  {error && !projects.length ? (
+                    <div
+                      role="alert"
+                      className="rounded-xl border p-8 text-center"
                     >
-                      {t("common.reload")}
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {shownProjects.length ? (
-                      <div className="project-card-grid">
-                        {shownProjects.map((project) => (
-                          <div className="project-card-slot" key={project.id}>
-                            <ContextMenu.Root>
-                              <ContextMenu.Trigger
-                                render={
-                                  <Card
-                                    className="project-list-card project-card-enter"
-                                    data-card-entry={`project:${project.id}`}
-                                    data-entered={
-                                      !listEntranceAllowed.current ||
-                                      enteredCards.current.has(
-                                        `project:${project.id}`,
-                                      ) ||
-                                      undefined
-                                    }
-                                    onAnimationEnd={finishCardEntrance}
-                                  />
-                                }
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        {error}
+                      </p>
+                      <Button
+                        variant="outline"
+                        disabled={loading}
+                        onClick={refresh}
+                      >
+                        {t("common.reload")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {shownProjects.length ? (
+                        <div
+                          className="project-card-grid"
+                          role="list"
+                          aria-label={t("projects.myProjects")}
+                        >
+                          {shownProjects.map((project) => (
+                            <div
+                              className="project-card-slot"
+                              key={project.id}
+                              role="listitem"
+                            >
+                              <ProjectCardMenu
+                                disabled={!!duplicating}
+                                copying={duplicating === project.id}
+                                onDuplicate={() => duplicate(project)}
                               >
-                                <button
-                                  className="project-thumbnail project-card-cover"
-                                  aria-label={t("recordings.open", {
-                                    arg0: project.name,
-                                  })}
-                                  onClick={() =>
-                                    navigate(`/drawing/${project.id}`)
-                                  }
-                                >
-                                  {project.cover ? (
-                                    <img
-                                      src={project.cover}
-                                      alt=""
-                                      className="project-card-preview"
-                                    />
-                                  ) : (
-                                    <FilePenLine
-                                      className="size-7 text-muted-foreground opacity-40"
-                                      strokeWidth={1.5}
-                                    />
-                                  )}
-                                </button>
-                                <CardContent className="project-card-content">
-                                  <div className="project-card-heading">
-                                    {renaming?.id === project.id ? (
-                                      <div className="min-w-0 flex-1">
-                                        <Input
-                                          aria-label={t("projects.projectName")}
-                                          value={name}
-                                          maxLength={120}
-                                          autoFocus
-                                          disabled={renamingBusy}
-                                          className="project-card-name-input"
-                                          onChange={(event) =>
-                                            setName(event.target.value)
-                                          }
-                                          onKeyDown={(event) => {
-                                            if (
-                                              event.nativeEvent.isComposing ||
-                                              event.nativeEvent.keyCode === 229
-                                            )
-                                              return;
-                                            if (event.key === "Enter") {
-                                              event.preventDefault();
-                                              void rename();
-                                            } else if (
-                                              event.key === "Escape" &&
-                                              !renamingBusy
-                                            ) {
-                                              setRenaming(null);
-                                            }
-                                          }}
-                                        />
-                                        <div className="project-name-actions">
-                                          <button
-                                            type="button"
-                                            className="project-name-save"
-                                            disabled={
-                                              !name.trim() || renamingBusy
-                                            }
-                                            onClick={rename}
-                                          >
-                                            {renamingBusy && (
-                                              <Loader2 className="size-3 animate-spin" />
-                                            )}
-                                            {renamingBusy
-                                              ? t("recordings.saving")
-                                              : t("common.save")}
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="project-name-cancel"
-                                            disabled={renamingBusy}
-                                            onClick={() => setRenaming(null)}
-                                          >
-                                            {t("common.cancel")}
-                                          </button>
-                                        </div>
-                                      </div>
+                                <Card className="project-list-card">
+                                  <button
+                                    className="project-thumbnail project-card-cover"
+                                    aria-label={t("recordings.open", {
+                                      arg0: project.name,
+                                    })}
+                                    onClick={() =>
+                                      navigate(`/drawing/${project.id}`)
+                                    }
+                                  >
+                                    {project.cover ? (
+                                      <img
+                                        src={project.cover}
+                                        alt=""
+                                        className="project-card-preview"
+                                      />
                                     ) : (
-                                      <>
-                                        <button
-                                          className="project-card-title"
-                                          title={project.name}
-                                          onClick={() =>
-                                            navigate(`/drawing/${project.id}`)
-                                          }
-                                        >
-                                          {project.name}
-                                        </button>
-                                        <div className="project-card-actions">
-                                          <button
-                                            type="button"
-                                            className="project-card-action project-card-action-edit"
-                                            aria-label={`${t("projects.renameProject")}: ${project.name}`}
-                                            title={t("projects.renameProject")}
+                                      <FilePenLine
+                                        className="size-7 text-muted-foreground opacity-40"
+                                        strokeWidth={1.5}
+                                      />
+                                    )}
+                                  </button>
+                                  <CardContent className="project-card-content">
+                                    <div className="project-card-heading">
+                                      {renaming?.id === project.id ? (
+                                        <div className="min-w-0 flex-1">
+                                          <Input
+                                            aria-label={t(
+                                              "projects.projectName",
+                                            )}
+                                            value={name}
+                                            maxLength={120}
+                                            autoFocus
                                             disabled={renamingBusy}
-                                            onClick={() => {
-                                              setRenaming(project);
-                                              setName(project.name);
+                                            className="project-card-name-input"
+                                            onChange={(event) =>
+                                              setName(event.target.value)
+                                            }
+                                            onKeyDown={(event) => {
+                                              if (
+                                                event.nativeEvent.isComposing ||
+                                                event.nativeEvent.keyCode ===
+                                                  229
+                                              )
+                                                return;
+                                              if (event.key === "Enter") {
+                                                event.preventDefault();
+                                                void rename();
+                                              } else if (
+                                                event.key === "Escape" &&
+                                                !renamingBusy
+                                              ) {
+                                                setRenaming(null);
+                                              }
                                             }}
-                                          >
-                                            <Pencil className="size-4" />
-                                          </button>
+                                          />
+                                          <div className="project-name-actions">
+                                            <button
+                                              type="button"
+                                              className="project-name-save"
+                                              disabled={
+                                                !name.trim() || renamingBusy
+                                              }
+                                              onClick={rename}
+                                            >
+                                              {renamingBusy && (
+                                                <Loader2 className="size-3 animate-spin" />
+                                              )}
+                                              {renamingBusy
+                                                ? t("recordings.saving")
+                                                : t("common.save")}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="project-name-cancel"
+                                              disabled={renamingBusy}
+                                              onClick={() => setRenaming(null)}
+                                            >
+                                              {t("common.cancel")}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
                                           <button
-                                            type="button"
-                                            className="project-card-action project-card-action-delete"
-                                            aria-label={`${t("projects.deleteProject")}: ${project.name}`}
-                                            title={t("projects.deleteProject")}
+                                            className="project-card-title"
+                                            title={project.name}
                                             onClick={() =>
-                                              setDeleting({
-                                                type: "project",
-                                                id: project.id,
-                                                name: project.name,
-                                              })
+                                              navigate(`/drawing/${project.id}`)
                                             }
                                           >
-                                            <Trash2 className="size-4" />
+                                            {project.name}
                                           </button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                  <div className="project-card-meta">
-                                    <p
-                                      className="project-card-meta-text"
-                                      title={new Date(
-                                        project.updated_at,
-                                      ).toLocaleString(getLocale())}
-                                    >
-                                      <Calendar className="size-3 shrink-0" />
-                                      <span className="truncate">
-                                        {editedDate(project.updated_at)}
-                                      </span>
-                                    </p>
-                                    <button
-                                      className="project-card-open"
-                                      onClick={() =>
-                                        navigate(`/drawing/${project.id}`)
-                                      }
-                                    >
-                                      {t("projects.open")}
-                                      <ArrowRight className="size-3" />
-                                    </button>
-                                  </div>
-                                </CardContent>
-                              </ContextMenu.Trigger>
-                              <ContextMenu.Portal>
-                                <ContextMenu.Positioner className="z-50 outline-none">
-                                  <ContextMenu.Popup className="project-card-menu min-w-40 bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none">
-                                    <ContextMenu.Item
-                                      className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 outline-none focus:bg-accent data-disabled:opacity-50"
-                                      disabled={!!duplicating}
-                                      onClick={() => duplicate(project)}
-                                    >
-                                      {duplicating === project.id ? (
-                                        <Loader2 className="size-4 animate-spin" />
-                                      ) : (
-                                        <Copy className="size-4" />
+                                          <div className="project-card-actions">
+                                            <button
+                                              type="button"
+                                              className="project-card-action"
+                                              aria-label={`${t("projects.duplicateProject")}: ${project.name}`}
+                                              title={t(
+                                                "projects.duplicateProject",
+                                              )}
+                                              disabled={!!duplicating}
+                                              onClick={() =>
+                                                void duplicate(project)
+                                              }
+                                            >
+                                              {duplicating === project.id ? (
+                                                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+                                              ) : (
+                                                <Copy className="size-4" />
+                                              )}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="project-card-action project-card-action-edit"
+                                              aria-label={`${t("projects.renameProject")}: ${project.name}`}
+                                              title={t(
+                                                "projects.renameProject",
+                                              )}
+                                              disabled={renamingBusy}
+                                              onClick={() => {
+                                                setRenaming(project);
+                                                setName(project.name);
+                                              }}
+                                            >
+                                              <Pencil className="size-4" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="project-card-action project-card-action-delete"
+                                              aria-label={`${t("projects.deleteProject")}: ${project.name}`}
+                                              title={t(
+                                                "projects.deleteProject",
+                                              )}
+                                              onClick={() =>
+                                                setDeleting({
+                                                  type: "project",
+                                                  id: project.id,
+                                                  name: project.name,
+                                                })
+                                              }
+                                            >
+                                              <Trash2 className="size-4" />
+                                            </button>
+                                          </div>
+                                        </>
                                       )}
-                                      {duplicating === project.id
-                                        ? t("projects.copying")
-                                        : t("projects.duplicateProject")}
-                                    </ContextMenu.Item>
-                                  </ContextMenu.Popup>
-                                </ContextMenu.Positioner>
-                              </ContextMenu.Portal>
-                            </ContextMenu.Root>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center rounded-xl border border-dashed py-20">
-                        <FolderOpen className="mb-4 size-9 text-muted-foreground" />
-                        <h2 className="text-base font-medium">
-                          {search.trim()
-                            ? t("projects.noMatchingProjects")
-                            : t("projects.empty.title")}
-                        </h2>
-                        <p className="mt-2 mb-5 text-sm text-muted-foreground">
-                          {search.trim()
-                            ? t("recordings.tryDifferentKeywords")
-                            : t(
-                                "projects.createABlankCanvasOrStartFromAnExample",
-                              )}
-                        </p>
-                        {search.trim() ? (
-                          <Button
-                            variant="outline"
-                            onClick={() => setActiveSearch("")}
-                          >
-                            {t("projects.viewAllProjects")}
-                          </Button>
-                        ) : (
-                          <Button onClick={create} disabled={busy}>
-                            <Plus />
-                            {t("projects.createProject")}
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
+                                    </div>
+                                    <div className="project-card-meta">
+                                      <p
+                                        className="project-card-meta-text"
+                                        title={new Date(
+                                          project.updated_at,
+                                        ).toLocaleString(getLocale())}
+                                      >
+                                        <Calendar className="size-3 shrink-0" />
+                                        <span className="truncate">
+                                          {editedDate(project.updated_at)}
+                                        </span>
+                                      </p>
+                                      <button
+                                        className="project-card-open"
+                                        onClick={() =>
+                                          navigate(`/drawing/${project.id}`)
+                                        }
+                                      >
+                                        {t("projects.open")}
+                                        <ArrowRight className="size-3" />
+                                      </button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </ProjectCardMenu>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center rounded-xl border border-dashed py-20">
+                          <FolderOpen className="mb-4 size-9 text-muted-foreground" />
+                          <h2 className="text-base font-medium">
+                            {search.trim()
+                              ? t("projects.noMatchingProjects")
+                              : t("projects.empty.title")}
+                          </h2>
+                          <p className="mt-2 mb-5 text-sm text-muted-foreground">
+                            {search.trim()
+                              ? t("recordings.tryDifferentKeywords")
+                              : t(
+                                  "projects.createABlankCanvasOrStartFromAnExample",
+                                )}
+                          </p>
+                          {search.trim() ? (
+                            <Button
+                              variant="outline"
+                              onClick={() => setActiveSearch("")}
+                            >
+                              {t("projects.viewAllProjects")}
+                            </Button>
+                          ) : (
+                            <Button onClick={create} disabled={busy}>
+                              <Plus />
+                              {t("projects.createProject")}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </LoadingRegion>
               </ProjectTabs.Panel>
               <ProjectTabs.Panel
-                id="projects-templates"
                 className="project-list-panel project-list-panel-examples"
                 value="templates"
                 hidden={activeTab !== "templates"}
@@ -938,7 +1064,11 @@ export function ProjectsPage() {
                         </button>
                       ))}
                     </div>
-                    <div className="project-card-grid">
+                    <div
+                      className="project-card-grid"
+                      role="list"
+                      aria-label={t("projects.exampleProjects")}
+                    >
                       {shownTemplates.map((template) => {
                         const Icon =
                           recipeIcons[recipeKind(template.recipe)] || Workflow;
@@ -948,7 +1078,11 @@ export function ProjectsPage() {
                             ? `/examples/quick-start/${template.recipe}-${getLocale()}.svg`
                             : null);
                         return (
-                          <div className="project-card-slot" key={template.id}>
+                          <div
+                            className="project-card-slot"
+                            key={template.id}
+                            role="listitem"
+                          >
                             <Card
                               className="project-list-card project-card-enter"
                               data-card-entry={`template:${template.id}`}

@@ -4,10 +4,11 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { MoreHorizontal } from "lucide-react";
-import { t } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import type { AssetGroupItem } from "./library-api";
-import { at } from "./messages";
+import { useAssetTranslations } from "./messages";
 import { cn } from "@/lib/utils";
+import { Button } from "@/ui/button";
 import folderIcon from "./folder.svg";
 
 interface AssetFolderTreeProps {
@@ -72,9 +73,11 @@ function FolderTreeRow({
   onDragOver?: (event: ReactDragEvent, group: AssetGroupItem) => void;
   onDrop?: (event: ReactDragEvent, group: AssetGroupItem) => void;
 }) {
+  const { t } = useTranslations();
   return (
     <div
       className="group relative z-10"
+      data-asset-drop-target
       onContextMenu={(event) => onContextMenu?.(event, group)}
       onKeyDown={(event) => {
         if (
@@ -83,6 +86,7 @@ function FolderTreeRow({
         )
           onContextMenu?.(event, group);
       }}
+      onDragEnter={(event) => onDragOver?.(event, group)}
       onDragOver={(event) => onDragOver?.(event, group)}
       onDrop={(event) => onDrop?.(event, group)}
     >
@@ -119,17 +123,19 @@ function FolderTreeRow({
           {group.name}
         </span>
       </button>
-      <button
+      <Button
         type="button"
-        className="asset-folder-more absolute top-1.5 right-1 flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+        variant="ghost"
+        size="icon-sm"
+        className="asset-folder-more absolute top-1.5 right-1 text-muted-foreground"
         aria-label={t("assets.folderActions", { name: group.name })}
         onClick={(event) => {
           event.stopPropagation();
           onContextMenu?.(event, group);
         }}
       >
-        <MoreHorizontal className="size-4" />
-      </button>
+        <MoreHorizontal />
+      </Button>
     </div>
   );
 }
@@ -226,11 +232,13 @@ export function AssetFolderTree({
   onAllDragOver,
   onAllDrop,
 }: AssetFolderTreeProps) {
+  const { at } = useAssetTranslations();
   return (
     <div className="space-y-1">
       <button
         type="button"
         onClick={onSelectAll}
+        data-asset-drop-target
         onContextMenu={(event) => onAllContextMenu?.(event)}
         onKeyDown={(event) => {
           if (
@@ -239,6 +247,7 @@ export function AssetFolderTree({
           )
             onAllContextMenu?.(event);
         }}
+        onDragEnter={(event) => onAllDragOver?.(event)}
         onDragOver={(event) => onAllDragOver?.(event)}
         onDrop={(event) => onAllDrop?.(event)}
         className={cn(

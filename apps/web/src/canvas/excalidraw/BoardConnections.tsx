@@ -1,7 +1,11 @@
-import { t, useLocale } from "@/i18n";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "@/i18n";
+import { useEffect, useEffectEvent, useId, useRef, useState } from "react";
 import { useEditor, type VecLike } from "@/canvas/editor";
-import { COMPONENT_CONFIGS, type ComponentType } from "@/config/components";
+import {
+  COMPONENT_CONFIGS,
+  componentConfig,
+  type ComponentType,
+} from "@/config/components";
 import { createConnectedComponent } from "@/utils/connectionParser";
 import {
   CONNECT_EVENT,
@@ -13,6 +17,7 @@ import {
 } from "@/workflow/connections";
 import { focusShapes, materialLabel } from "@/workflow/context";
 import { useToast } from "@/Components/common/ToastProvider";
+import { ComponentConnectionDots } from "@/Components/common/ComponentConnectionDots";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,7 +34,6 @@ interface Drag extends ConnectionStart {
   point: VecLike;
   moved: boolean;
   target?: string;
-  problem?: string;
 }
 interface Picker extends ConnectionStart {
   point?: VecLike;
@@ -45,40 +49,54 @@ const types: ComponentType[] = [
 ];
 
 export function BoardConnections() {
-  useLocale();
+  const { t, locale } = useTranslations();
   const editor = useEditor();
   const { showToast } = useToast();
   const marker = useId().replaceAll(":", "");
-  const [drag, setDrag] = useState<Drag | null>(null);
+  type Gesture =
+    | { phase: "idle" }
+    | { phase: "dragging"; drag: Drag }
+    | { phase: "choosing"; picker: Picker };
+  const [gesture, setGesture] = useState<Gesture>({ phase: "idle" });
   const active = useRef<Drag | null>(null);
-  const [picker, setPicker] = useState<Picker | null>(null);
+  const drag = gesture.phase === "dragging" ? gesture.drag : null;
+  const picker = gesture.phase === "choosing" ? gesture.picker : null;
+  function setPicker(value: Picker | null) {
+    active.current = null;
+    setGesture(
+      value ? { phase: "choosing", picker: value } : { phase: "idle" },
+    );
+  }
+  function setDrag(value: Drag | null) {
+    active.current = value;
+    setGesture(value ? { phase: "dragging", drag: value } : { phase: "idle" });
+  }
   const page = editor.getCurrentPageId();
   function cancel() {
     active.current = null;
     setDrag(null);
   }
-  const link = useCallback(
-    (start: ConnectionStart, target: string) => {
-      try {
-        linkWorkflow(
-          editor,
-          start.side === "right" ? start.id : target,
-          start.side === "right" ? target : start.id,
-        );
-        editor.select(start.side === "right" ? target : start.id);
-      } catch (error) {
-        showToast({
-          title: t("canvas.connections.failed"),
-          description:
-            error instanceof Error
-              ? error.message
-              : t("canvas.connections.selectACardAgain"),
-          variant: "destructive",
-        });
-      }
-    },
-    [editor, showToast],
-  );
+  function link(start: ConnectionStart, target: string) {
+    try {
+      linkWorkflow(
+        editor,
+        start.side === "right" ? start.id : target,
+        start.side === "right" ? target : start.id,
+        locale,
+      );
+      editor.select(start.side === "right" ? target : start.id);
+    } catch (error) {
+      showToast({
+        title: t("canvas.connections.failed"),
+        description:
+          error instanceof Error
+            ? error.message
+            : t("canvas.connections.selectACardAgain"),
+        variant: "destructive",
+      });
+    }
+  }
+  const linkFromDrag = useEffectEvent(link);
   useEffect(() => {
     const container = editor.container;
     function start(event: Event) {
@@ -125,13 +143,6 @@ export function BoardConnections() {
           current.moved ||
           Math.hypot(event.clientX - current.x, event.clientY - current.y) > 5,
         target: target?.id,
-        problem: target
-          ? connectionProblem(
-              editor,
-              current.side === "right" ? current.id : target.id,
-              current.side === "right" ? target.id : current.id,
-            )
-          : null,
       };
       active.current = next;
       setDrag(next);
@@ -143,7 +154,7 @@ export function BoardConnections() {
       event.stopPropagation();
       cancel();
       if (current.target && current.moved) {
-        link(current, current.target);
+        linkFromDrag(current, current.target);
         return;
       }
       if (
@@ -189,13 +200,22 @@ export function BoardConnections() {
       window.removeEventListener("pointercancel", cancel, true);
       window.removeEventListener("keydown", escape, true);
     };
-  }, [editor, link]);
+  }, [editor]);
   useEffect(() => {
     cancel();
     setPicker(null);
   }, [page]);
 
   const camera = editor.session.camera;
+  const selected = editor.getSelectedShapes();
+  const frame =
+    selected.length === 1 &&
+    selected[0].type === "frame" &&
+    !selected[0].isLocked &&
+    editor.getCurrentToolId() === "select"
+      ? selected[0]
+      : null;
+  const frameTransform = frame && editor.getPageTransform(frame);
   const local = (point: VecLike) => ({
     x: (point.x + camera.x) * camera.z,
     y: (point.y + camera.y) * camera.z,
@@ -215,11 +235,19 @@ export function BoardConnections() {
     const length = Math.max(40, Math.min(150, Math.abs(b.x - a.x) / 2));
     const box = drag.target && editor.getShapePageBounds(drag.target);
     const corner = box && local(box.point);
+    const problem =
+      drag.target &&
+      connectionProblem(
+        editor,
+        drag.side === "right" ? drag.id : drag.target,
+        drag.side === "right" ? drag.target : drag.id,
+        locale,
+      );
     const label =
-      drag.problem ||
+      problem ||
       (drag.target
         ? t("canvas.connections.connect", {
-            arg0: materialLabel(editor.getShape(drag.target)!),
+            arg0: materialLabel(editor.getShape(drag.target)!, locale),
           })
         : drag.side === "right"
           ? t("canvas.connections.releaseToAddTheNextStep")
@@ -232,7 +260,7 @@ export function BoardConnections() {
           className="board-connection-overlay"
           aria-hidden="true"
           style={{
-            color: drag.problem ? "var(--destructive)" : "var(--canvas-stroke)",
+            color: problem ? "var(--destructive)" : "var(--canvas-stroke)",
           }}
         >
           <defs>
@@ -294,6 +322,19 @@ export function BoardConnections() {
     : [];
   return (
     <>
+      {frame && frameTransform && (
+        <div
+          className="board-frame-connections"
+          data-canvas-ui
+          style={{
+            width: frame.props.w,
+            height: frame.props.h,
+            transform: `translate(${(frameTransform.x + camera.x) * camera.z}px, ${(frameTransform.y + camera.y) * camera.z}px) scale(${camera.z}) rotate(${frameTransform.rotation}rad)`,
+          }}
+        >
+          <ComponentConnectionDots shape={frame} />
+        </div>
+      )}
       {wire}
       {picker && (
         <DropdownMenu
@@ -326,7 +367,7 @@ export function BoardConnections() {
                 : t("canvas.connections.createInputMaterial")}
             </div>
             {types.map((type) => {
-              const config = COMPONENT_CONFIGS[type];
+              const config = componentConfig(type, locale);
               const Icon = config.icon;
               return (
                 <DropdownMenuItem
@@ -386,18 +427,21 @@ export function BoardConnections() {
                       editor,
                       picker.side === "right" ? picker.id : shape.id,
                       picker.side === "right" ? shape.id : picker.id,
+                      locale,
                     );
                     return (
                       <DropdownMenuItem
                         key={shape.id}
                         disabled={!!problem}
-                        title={problem || materialLabel(shape)}
+                        title={problem || materialLabel(shape, locale)}
                         onClick={() => {
                           link(picker, shape.id);
                           setPicker(null);
                         }}
                       >
-                        <span className="truncate">{materialLabel(shape)}</span>
+                        <span className="truncate">
+                          {materialLabel(shape, locale)}
+                        </span>
                         {problem && (
                           <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                             {t("canvas.connections.unavailable")}

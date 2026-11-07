@@ -5,6 +5,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.loading-region {
+  --skullet-base: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --skullet-highlight: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --skullet-radius: var(--radius);
+  --skullet-animation: shimmer;
+  --skullet-speed: slow;
+}
+.loading-region[data-skeleton-visible="false"] [skullet-loading],
+.loading-region[data-skeleton-visible="false"] .loading-region-placeholder {
+  visibility: hidden;
+}
+.loading-region-placeholder [skullet-block] {
+  background-color: var(--skullet-base);
+}
+.recording-cover-image {
+  animation: recording-cover-appear 160ms ease-out;
+}
+@keyframes recording-cover-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recording-cover-image {
+    animation: none;
+  }
+}
+
 :root {
   color-scheme: light;
   --background: #f8f8f7;

@@ -78,4 +78,6 @@ Use real public URLs before publishing, then verify docs, images, metadata, lang
 
 ## Access boundaries
 
-The application has no accounts, tenant isolation or public access control. Collaboration links are not project-list permissions. Do not expose the application API directly to the internet. Remote use needs external authentication, TLS, access control and maintenance. Publishing the independent static site does not expose local projects.
+The service computer manages the workspace. Other devices need a valid collaboration link and can edit only its canvas. The independent collaborator interface excludes project lists, the global asset library, recordings and project/share management. Management access is determined by the connection originating from the service computer, not by an account or tenant system; direct workspace access on that computer remains privileged.
+
+The development proxy forwards the client address. Other reverse proxies must supply a trustworthy `X-Forwarded-For` instead of disguising remote requests as local traffic. Do not expose the API directly to the internet. Public deployments still need external authentication, TLS, access control and maintenance. Publishing the independent static site does not expose local projects.

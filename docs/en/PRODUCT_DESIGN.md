@@ -23,27 +23,25 @@ The following separates team statements from Huayu’s design inferences. Resear
 
 ## Implemented journeys
 
-Select materials and open **Create from this** near the selection. Review and remove inputs, revisit originals, and choose text, images, pages, charts, audio or documents. Starting creates a connected step and runs it; **Add step only** lets users arrange a flow first. New cards avoid existing content and can be undone with their connections.
-
-Text retains actual text, pages retain HTML, and charts retain structured data. Native drawings, shapes, notes, lines and frames form a coherent visual input. Running a new step uses cached source content without regenerating sources. Cancellation during capture prevents subsequent model requests. The independent drawing agent still uses whole-page context; scoped previews remain future work.
+Add components and connect materials to an instruction, then run it from its header. Image, speech, website, file and chart components receive preceding outputs. Inputs and outputs follow the original MenteX handlers; text replaces its body, websites generate and preview HTML, frames supply a single snapshot, and the drawing agent uses native shapes inside its own box.
 
 Recording text, chapters and selected excerpts become editable canvas materials with original source/time links. Chapters use the matching transcript range. Conversion makes no model call, so facts can be checked before creating.
 
-Compact headers and selection-only action bars give content more room. Port dragging shows targets and previews; dropping on empty space continues the flow, with click and keyboard alternatives. Duplicate, cycle and cross-page connections explain their limits. Real port positions account for rotation and frames. Focusing input does not independently scroll the card layer.
+Compact headers leave room for content. Component tools remain inside the original MenteX positions and stay visible without selection. Image upload/download sits at the bottom left, ratio at the bottom right, and instruction web search at the bottom left. The extra selection toolbar, external action bars and creation panel have been removed. Port dragging shows targets and previews; dropping on empty space continues the flow, with click and keyboard alternatives. Duplicate, cycle and cross-page connections explain their limits. Real port positions account for rotation and frames. Focusing input does not independently scroll the card layer.
 
-Execution paths and per-card state show waiting, running, failure, stopping and elapsed time. A run list locates content. Content fingerprints persist freshness after reload; changed material marks affected descendants and allows branch-only updates. Locked results remain reusable. Changed inputs during a request do not falsely mark old output as fresh. Existing works survive stopping and failure.
+Execution paths and per-card state show waiting, running, failure, stopping and elapsed time. Content fingerprints persist freshness after reload; changed material marks affected descendants and allows branch-only updates. Locked results remain reusable. Changed inputs during a request do not falsely mark old output as fresh. Existing works survive stopping and failure.
 
-**Back to content** returns to selected objects when available. View changes retain selection. The neutral sidebar, appearance and browser-only model settings remain consistent.
+The neutral sidebar, appearance and browser-only model settings remain consistent.
 
-## View, edit and create again
+## View and edit work
 
-Text, image and page works share one work window, reachable from card headers, selected-object controls and double-click. Closing restores focus to the current work; version changes locate the matching canvas object.
+Text, image and page works share one work window, reachable by double-clicking component headers, pressing Enter on a selected component. Website full-screen buttons open a separate preview window. Closing restores focus to the current work; version changes locate the matching canvas object.
 
 Text reads as Markdown and edits the generated body, retaining the original request. Pages support real interaction, desktop/mobile preview, direct HTML editing and live preview with existing isolation. Browser drafts are scoped to project, page and work; conflicts preserve drafts rather than silently replacing newer content.
 
 Images support zoom, pan, original size, fit, crop and rotate. Cropping saves a new PNG without changing the original, with lineage and a suitable ratio for the next generation. Copy uses actual image pixels.
 
-Creation beside the work defaults to its current media type, keeps original versions, and can convert media types. Save-and-create includes manual edits. Pending steps are reused on retry, and reopened windows reconnect to in-flight browser tasks. Version history records derived works, while ordinary edits use undo/redo.
+Existing version links remain available; ordinary edits use undo/redo.
 
 ## Scope and follow-up
 

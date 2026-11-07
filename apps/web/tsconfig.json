@@ -14,5 +14,10 @@
     "types": ["vite-plus/client"],
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "build", "vite.config.ts"]
+  "include": [
+    "src",
+    "build",
+    "vite.config.ts",
+    "../../scripts/generate-quick-start-covers.ts"
+  ]
 }

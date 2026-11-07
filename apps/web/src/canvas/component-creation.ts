@@ -51,9 +51,14 @@ export function createCanvasShape(
 
 /** A live card uses the same renderer without changing the document until placement. */
 export class ComponentDrag {
-  preview: Editor | null = null;
-  private previewId?: string;
-  private ended = false;
+  private state:
+    | { phase: "pressed" | "finished" | "cancelled" }
+    | { phase: "dragging"; preview: Editor; previewId: string } = {
+    phase: "pressed",
+  };
+  get preview() {
+    return this.state.phase === "dragging" ? this.state.preview : null;
+  }
   constructor(
     private readonly editor: Editor,
     readonly type: ComponentType,
@@ -62,27 +67,29 @@ export class ComponentDrag {
 
   move(point: VecLike) {
     if (
-      this.ended ||
-      (!this.preview &&
+      this.state.phase === "finished" ||
+      this.state.phase === "cancelled" ||
+      (this.state.phase === "pressed" &&
         Math.hypot(point.x - this.start.x, point.y - this.start.y) <= 8)
     )
       return;
     const page = this.editor.screenToPage(point);
     const size = COMPONENT_CONFIGS[this.type].defaultSize;
-    if (!this.preview) {
-      this.preview = new Editor(createCanvasStore());
-      this.preview.theme = this.editor.theme;
-      this.preview.setViewport(this.editor.viewport);
-      this.previewId = createCanvasShape(this.preview, this.type, {
+    if (this.state.phase === "pressed") {
+      const preview = new Editor(createCanvasStore());
+      preview.theme = this.editor.theme;
+      preview.setViewport(this.editor.viewport);
+      const previewId = createCanvasShape(preview, this.type, {
         x: page.x,
         y: page.y + size.h / 2 - 20,
       });
-      this.preview.select();
-    } else {
+      preview.select();
+      this.state = { phase: "dragging", preview, previewId };
+    } else if (this.state.phase === "dragging") {
       this.preview.theme = this.editor.theme;
       this.preview.setViewport(this.editor.viewport);
       this.preview.updateShape({
-        id: this.previewId!,
+        id: this.state.previewId,
         x: page.x - size.w / 2,
         y: page.y - 20,
       });
@@ -90,10 +97,10 @@ export class ComponentDrag {
   }
 
   finish(point: VecLike, validDrop: boolean) {
-    if (this.ended) return;
-    this.ended = true;
-    const dragged = !!this.preview;
-    this.preview = null;
+    if (this.state.phase === "finished" || this.state.phase === "cancelled")
+      return;
+    const dragged = this.state.phase === "dragging";
+    this.state = { phase: "finished" };
     if (!dragged || !validDrop) return;
     const page = this.editor.screenToPage(point);
     return createCanvasShape(this.editor, this.type, {
@@ -103,7 +110,6 @@ export class ComponentDrag {
   }
 
   cancel() {
-    this.ended = true;
-    this.preview = null;
+    this.state = { phase: "cancelled" };
   }
 }

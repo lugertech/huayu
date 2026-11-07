@@ -1,7 +1,7 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations } from "@/i18n";
 import { useEffect, useState } from "react";
 import type { Editor } from "@/canvas/editor";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, MoreHorizontal, Focus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,13 @@ import {
   DialogTitle,
 } from "@/ui/dialog";
 import { Button } from "@/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/ui/dropdown-menu";
+import { requestInspection, focusShapes } from "@/workflow/context";
 import {
   collectDownloadableFiles,
   downloadFile,
@@ -25,7 +32,7 @@ export function FileDownloadDrawer({
   onOpenChange: (open: boolean) => void;
   editor: Editor;
 }) {
-  useLocale();
+  const { t } = useTranslations();
   const [files, setFiles] = useState<DownloadableFile[]>([]);
   const { showToast } = useToast();
   useEffect(() => {
@@ -36,16 +43,36 @@ export function FileDownloadDrawer({
   }, [open, editor]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
         <DialogTitle>{t("canvas.files.label")}</DialogTitle>
-        <DialogDescription>{t("canvas.files.description")}</DialogDescription>
+        <DialogDescription className="sr-only">
+          {t("canvas.files.description")}
+        </DialogDescription>
         {files.length ? (
           files.map((file) => (
             <div
               key={file.id}
-              className="flex items-center gap-3 rounded-lg border p-3"
+              className="flex items-center gap-3 border-b py-3 last:border-0"
             >
-              <FileText className="size-5 text-muted-foreground" />
+              {file.source === "image" ? (
+                <button
+                  type="button"
+                  aria-label={t("canvas.viewImage")}
+                  className="shrink-0 rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => {
+                    onOpenChange(false);
+                    requestInspection(editor, file.shapeId);
+                  }}
+                >
+                  <img
+                    src={file.downloadUrl}
+                    alt=""
+                    className="size-12 rounded-md border bg-muted object-contain"
+                  />
+                </button>
+              ) : (
+                <FileText className="mx-3 size-6 shrink-0 text-muted-foreground" />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{file.fileName}</p>
                 <p className="text-xs text-muted-foreground">
@@ -53,7 +80,7 @@ export function FileDownloadDrawer({
                 </p>
               </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon-sm"
                 aria-label={t("canvas.files.downloadNamed", {
                   arg0: file.fileName,
@@ -70,6 +97,33 @@ export function FileDownloadDrawer({
               >
                 <Download />
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("assets.assetActions", {
+                        name: file.fileName,
+                      })}
+                    >
+                      <MoreHorizontal />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onOpenChange(false);
+                      editor.select(file.shapeId);
+                      focusShapes(editor, [file.shapeId]);
+                    }}
+                  >
+                    <Focus />
+                    {t("assets.locateOnCanvas")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))
         ) : (

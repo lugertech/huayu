@@ -8,9 +8,6 @@
 .asset-browser-heading {
   min-height: 64px;
 }
-.asset-browser-manager .asset-browser-heading {
-  min-height: 88px;
-}
 .asset-gallery-scroll {
   min-width: 0;
   min-height: 0;
@@ -74,20 +71,91 @@
   height: auto;
 }
 .asset-picker-card .asset-card-image {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  aspect-ratio: auto;
+  position: relative;
+  aspect-ratio: 4 / 3;
 }
 .asset-picker-card .asset-card-image img {
   object-fit: contain;
 }
 .asset-picker-card .asset-card-caption {
-  display: none;
+  display: block;
 }
 .asset-picker-card + .asset-card-more {
   right: 4px;
   bottom: 4px;
+}
+.asset-row-date {
+  display: none;
+}
+.asset-view-toggle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 1px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--muted);
+}
+.asset-manager-list .asset-card-wrap {
+  border-bottom: 1px solid var(--border);
+}
+.asset-manager-list .asset-card-wrap:last-child {
+  border-bottom: 0;
+}
+.asset-manager-list .asset-card-wrap > button:first-child,
+.asset-manager-list > button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 48px 10px 8px;
+  border: 0;
+  background: transparent;
+}
+.asset-manager-list .asset-card-wrap > button:first-child:hover,
+.asset-manager-list > button:hover {
+  background: var(--accent);
+}
+.asset-manager-list .asset-card-image,
+.asset-manager-list > button > div:first-child {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 4px;
+  background: transparent;
+}
+.asset-manager-list .asset-card-image img,
+.asset-manager-list > button > div:first-child img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.asset-manager-list .asset-card-caption,
+.asset-manager-list > button > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+.asset-manager-list .asset-card-more {
+  right: 8px;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+}
+.asset-manager-list .asset-row-date {
+  display: block;
+  margin-left: auto;
+}
+@media (max-width: 639px) {
+  .asset-manager-list .asset-row-date {
+    display: none;
+  }
 }
 .asset-selection-mark {
   position: absolute;
@@ -118,6 +186,7 @@
   display: flex;
   width: 100%;
   justify-content: flex-start;
+  gap: 8px;
   border-radius: 0;
   padding: 6px 12px;
   font-size: 14px;
@@ -127,9 +196,6 @@
 }
 .asset-upload-dialog {
   min-width: 0;
-}
-.asset-upload-cancel-icon {
-  display: none;
 }
 .asset-upload-dialog [class*="grid-cols-"] {
   grid-template-columns: minmax(0, 1fr) 72px 90px 48px;
@@ -141,22 +207,11 @@
   }
 }
 @media (max-width: 639px) {
-  .asset-browser-manager .asset-browser-heading {
-    min-height: 64px;
-  }
   .asset-manager-grid {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
   .asset-browser-picker .asset-browser-tools {
     gap: 4px;
-  }
-  .asset-browser-picker .asset-browser-tools > button {
-    padding-inline: 8px;
-  }
-  .asset-browser-manager .asset-refresh {
-    font-size: 0;
-    gap: 0;
-    width: 32px;
   }
   .asset-browser-picker .asset-browser-footer {
     justify-content: space-between;
@@ -170,17 +225,6 @@
   }
   .asset-upload-dialog .asset-upload-size {
     display: none;
-  }
-  .asset-upload-cancel {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-  }
-  .asset-upload-cancel-label {
-    display: none;
-  }
-  .asset-upload-cancel-icon {
-    display: block;
   }
   .asset-upload-dialog [data-slot="dialog-footer"] {
     flex-wrap: wrap;

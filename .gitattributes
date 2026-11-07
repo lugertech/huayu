@@ -1,1 +1,28 @@
 * text=auto eol=lf
+
+/var export-ignore
+/output export-ignore
+/playwright-report export-ignore
+/test-results export-ignore
+**/node_modules export-ignore
+**/dist export-ignore
+**/target export-ignore
+**/.render export-ignore
+**/.vitest export-ignore
+**/.playwright-cli export-ignore
+**/.DS_Store export-ignore
+**/._* export-ignore
+**/.env* export-ignore
+**/.env.example -export-ignore
+*.log export-ignore
+*.sqlite export-ignore
+*.sqlite3 export-ignore
+*.sqlite-wal export-ignore
+*.sqlite-shm export-ignore
+*.sqlite3-wal export-ignore
+*.sqlite3-shm export-ignore
+*.db export-ignore
+*.pem export-ignore
+*.key export-ignore
+*.p12 export-ignore
+*.pfx export-ignore

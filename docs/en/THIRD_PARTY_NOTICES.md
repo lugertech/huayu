@@ -12,6 +12,8 @@ MenteX metadata names `flowerdance` and MIT. tpk-admin’s MIT Composer declarat
 
 The canvas uses [Excalidraw 0.18.1](https://github.com/excalidraw/excalidraw/tree/v0.18.1), under MIT without a license-key requirement. See [retained license](../../licenses/excalidraw-MIT.txt). This project uses the open-source editor library, not its hosted rooms, accounts, analytics or paid services.
 
+A [local patch](../../patches/@excalidraw__excalidraw@0.18.1.patch) moves the editor's interaction reset from `unload` to `pagehide`, preserving the callback and listener cleanup in both development and production builds. Recheck the patch and editing after page navigation when upgrading the dependency.
+
 Bundled fonts are served locally and remain unmodified. See [font notices](../../licenses/excalidraw-fonts-NOTICE.md) and adjacent OFL texts. Comic Shanns uses MIT; other bundled fonts use SIL OFL. Helvetica and Segoe UI Emoji are system fonts and are not distributed.
 
 ## React Flow and drawing
@@ -35,7 +37,7 @@ Builds copy notices to `assets/licenses/` for distribution alongside the fronten
 
 ## BeautifulRust
 
-Rust development guidance and additional Clippy configuration are adapted from [BeautifulRust](https://github.com/morganlinton/BeautifulRust/tree/c6f56d27a01739d404da2a554daaea023d7ddcca), copyright Morgan Linton, under MIT. The project selects checks suited to its application code. See the [retained copyright and license](../../licenses/BeautifulRust-MIT.txt).
+Rust development guidance and additional Clippy configuration are adapted from [BeautifulRust](https://github.com/morganlinton/BeautifulRust/tree/40db61c6fee84bd121cf288755f0e2f22a50e995), copyright Morgan Linton, under MIT. The project selects checks suited to its application code. See the [retained copyright and license](../../licenses/BeautifulRust-MIT.txt).
 
 ## Rust
 

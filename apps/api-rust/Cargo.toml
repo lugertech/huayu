@@ -18,6 +18,7 @@ unsafe_op_in_unsafe_fn = "warn"
 all = { level = "deny", priority = -1 }
 unwrap_used = "warn"
 panic_in_result_fn = "warn"
+missing_assert_message = "warn"
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
 undocumented_unsafe_blocks = "warn"
@@ -35,7 +36,7 @@ cast_sign_loss = "warn"
 axum = { version = "0.8.9", features = ["multipart", "ws"] }
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.7", features = ["trace", "fs", "limit"] }
+tower-http = { version = "0.7", features = ["trace", "fs", "limit", "compression-gzip"] }
 sea-orm = { version = "2.0.4", default-features = false, features = ["macros", "sqlx-sqlite", "runtime-tokio-rustls", "with-json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
@@ -54,6 +55,7 @@ calamine = "0.36"
 pdf-extract = "0.10"
 scraper = "0.25"
 tempfile = "3"
+tokio-tungstenite = "0.29"
 huayu-core = { path = "crates/huayu-core" }
 huayu-store = { path = "crates/huayu-store" }
 

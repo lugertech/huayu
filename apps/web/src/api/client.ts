@@ -1,5 +1,6 @@
 import { t, type MessageKey } from "@/i18n";
 import { zhCN } from "@/i18n/messages";
+import { canvasRequestHeaders } from "@/lib/canvas-access";
 
 // The local API still returns human-readable messages. Translate known messages
 // at this boundary and preserve unknown details instead of treating them as keys.
@@ -51,6 +52,7 @@ export interface Recording {
   id: string;
   name: string;
   asset_id: string;
+  project_id?: string | null;
   duration: number;
   size: number;
   transcript: string | null;
@@ -59,6 +61,9 @@ export interface Recording {
 }
 
 export const PROJECTS_CHANGED_EVENT = "huayu:projects-changed";
+export type ProjectChange =
+  | { type: "updated"; project: Project }
+  | { type: "deleted"; id: string };
 
 export class APIError extends Error {
   constructor(
@@ -77,6 +82,8 @@ export async function api<T>(
 ): Promise<T> {
   if (!path.startsWith("/api/")) throw new Error(t("api.invalidRequestUrl"));
   const headers = new Headers(options.headers);
+  for (const [key, value] of Object.entries(canvasRequestHeaders()))
+    headers.set(key, value);
   if (options.body && !(options.body instanceof FormData))
     headers.set("Content-Type", "application/json");
   let response: Response;
@@ -84,7 +91,7 @@ export async function api<T>(
     response = await fetch(path, {
       ...options,
       headers,
-      credentials: "omit",
+      credentials: "same-origin",
       cache: "no-store",
     });
   } catch (error) {
@@ -113,7 +120,14 @@ export async function api<T>(
     (/^\/api\/projects(?:\/[^/?]+)?$/.test(path) ||
       /^\/api\/templates\/[^/?]+\/fork$/.test(path))
   ) {
-    window.dispatchEvent(new Event(PROJECTS_CHANGED_EVENT));
+    const projectPath = /^\/api\/projects\/([^/?]+)$/.exec(path);
+    let detail: ProjectChange | undefined;
+    if (projectPath && options.method.toUpperCase() === "PATCH") {
+      detail = { type: "updated", project: result as Project };
+    } else if (projectPath && options.method.toUpperCase() === "DELETE") {
+      detail = { type: "deleted", id: projectPath[1] };
+    }
+    window.dispatchEvent(new CustomEvent(PROJECTS_CHANGED_EVENT, { detail }));
   }
   return result;
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { api } from "./client";
+import { api, PROJECTS_CHANGED_EVENT } from "./client";
 import { setLanguage } from "@/i18n";
 
 describe("local API connection errors", () => {
@@ -72,5 +72,68 @@ describe("local API connection errors", () => {
     await expect(
       api("/api/projects", { signal: controller.signal }),
     ).rejects.toBe(cancelled);
+  });
+});
+
+describe("project changes shared by the sidebar and open page", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("publishes the saved project so other views can rename it without reloading", async () => {
+    const events = new EventTarget();
+    const changed = vi.fn();
+    events.addEventListener(PROJECTS_CHANGED_EVENT, changed);
+    vi.stubGlobal("window", events);
+    const project = { id: "project-1", name: "Updated name" };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(project)));
+
+    await api("/api/projects/project-1", {
+      method: "PATCH",
+      body: JSON.stringify({ name: project.name }),
+    });
+
+    expect(changed).toHaveBeenCalledOnce();
+    expect(changed.mock.calls[0][0].detail).toEqual({
+      type: "updated",
+      project,
+    });
+  });
+
+  it("identifies a deleted project even when the API has no response body", async () => {
+    const events = new EventTarget();
+    const changed = vi.fn();
+    events.addEventListener(PROJECTS_CHANGED_EVENT, changed);
+    vi.stubGlobal("window", events);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 204 })),
+    );
+
+    await api("/api/projects/project-1", { method: "DELETE" });
+
+    expect(changed).toHaveBeenCalledOnce();
+    expect(changed.mock.calls[0][0].detail).toEqual({
+      type: "deleted",
+      id: "project-1",
+    });
+  });
+
+  it("does not remove a project from other views when deletion fails", async () => {
+    const events = new EventTarget();
+    const changed = vi.fn();
+    events.addEventListener(PROJECTS_CHANGED_EVENT, changed);
+    vi.stubGlobal("window", events);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ message: "Delete failed" }, { status: 500 }),
+        ),
+    );
+
+    await expect(
+      api("/api/projects/project-1", { method: "DELETE" }),
+    ).rejects.toThrow("Delete failed");
+    expect(changed).not.toHaveBeenCalled();
   });
 });

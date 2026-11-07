@@ -1,5 +1,10 @@
+use std::{
+    collections::{HashMap, HashSet},
+    time::{Duration, Instant},
+};
+
 use axum::{
-    Json,
+    Extension, Json,
     extract::{
         Path, Query, State, WebSocketUpgrade,
         ws::{Message, WebSocket},
@@ -8,11 +13,16 @@ use axum::{
     response::Response,
 };
 use futures_util::{SinkExt, StreamExt};
-use huayu_core::{Document, DocumentPatch, Project, Template};
+use huayu_core::{Document, DocumentPatch, Project, Template, validate_record};
 use serde::{Deserialize, Deserializer, Serialize};
 use tokio::sync::broadcast;
+use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState, error::ApiJson};
+use crate::{
+    ApiError, ApiResult, AppState,
+    access::{CanvasAccess, project_assets, referenced_assets},
+    error::ApiJson,
+};
 
 #[derive(Default, Deserialize)]
 pub(crate) struct ListQuery {
@@ -76,6 +86,81 @@ pub(crate) struct PromoteRequest {
     tags: Vec<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum PointerTool {
+    Pointer,
+    Laser,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Pointer {
+    x: f64,
+    y: f64,
+    tool: PointerTool,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum PointerButton {
+    Down,
+    #[default]
+    Up,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct Presence {
+    pointer: Option<Pointer>,
+    button: PointerButton,
+    selected_element_ids: HashMap<String, bool>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct Peer {
+    id: Uuid,
+    member_id: String,
+    role: MemberRole,
+    joined_at: i64,
+    #[serde(flatten)]
+    presence: Presence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum MemberRole {
+    Host,
+    Collaborator,
+}
+
+const MAX_COLLABORATORS: usize = 15;
+
+pub(crate) struct Room {
+    sender: broadcast::Sender<RoomEvent>,
+    peers: HashMap<Uuid, Peer>,
+}
+
+impl Room {
+    pub(crate) fn can_admit(&self, member_id: Option<&str>) -> bool {
+        let members: HashSet<_> = self
+            .peers
+            .values()
+            .filter(|peer| peer.role == MemberRole::Collaborator)
+            .map(|peer| peer.member_id.as_str())
+            .collect();
+        member_id.is_some_and(|id| members.contains(id)) || members.len() < MAX_COLLABORATORS
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum ClientEvent {
+    SceneUpdate { patch: DocumentPatch },
+    SceneInit { target: Uuid, patch: DocumentPatch },
+    Presence { presence: Presence },
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum RoomEvent {
@@ -90,6 +175,31 @@ pub(crate) enum RoomEvent {
     Deleted,
     Collaboration {
         enabled: bool,
+    },
+    Peers {
+        client_id: Uuid,
+        peers: Vec<Peer>,
+        max_collaborators: usize,
+    },
+    MemberRemoved {
+        member_id: String,
+    },
+    RoomFull {
+        max_collaborators: usize,
+    },
+    PeerJoined {
+        peer: Peer,
+    },
+    PeerLeft {
+        client_id: Uuid,
+    },
+    Presence {
+        peer: Peer,
+    },
+    SceneUpdate {
+        client_id: Uuid,
+        target: Option<Uuid>,
+        patch: DocumentPatch,
     },
 }
 
@@ -157,8 +267,8 @@ pub(crate) async fn delete(
 ) -> ApiResult<StatusCode> {
     let _guard = state.mutations.lock().await;
     state.store.delete_project(&id).await?;
-    if let Some(sender) = state.rooms.lock().await.remove(&id) {
-        let _ = sender.send(RoomEvent::Deleted);
+    if let Some(room) = state.rooms.lock().await.remove(&id) {
+        let _ = room.sender.send(RoomEvent::Deleted);
     }
     Ok(StatusCode::NO_CONTENT)
 }
@@ -170,6 +280,7 @@ pub(crate) struct Revision {
 
 pub(crate) async fn patch_document(
     State(state): State<AppState>,
+    Extension(access): Extension<CanvasAccess>,
     Path(id): Path<String>,
     Query(query): Query<AccessQuery>,
     ApiJson(patch): ApiJson<DocumentPatch>,
@@ -182,8 +293,18 @@ pub(crate) async fn patch_document(
         return Err(ApiError::invalid("画布数据过大，请减少嵌入内容后重试"));
     }
     let _guard = state.mutations.lock().await;
-    check_shared_access(&state.store.project(&id).await?, &query)?;
+    access.ensure_active(&state).await?;
+    let current = state.store.project(&id).await?;
+    let query = AccessQuery {
+        share: access.share_token().map(str::to_owned).or(query.share),
+    };
+    check_shared_access(&current, &query)?;
+    let assets = referenced_assets(patch.upsert.iter());
+    access.validate_assets(&assets)?;
     let project = state.store.patch_document(&id, &patch).await?;
+    if access.share_token().is_none() {
+        state.store.grant_project_assets(&id, &assets).await?;
+    }
     let sender = room_sender(&state, &id).await;
     let _ = sender.send(RoomEvent::Patch {
         patch,
@@ -259,8 +380,31 @@ pub(crate) async fn delete_template(
     Ok(StatusCode::NO_CONTENT)
 }
 
+pub(crate) async fn remove_member(
+    State(state): State<AppState>,
+    Path((id, member_id)): Path<(String, String)>,
+) -> ApiResult<StatusCode> {
+    let _guard = state.mutations.lock().await;
+    let project = state.store.project(&id).await?;
+    let token = project
+        .share_token
+        .as_deref()
+        .filter(|_| project.is_collaborative)
+        .ok_or_else(|| ApiError::invalid("协作尚未开启"))?;
+    state
+        .store
+        .remove_collaboration_member(&id, &member_id, token)
+        .await?;
+    if let Some(room) = state.rooms.lock().await.get_mut(&id) {
+        room.peers.retain(|_, peer| peer.member_id != member_id);
+        let _ = room.sender.send(RoomEvent::MemberRemoved { member_id });
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub(crate) async fn events(
     State(state): State<AppState>,
+    Extension(access): Extension<CanvasAccess>,
     Path(id): Path<String>,
     Query(query): Query<AccessQuery>,
     upgrade: WebSocketUpgrade,
@@ -268,12 +412,13 @@ pub(crate) async fn events(
     let guard = state.mutations.lock().await;
     let project = state.store.project(&id).await?;
     check_shared_access(&project, &query)?;
+    access.ensure_active(&state).await?;
     let receiver = room_sender(&state, &id).await.subscribe();
     drop(guard);
-    Ok(
-        upgrade
-            .on_upgrade(move |socket| stream_events(socket, state, id, project, receiver, query)),
-    )
+    Ok(upgrade
+        .max_message_size(32 * 1024 * 1024)
+        .max_frame_size(32 * 1024 * 1024)
+        .on_upgrade(move |socket| stream_events(socket, state, id, project, receiver, access)))
 }
 
 async fn room_sender(state: &AppState, id: &str) -> broadcast::Sender<RoomEvent> {
@@ -282,7 +427,11 @@ async fn room_sender(state: &AppState, id: &str) -> broadcast::Sender<RoomEvent>
         .lock()
         .await
         .entry(id.to_owned())
-        .or_insert_with(|| broadcast::channel(128).0)
+        .or_insert_with(|| Room {
+            sender: broadcast::channel(256).0,
+            peers: HashMap::new(),
+        })
+        .sender
         .clone()
 }
 
@@ -292,22 +441,144 @@ async fn stream_events(
     id: String,
     project: Project,
     mut receiver: broadcast::Receiver<RoomEvent>,
-    access: AccessQuery,
+    access: CanvasAccess,
 ) {
     let (mut sender, mut incoming) = socket.split();
+    let mut known_assets = match project_assets(&state, &project).await {
+        Ok(assets) => assets,
+        Err(_) => return,
+    };
+    let events = room_sender(&state, &id).await;
+    let client_id = Uuid::new_v4();
+    let mut peer = Peer {
+        id: client_id,
+        member_id: access.member_id().to_owned(),
+        role: if access.share_token().is_some() {
+            MemberRole::Collaborator
+        } else {
+            MemberRole::Host
+        },
+        joined_at: chrono::Utc::now().timestamp_millis(),
+        presence: Presence::default(),
+    };
+    // Admission and removal share the mutation lock; the last place cannot be double-booked.
+    let admission = {
+        let _guard = state.mutations.lock().await;
+        if let Err(error) = access.ensure_active(&state).await {
+            Some(if error.code == "COLLABORATOR_REMOVED" {
+                RoomEvent::MemberRemoved {
+                    member_id: peer.member_id.clone(),
+                }
+            } else {
+                RoomEvent::Collaboration { enabled: false }
+            })
+        } else {
+            let mut rooms = state.rooms.lock().await;
+            let Some(room) = rooms.get_mut(&id) else {
+                return;
+            };
+            if peer.role == MemberRole::Collaborator && !room.can_admit(Some(&peer.member_id)) {
+                Some(RoomEvent::RoomFull {
+                    max_collaborators: MAX_COLLABORATORS,
+                })
+            } else {
+                if let Some(existing) = room
+                    .peers
+                    .values()
+                    .find(|existing| existing.member_id == peer.member_id)
+                {
+                    peer.joined_at = existing.joined_at;
+                }
+                room.peers.insert(client_id, peer.clone());
+                None
+            }
+        }
+    };
+    if let Some(event) = admission {
+        let _ = send_event(&mut sender, &event).await;
+        let _ = sender.send(Message::Close(None)).await;
+        return;
+    }
     let initial = RoomEvent::Snapshot {
         document: project.document,
         revision: project.revision,
     };
-    if send_event(&mut sender, &initial).await.is_err() {
+    let peers = peer_snapshot(&state, &id, client_id).await;
+    if send_event(&mut sender, &initial).await.is_err()
+        || send_event(&mut sender, &peers).await.is_err()
+    {
+        leave_room(&state, &id, client_id, &events).await;
         return;
     }
-    let mut heartbeat = tokio::time::interval(std::time::Duration::from_secs(25));
+    let _ = events.send(RoomEvent::PeerJoined { peer: peer.clone() });
+    let mut heartbeat = tokio::time::interval(Duration::from_secs(25));
+    let mut last_message = Instant::now();
     loop {
         tokio::select! {
             message = incoming.next() => {
                 match message {
-                    Some(Ok(Message::Ping(value))) => { if sender.send(Message::Pong(value)).await.is_err() { break; } }
+                    Some(Ok(Message::Text(text))) => {
+                        last_message = Instant::now();
+                        let Ok(message) = serde_json::from_str::<ClientEvent>(&text) else {
+                            continue;
+                        };
+                        if !state.rooms.lock().await.get(&id).is_some_and(|room| room.peers.contains_key(&client_id)) {
+                            let _ = send_event(&mut sender, &RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }).await;
+                            break;
+                        }
+                        let (target, patch) = match message {
+                            ClientEvent::Presence { presence } => {
+                                if presence.selected_element_ids.len() > 50_000
+                                    || presence.selected_element_ids.keys().any(|key| key.is_empty() || key.len() >= 256)
+                                {
+                                    continue;
+                                }
+                                {
+                                    let mut rooms = state.rooms.lock().await;
+                                    let Some(room) = rooms.get_mut(&id) else {
+                                        break;
+                                    };
+                                    let Some(current) = room.peers.get_mut(&client_id) else { break; };
+                                    current.presence = presence.clone();
+                                }
+                                let _ = events.send(RoomEvent::Presence {
+                                    peer: Peer { presence, ..peer.clone() },
+                                });
+                                continue;
+                            }
+                            ClientEvent::SceneUpdate { patch } => (None, patch),
+                            ClientEvent::SceneInit { target, patch } => (Some(target), patch),
+                        };
+                        if patch.client_id.len() > 120
+                            || patch.upsert.len() + patch.remove.len() > 50_000
+                            || patch.upsert.iter().any(|record| validate_record(record).is_err())
+                            || patch.remove.iter().any(|key| key.is_empty() || key.len() >= 256)
+                        {
+                            continue;
+                        }
+                        let referenced = referenced_assets(patch.upsert.iter());
+                        let new_assets = referenced.difference(&known_assets).cloned().collect();
+                        if !referenced.is_subset(&known_assets) {
+                            if access.share_token().is_some() {
+                                let Ok(allowed) = state.store.project_asset_ids(&id).await else { break; };
+                                if !referenced.is_subset(&known_assets.union(&allowed).cloned().collect()) {
+                                    continue;
+                                }
+                            } else if state.store.grant_project_assets(&id, &new_assets).await.is_err() {
+                                break;
+                            }
+                            known_assets.extend(new_assets);
+                        }
+                        // Live previews are only relayed. PATCH /document owns persistence.
+                        let _ = events.send(RoomEvent::SceneUpdate { client_id, target, patch });
+                    }
+                    Some(Ok(Message::Ping(value))) => {
+                        last_message = Instant::now();
+                        if sender.send(Message::Pong(value)).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(Ok(Message::Pong(_))) => last_message = Instant::now(),
                     Some(Ok(Message::Close(_))) | None | Some(Err(_)) => break,
                     _ => {}
                 }
@@ -319,25 +590,75 @@ async fn stream_events(
                     Err(broadcast::error::RecvError::Lagged(_)) => {
                         match state.store.project(&id).await {
                             Ok(project) => {
-                                if check_shared_access(&project, &access).is_err() {
-                                    let _ = send_event(&mut sender, &RoomEvent::Collaboration { enabled: false }).await;
+                                if let Err(error) = access.ensure_active(&state).await {
+                                    let event = if error.code == "COLLABORATOR_REMOVED" {
+                                        RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }
+                                    } else { RoomEvent::Collaboration { enabled: false } };
+                                    let _ = send_event(&mut sender, &event).await;
+                                    break;
+                                }
+                                let peers = peer_snapshot(&state, &id, client_id).await;
+                                if send_event(&mut sender, &peers).await.is_err() {
                                     break;
                                 }
                                 RoomEvent::Snapshot { document: project.document, revision: project.revision }
-                            },
+                            }
                             Err(_) => break,
                         }
                     }
                 };
+                if let RoomEvent::SceneUpdate { client_id: source, target, .. } = &event
+                    && (*source == client_id || target.is_some_and(|target| target != client_id))
+                {
+                    continue;
+                }
+                if matches!(event, RoomEvent::Collaboration { enabled: true })
+                    && access.share_token().is_some()
+                    && access.ensure_active(&state).await.is_err()
+                {
+                    let _ = send_event(&mut sender, &RoomEvent::Collaboration { enabled: false }).await;
+                    break;
+                }
                 if send_event(&mut sender, &event).await.is_err() { break; }
+                if matches!(event, RoomEvent::MemberRemoved { ref member_id } if *member_id == peer.member_id) { break; }
                 if matches!(event, RoomEvent::Deleted) { break; }
-                if access.share.is_some() && matches!(event, RoomEvent::Collaboration { enabled: false }) { break; }
+                if access.share_token().is_some() && matches!(event, RoomEvent::Collaboration { enabled: false }) { break; }
             }
             _ = heartbeat.tick() => {
-                if sender.send(Message::Ping(Vec::new().into())).await.is_err() { break; }
+                if last_message.elapsed() > Duration::from_secs(75)
+                    || sender.send(Message::Ping(Vec::new().into())).await.is_err()
+                {
+                    break;
+                }
             }
         }
     }
+    leave_room(&state, &id, client_id, &events).await;
+}
+
+async fn peer_snapshot(state: &AppState, id: &str, client_id: Uuid) -> RoomEvent {
+    let rooms = state.rooms.lock().await;
+    let peers = rooms
+        .get(id)
+        .map(|room| room.peers.values().cloned().collect())
+        .unwrap_or_default();
+    RoomEvent::Peers {
+        client_id,
+        peers,
+        max_collaborators: MAX_COLLABORATORS,
+    }
+}
+
+async fn leave_room(
+    state: &AppState,
+    id: &str,
+    client_id: Uuid,
+    events: &broadcast::Sender<RoomEvent>,
+) {
+    if let Some(room) = state.rooms.lock().await.get_mut(id) {
+        room.peers.remove(&client_id);
+    }
+    let _ = events.send(RoomEvent::PeerLeft { client_id });
 }
 
 async fn send_event(

@@ -72,7 +72,10 @@ pub(crate) async fn create(
     ApiJson(input): ApiJson<CreateAsset>,
 ) -> ApiResult<StatusCode> {
     let file = state.store.asset(&input.asset_id).await?;
-    if !file.mime.starts_with("image/") || input.width <= 0 || input.height <= 0 {
+    if input.width < 0
+        || input.height < 0
+        || (file.mime.starts_with("image/") && (input.width == 0 || input.height == 0))
+    {
         return Err(ApiError::invalid("请选择可读取的图片素材"));
     }
     state

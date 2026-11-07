@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useTranslations, type MessageKey } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Crop as CropIcon,
@@ -36,27 +36,32 @@ export function ImageViewer({
   onSize?: (width: number, height: number) => void;
   onEditingChange?: (editing: boolean) => void;
 }) {
-  useLocale();
+  const { t } = useTranslations();
   const area = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const [size, setSize] = useState({ w: 1, h: 1 });
   const [available, setAvailable] = useState({ w: 1, h: 1 });
   const [view, setView] = useState({ scale: 0, x: 0, y: 0 });
-  const [editing, setEditing] = useState(false);
+  const [phase, setPhase] = useState<
+    "viewing" | "decoding" | "editing" | "saving"
+  >("viewing");
+  const editing = phase !== "viewing";
+  const busy = phase === "decoding" || phase === "saving";
   const [turns, setTurns] = useState(0);
   const [crop, setCrop] = useState<Crop>(fullCrop);
   const [preview, setPreview] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error | MessageKey | null>(null);
   const drag = useRef<{
     x: number;
     y: number;
     startX: number;
     startY: number;
-    crop: boolean;
+    mode: "crop" | "pan";
   } | null>(null);
   const fit = Math.min(available.w / size.w, available.h / size.h, 1);
   const scale = view.scale || fit;
+  const errorMessage =
+    error instanceof Error ? error.message : error && t(error);
   useEffect(() => {
     onEditingChange?.(editing);
   }, [editing, onEditingChange]);
@@ -117,8 +122,8 @@ export function ImageViewer({
     }
     let active = true;
     let url = "";
-    setBusy(true);
-    setError("");
+    setPhase("decoding");
+    setError(null);
     void blobForSource(src)
       .then((blob) => rotateImage(blob, turns))
       .then((value) => {
@@ -133,12 +138,12 @@ export function ImageViewer({
         if (active)
           setError(
             reason instanceof Error
-              ? reason.message
-              : t("results.image.imageCannotBeLoaded"),
+              ? reason
+              : "results.image.imageCannotBeLoaded",
           );
       })
       .finally(() => {
-        if (active) setBusy(false);
+        if (active) setPhase("editing");
       });
     return () => {
       active = false;
@@ -146,19 +151,17 @@ export function ImageViewer({
   }, [src, editing, turns]);
   async function save() {
     if (!canvas.current || busy) return;
-    setBusy(true);
-    setError("");
+    setPhase("saving");
+    setError(null);
     try {
       const result = await croppedImage(canvas.current, crop);
       await onSave(result.blob, result.width, result.height);
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : t("results.image.cannotSaveTheImage"),
+        reason instanceof Error ? reason : "results.image.cannotSaveTheImage",
       );
     } finally {
-      setBusy(false);
+      setPhase("editing");
     }
   }
   return (
@@ -171,7 +174,7 @@ export function ImageViewer({
               size="sm"
               disabled={busy}
               onClick={() => {
-                setEditing(false);
+                setPhase("viewing");
                 setTurns(0);
               }}
             >
@@ -248,19 +251,19 @@ export function ImageViewer({
             size="sm"
             variant="outline"
             disabled={locked}
-            onClick={() => setEditing(true)}
+            onClick={() => setPhase("decoding")}
           >
             <CropIcon />
             {t("results.image.cropAndRotate")}
           </Button>
         )}
       </div>
-      {error && (
+      {errorMessage && (
         <div
           role="alert"
           className="border-b px-4 py-2 text-xs text-destructive"
         >
-          {error}
+          {errorMessage}
         </div>
       )}
       <div
@@ -295,20 +298,20 @@ export function ImageViewer({
               (event.clientY - rect.top - (rect.height - fitted.h) / 2) /
               fitted.h;
             if (x < 0 || x > 1 || y < 0 || y > 1) return;
-            drag.current = { x, y, startX: 0, startY: 0, crop: true };
+            drag.current = { x, y, startX: 0, startY: 0, mode: "crop" };
           } else
             drag.current = {
               x: event.clientX,
               y: event.clientY,
               startX: view.x,
               startY: view.y,
-              crop: false,
+              mode: "pan",
             };
         }}
         onPointerMove={(event) => {
           const current = drag.current;
           if (!current) return;
-          if (current.crop) {
+          if (current.mode === "crop") {
             const rect = event.currentTarget.getBoundingClientRect();
             setCrop(
               clampCrop(current, {
@@ -367,7 +370,7 @@ export function ImageViewer({
                 );
               }
             }}
-            onError={() => setError(t("results.image.reopenHint"))}
+            onError={() => setError("results.image.reopenHint")}
           />
           {editing && (
             <div

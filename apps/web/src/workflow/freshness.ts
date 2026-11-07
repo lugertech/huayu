@@ -1,6 +1,7 @@
-import { t } from "@/i18n";
+import { t, type Locale } from "@/i18n";
 import type { CanvasShape, Editor } from "@/canvas/editor";
 import { connectedShapes } from "@/utils/connectionParser";
+import { drawingShapes } from "./context";
 
 export interface GenerationInfo {
   fingerprint: string;
@@ -129,9 +130,7 @@ export function generationFingerprint(editor: Editor, id: string): string {
       .sort(),
     ...(shape.type === "ai-draw"
       ? {
-          page: editor
-            .getCurrentPageShapes()
-            .filter((item) => item.id !== id)
+          page: drawingShapes(editor, shape)
             .map((item) => [item.id, content(editor, item, true)])
             .sort(),
         }
@@ -172,14 +171,20 @@ export function resultIsStale(editor: Editor, id: string) {
   return changed(id);
 }
 
-export function formatElapsed(milliseconds: number) {
+export function formatElapsed(milliseconds: number, locale?: Locale) {
   const seconds = Math.max(0, milliseconds) / 1000;
   return seconds < 60
-    ? t("common.duration.seconds", {
-        arg0: seconds < 10 ? seconds.toFixed(1) : Math.floor(seconds),
-      })
-    : t("common.duration.minutesSeconds", {
-        arg0: Math.floor(seconds / 60),
-        arg1: Math.floor(seconds % 60),
-      });
+    ? t(
+        "common.duration.seconds",
+        { arg0: seconds < 10 ? seconds.toFixed(1) : Math.floor(seconds) },
+        locale,
+      )
+    : t(
+        "common.duration.minutesSeconds",
+        {
+          arg0: Math.floor(seconds / 60),
+          arg1: Math.floor(seconds % 60),
+        },
+        locale,
+      );
 }

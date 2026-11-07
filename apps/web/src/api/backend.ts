@@ -2,6 +2,7 @@ import { modelPrompts } from "@/ai/prompts";
 import { t } from "@/i18n";
 import { requireConnection } from "@/ai/settings";
 import { api, uploadAsset, type Asset } from "./client";
+import { canvasRequestHeaders } from "@/lib/canvas-access";
 import {
   chat,
   generateImage,
@@ -81,7 +82,11 @@ export async function blobForSource(
   if (!["http:", "https:", "data:", "blob:"].includes(url.protocol))
     throw new Error(t("api.invalidResourceUrl"));
   const response = await fetch(url, {
-    credentials: "omit",
+    credentials: url.origin === window.location.origin ? "same-origin" : "omit",
+    headers:
+      url.origin === window.location.origin && url.pathname.startsWith("/api/")
+        ? canvasRequestHeaders()
+        : undefined,
     referrerPolicy: "no-referrer",
     signal,
   });

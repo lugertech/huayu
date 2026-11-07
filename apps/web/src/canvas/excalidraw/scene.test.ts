@@ -232,6 +232,49 @@ describe("Excalidraw record compatibility", () => {
     expect(board.getShape("shape:child").parentId).toBe("shape:frame");
     expect(board.getShape("shape:child").props.text).toBe("中文标签");
   });
+  it("does not restore a stale frame after a connected card moves out", () => {
+    const board = editor();
+    board.createShape({
+      id: "shape:frame",
+      type: "frame",
+      x: 100,
+      y: 80,
+      props: { w: 700, h: 500 },
+    });
+    board.createShape({
+      id: "shape:card",
+      type: "ai-text",
+      parentId: "shape:frame",
+      x: 40,
+      y: 60,
+    });
+    board.createShape({ id: "shape:task", type: "instruction", x: 1000 });
+    const arrow = connectShapes(board, "shape:card", "shape:task")!;
+    applyNativeScene(board, sceneFromEditor(board));
+    const position = board.getPageTransform(board.getShape("shape:card"));
+    board.reparentShapes(["shape:card"], board.getCurrentPageId());
+    const scene = sceneFromEditor(board);
+    expect(
+      scene.find((element) => element.id === "shape:card")!.frameId,
+    ).toBeNull();
+    applyNativeScene(board, scene);
+    expect(board.getShape("shape:card").parentId).toBe(
+      board.getCurrentPageId(),
+    );
+    expect(board.getPageTransform(board.getShape("shape:card"))).toEqual(
+      position,
+    );
+    expect(connectedShapes(board, "shape:task", "previous")[0].id).toBe(
+      "shape:card",
+    );
+    const start = board.arrowPoints(board.getShape(arrow)).start;
+    board.updateShape({ id: "shape:frame", x: 400 });
+    expect(board.getPageTransform(board.getShape("shape:card"))).toEqual(
+      position,
+    );
+    expect(board.arrowPoints(board.getShape(arrow)).start).toEqual(start);
+  });
+
   it("retains pressure, elbow points, grouping and native extension data", () => {
     const board = editor();
     board.createShape({
@@ -363,5 +406,115 @@ describe("Excalidraw record compatibility", () => {
       before.y + before.points.at(-1)[1] + 120,
     );
     expect(after.endBinding.elementId).toBe("shape:b");
+  });
+  it.each(["frame", "child"])(
+    "keeps a native arrow from a %s to an outside card out of the frame",
+    (source) => {
+      const board = editor();
+      board.createShape({
+        id: "shape:frame",
+        type: "frame",
+        x: 100,
+        y: 100,
+        props: { w: 600, h: 400 },
+      });
+      board.createShape({
+        id: "shape:child",
+        type: "ai-text",
+        parentId: "shape:frame",
+        x: 100,
+        y: 80,
+      });
+      board.createShape({
+        id: "shape:outside",
+        type: "instruction",
+        x: 1000,
+        y: 180,
+      });
+      const id = connectShapes(
+        board,
+        `shape:${source}`,
+        "shape:outside",
+        "素材",
+      )!;
+      const native = sceneFromEditor(board).map((element) =>
+        element.id === id ||
+        (element.type === "text" && element.containerId === id)
+          ? { ...element, frameId: "shape:frame" }
+          : element,
+      );
+      applyNativeScene(board, native);
+      expect(board.getShape(id).parentId).toBe(board.getCurrentPageId());
+      const scene = sceneFromEditor(board);
+      expect(scene.find((element) => element.id === id)!.frameId).toBeNull();
+      expect(
+        scene.find(
+          (element) => element.type === "text" && element.containerId === id,
+        )!.frameId,
+      ).toBeNull();
+      expect(
+        scene.find((element) => element.id === `shape:${source}`)!
+          .boundElements,
+      ).toContainEqual({ id, type: "arrow" });
+      const before = board.arrowPoints(board.getShape(id));
+      board.updateShape({ id: "shape:frame", x: 300, y: 200 });
+      applyNativeScene(board, sceneFromEditor(board));
+      const after = board.arrowPoints(board.getShape(id));
+      expect(after.start).toEqual({
+        x: before.start.x + 200,
+        y: before.start.y + 100,
+      });
+      expect(after.end).toEqual(before.end);
+      expect(
+        connectedShapes(board, "shape:outside", "previous").map(
+          (shape) => shape.id,
+        ),
+      ).toEqual([`shape:${source}`]);
+    },
+  );
+  it("keeps internal bound arrows and unbound drawing arrows in their frame", () => {
+    const board = editor();
+    board.createShape({
+      id: "shape:frame",
+      type: "frame",
+      props: { w: 900, h: 700 },
+    });
+    board.createShape({
+      id: "shape:a",
+      type: "ai-text",
+      parentId: "shape:frame",
+      x: 40,
+      y: 50,
+    });
+    board.createShape({
+      id: "shape:b",
+      type: "instruction",
+      parentId: "shape:frame",
+      x: 480,
+      y: 50,
+    });
+    board.createShape({
+      id: "shape:drawing",
+      type: "arrow",
+      parentId: "shape:frame",
+      x: 80,
+      y: 450,
+    });
+    const id = connectShapes(board, "shape:a", "shape:b")!;
+    const native = sceneFromEditor(board).map((element) =>
+      element.id === id ? { ...element, frameId: "shape:frame" } : element,
+    );
+    applyNativeScene(board, native);
+    expect(board.getShape(id).parentId).toBe("shape:frame");
+    expect(board.getShape("shape:drawing").parentId).toBe("shape:frame");
+    const before = board.arrowPoints(board.getShape(id));
+    board.updateShape({ id: "shape:frame", x: 200, y: 100 });
+    applyNativeScene(board, sceneFromEditor(board));
+    const after = board.arrowPoints(board.getShape(id));
+    expect(after.start).toEqual({
+      x: before.start.x + 200,
+      y: before.start.y + 100,
+    });
+    expect(after.end).toEqual({ x: before.end.x + 200, y: before.end.y + 100 });
   });
 });

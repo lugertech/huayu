@@ -10,7 +10,7 @@ use serde::{Serialize, de::DeserializeOwned};
 #[error("{message}")]
 pub struct ApiError {
     status: StatusCode,
-    code: &'static str,
+    pub(crate) code: &'static str,
     message: String,
 }
 

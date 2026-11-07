@@ -20,7 +20,15 @@ import {
 function CodeBlock({ children }: { children?: ReactNode }) {
   const { t } = useSiteI18n();
   const block = useRef<HTMLPreElement>(null);
-  const [state, setState] = useState("");
+  const [phase, setPhase] = useState<"idle" | "copying" | "copied" | "failed">(
+    "idle",
+  );
+  const state =
+    phase === "copied"
+      ? t("home.copied")
+      : phase === "failed"
+        ? t("home.selectTheCodeToCopyIt")
+        : "";
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
@@ -28,17 +36,20 @@ function CodeBlock({ children }: { children?: ReactNode }) {
       <pre ref={block}>{children}</pre>
       <button
         aria-label={t("home.copyCode")}
+        disabled={phase === "copying"}
         onClick={async () => {
+          clearTimeout(timer.current);
+          setPhase("copying");
           try {
             await navigator.clipboard.writeText(
               block.current?.textContent || "",
             );
-            setState(t("home.copied"));
+            setPhase("copied");
           } catch {
-            setState(t("home.selectTheCodeToCopyIt"));
+            setPhase("failed");
           }
           clearTimeout(timer.current);
-          timer.current = setTimeout(() => setState(""), 2400);
+          timer.current = setTimeout(() => setPhase("idle"), 2400);
         }}
       >
         {state || <Copy size={14} />}

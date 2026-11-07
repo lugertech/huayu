@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { useLocale, useTranslations } from "@/i18n";
 import { XIcon } from "lucide-react";
 ("use client");
 
@@ -53,7 +53,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
 }) {
-  useLocale();
+  const { t } = useTranslations();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -105,7 +105,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
 }) {
-  useLocale();
+  const { t } = useTranslations();
   return (
     <div
       data-slot="dialog-footer"
@@ -118,7 +118,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
+          {t("common.close")}
         </DialogPrimitive.Close>
       )}
     </div>

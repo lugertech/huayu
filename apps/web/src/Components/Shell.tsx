@@ -1,4 +1,4 @@
-import { t, useLocale } from "@/i18n";
+import { t, useLocale, useTranslations } from "@/i18n";
 import {
   createContext,
   useContext,
@@ -24,11 +24,8 @@ import "./sidebar.css";
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
 import type { Capability } from "@/ai/settings";
 
-const AppSidebar = lazy(() =>
-  import("./AppSidebar").then((module) => ({
-    default: module.AppSidebar,
-  })),
-);
+import { AppSidebar } from "./AppSidebar";
+
 const SettingsDialog = lazy(() =>
   import("./SettingsDialog").then((module) => ({
     default: module.SettingsDialog,
@@ -47,14 +44,15 @@ const SidebarContext = createContext<{
   toggle: () => void;
 } | null>(null);
 
-export function ShellSidebarTrigger() {
-  useLocale();
+export function ShellSidebarTrigger({ className }: { className?: string }) {
+  const { t } = useTranslations();
   const sidebar = useContext(SidebarContext);
   if (!sidebar?.hidden) return null;
   return (
     <Button
       variant="ghost"
       size="icon-sm"
+      className={className}
       onClick={sidebar.toggle}
       aria-label={t("navigation.expandSidebar")}
       aria-expanded={sidebar.open}
@@ -67,13 +65,9 @@ export function ShellSidebarTrigger() {
 export function Shell({
   children,
   canvas = false,
-  onAssets,
-  assetsOpen = false,
 }: {
   children: ReactNode;
   canvas?: boolean;
-  onAssets?: () => void;
-  assetsOpen?: boolean;
 }) {
   useLocale();
   const { pathname } = useLocation();
@@ -87,8 +81,11 @@ export function Shell({
     }
   });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [overlay, setOverlay] = useState<"none" | "settings" | "search">(
+    "none",
+  );
+  const settingsOpen = overlay === "settings";
+  const searchOpen = overlay === "search";
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [searchLoaded, setSearchLoaded] = useState(false);
   const [settingsCapability, setSettingsCapability] =
@@ -98,13 +95,13 @@ export function Shell({
   );
   useEffect(() => {
     const openModels = (event: Event) => {
-      setSearchOpen(false);
+      setOverlay((current) => (current === "search" ? "none" : current));
       setSettingsCapability(
         (event as CustomEvent<Capability>).detail || "text",
       );
       setSettingsTab("models");
       setSettingsLoaded(true);
-      setSettingsOpen(true);
+      setOverlay("settings");
       setMobileOpen(false);
     };
     window.addEventListener(OPEN_SETTINGS_EVENT, openModels);
@@ -123,6 +120,13 @@ export function Shell({
         return;
       if (
         !searchOpen &&
+        event.target instanceof Element &&
+        event.target.closest(".board-stage") &&
+        !event.target.closest("[data-canvas-ui]")
+      )
+        return;
+      if (
+        !searchOpen &&
         document.querySelector(
           '[role="dialog"][data-open], [role="alertdialog"][data-open]',
         )
@@ -132,7 +136,7 @@ export function Shell({
       event.stopImmediatePropagation();
       setMobileOpen(false);
       setSearchLoaded(true);
-      setSearchOpen((value) => !value);
+      setOverlay((current) => (current === "search" ? "none" : "search"));
     };
     window.addEventListener("keydown", shortcut, true);
     return () => window.removeEventListener("keydown", shortcut, true);
@@ -164,13 +168,13 @@ export function Shell({
     setSettingsTab("general");
     setMobileOpen(false);
     setSettingsLoaded(true);
-    setSettingsOpen(true);
+    setOverlay("settings");
   }
 
   function openSearch() {
     setMobileOpen(false);
     setSearchLoaded(true);
-    setSearchOpen(true);
+    setOverlay("search");
   }
 
   return (
@@ -189,16 +193,12 @@ export function Shell({
             data-collapsed={!sidebarOpen}
             className="desktop-sidebar relative z-40 flex shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground"
           >
-            <Suspense fallback={null}>
-              <AppSidebar
-                collapsed={!sidebarOpen}
-                onClose={toggleSidebar}
-                onSettings={openSettings}
-                onSearch={openSearch}
-                onAssets={onAssets}
-                assetsOpen={assetsOpen}
-              />
-            </Suspense>
+            <AppSidebar
+              collapsed={!sidebarOpen}
+              onClose={toggleSidebar}
+              onSettings={openSettings}
+              onSearch={openSearch}
+            />
           </aside>
         )}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -222,28 +222,28 @@ export function Shell({
             <DialogDescription className="sr-only">
               {t("navigation.description")}
             </DialogDescription>
-            <Suspense fallback={null}>
-              <AppSidebar
-                mobile
-                onClose={() => setMobileOpen(false)}
-                onNavigate={() => setMobileOpen(false)}
-                onSettings={openSettings}
-                onSearch={openSearch}
-                onAssets={onAssets}
-                assetsOpen={assetsOpen}
-              />
-            </Suspense>
+            <AppSidebar
+              mobile
+              onClose={() => setMobileOpen(false)}
+              onNavigate={() => setMobileOpen(false)}
+              onSettings={openSettings}
+              onSearch={openSearch}
+            />
           </DialogContent>
         </Dialog>
         {searchLoaded && (
           <Suspense fallback={null}>
             <QuickSearch
               open={searchOpen}
-              onOpenChange={setSearchOpen}
+              onOpenChange={(open) =>
+                setOverlay((current) =>
+                  open ? "search" : current === "search" ? "none" : current,
+                )
+              }
               onModels={() => {
                 setSettingsTab("models");
                 setSettingsLoaded(true);
-                setSettingsOpen(true);
+                setOverlay("settings");
               }}
             />
           </Suspense>
@@ -254,7 +254,11 @@ export function Shell({
               initialTab={settingsTab}
               initialCapability={settingsCapability}
               open={settingsOpen}
-              onOpenChange={setSettingsOpen}
+              onOpenChange={(open) =>
+                setOverlay((current) =>
+                  open ? "settings" : current === "settings" ? "none" : current,
+                )
+              }
             />
           </Suspense>
         )}

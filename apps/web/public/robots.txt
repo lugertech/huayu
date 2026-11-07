@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /api/
+Disallow: /drawing/
+Disallow: /recordings/
+Disallow: /library

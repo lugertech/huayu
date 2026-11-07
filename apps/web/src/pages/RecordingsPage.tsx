@@ -1,19 +1,23 @@
 import { t, useLocale, getLocale } from "@/i18n";
 import { useNavigate } from "react-router-dom";
+import { useAnalysisTask } from "@/recording/analysis-task";
 import {
-  useAnalysisTask,
   readTranscript,
   readAnalysis,
   readCheckpoint,
-} from "@/recording/analysis";
-import { useEffect, useRef, useState } from "react";
+} from "@/recording/report";
 import {
-  Download,
+  lazy,
+  Suspense,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
+import {
   Loader2,
   MoreHorizontal,
-  Pencil,
   Search,
-  Trash2,
   Upload,
   Video,
   Play,
@@ -24,19 +28,13 @@ import {
 import { ShellSidebarTrigger } from "@/Components/Shell";
 import { useToast } from "@/Components/common/ToastProvider";
 import { api, uploadAsset, type Recording } from "@/api/client";
-import { downloadRecording, mediaDuration } from "@/recording/files";
 import { RecorderButton, formatDuration } from "@/recording/Recorder";
 import { RecordingCover } from "@/recording/RecordingCover";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
+import { LoadingRegion } from "@/ui/loading-region";
 import { searchScore } from "@/lib/search";
 import { Card, CardContent } from "@/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/ui/dialog";
 import {
   AlertDialog,
@@ -47,11 +45,19 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/ui/alert-dialog";
+import type { RecordingCardMenuProps } from "./RecordingCardMenu";
+
+const DeferredRecordingCardMenu = lazy(() =>
+  import("./RecordingCardMenu").then((module) => ({
+    default: module.RecordingCardMenu,
+  })),
+);
 
 export function RecordingsPage() {
   useLocale();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<Recording | null>(null);
@@ -75,20 +81,23 @@ export function RecordingsPage() {
     setError("");
     try {
       setRecordings(await api<Recording[]>("/api/recordings"));
+      setHasLoaded(true);
     } catch (error) {
-      setError(
+      const message =
         error instanceof Error
           ? error.message
-          : t("recordings.cannotLoadRecording"),
-      );
+          : t("recordings.cannotLoadRecording");
+      setError(message);
+      if (hasLoaded) showToast({ title: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   }
+  const refreshFromEvent = useEffectEvent(refresh);
   useEffect(() => {
-    void refresh();
+    void refreshFromEvent();
     const listener = () => {
-      void refresh();
+      void refreshFromEvent();
     };
     window.addEventListener("huayu:recordings-changed", listener);
     return () => {
@@ -128,7 +137,7 @@ export function RecordingsPage() {
   }
   const pageActions = (
     <>
-      <RecorderButton />
+      <RecorderButton prominent />
       <input
         ref={input}
         type="file"
@@ -142,7 +151,9 @@ export function RecordingsPage() {
           try {
             const [asset, duration] = await Promise.all([
               uploadAsset(file),
-              mediaDuration(file),
+              import("@/recording/files").then(({ mediaDuration }) =>
+                mediaDuration(file),
+              ),
             ]);
             const value = await api<Recording>("/api/recordings", {
               method: "POST",
@@ -163,7 +174,6 @@ export function RecordingsPage() {
       />
       <Button
         variant="outline"
-        size="sm"
         aria-label={t("recordings.importRecording")}
         title={t("recordings.importRecording")}
         disabled={busy}
@@ -216,165 +226,147 @@ export function RecordingsPage() {
             </div>
           </div>
         </div>
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-muted-foreground" />
-          </div>
-        ) : error ? (
-          <div role="alert" className="rounded-xl border p-8 text-center">
-            <p className="mb-4 text-sm text-muted-foreground">{error}</p>
-            <Button variant="outline" onClick={refresh}>
-              {t("common.reload")}
-            </Button>
-          </div>
-        ) : shown.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {shown.map((recording) => (
-              <Card key={recording.id} className="gap-0 overflow-hidden py-0">
-                <button
-                  className="group relative isolate flex aspect-video w-full items-center justify-center overflow-hidden border-b bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                  aria-label={t("recordings.open", { arg0: recording.name })}
-                  onClick={() =>
-                    navigate(`/recordings/${recording.id}/analysis`)
-                  }
-                >
-                  <RecordingCover
-                    key={recording.asset_id}
-                    recording={recording}
-                  />
-                  <span
-                    className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                    aria-hidden="true"
+        <LoadingRegion
+          id="huayu:recording-list"
+          loading={loading && !hasLoaded}
+          empty={!shown.length}
+          error={!!error && !hasLoaded}
+          placeholder={
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {["72%", "56%", "84%", "64%"].map((width) => (
+                <Card key={width} className="gap-0 overflow-hidden py-0">
+                  <div skullet-block="" className="aspect-video border-b" />
+                  <CardContent className="p-4">
+                    <div className="flex h-6 items-center">
+                      <span
+                        skullet-block=""
+                        className="h-3.5 rounded"
+                        style={{ width }}
+                      />
+                    </div>
+                    <div className="mt-2 flex h-4 items-center">
+                      <span skullet-block="" className="h-3 w-28 rounded" />
+                    </div>
+                    <div className="mt-3 flex h-4 items-center">
+                      <span skullet-block="" className="h-3 w-32 rounded" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          }
+        >
+          {error && !hasLoaded ? (
+            <div role="alert" className="rounded-xl border p-8 text-center">
+              <p className="mb-4 text-sm text-muted-foreground">{error}</p>
+              <Button variant="outline" onClick={refresh}>
+                {t("common.reload")}
+              </Button>
+            </div>
+          ) : shown.length ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {shown.map((recording) => (
+                <Card key={recording.id} className="gap-0 overflow-hidden py-0">
+                  <button
+                    className="group relative isolate flex aspect-video w-full items-center justify-center overflow-hidden border-b bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                    aria-label={t("recordings.open", { arg0: recording.name })}
+                    onClick={() =>
+                      navigate(`/recordings/${recording.id}/analysis`)
+                    }
                   >
-                    <span className="flex size-10 items-center justify-center rounded-full bg-black/65 text-white shadow-sm">
-                      <Play className="ml-0.5 size-4 fill-current" />
-                    </span>
-                  </span>
-                  {recording.duration > 0 && (
+                    <RecordingCover
+                      key={recording.asset_id}
+                      recording={recording}
+                    />
                     <span
-                      className="absolute right-2 bottom-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white tabular-nums"
+                      className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                       aria-hidden="true"
                     >
-                      {formatDuration(recording.duration)}
+                      <span className="flex size-10 items-center justify-center rounded-full bg-black/65 text-white shadow-sm">
+                        <Play className="ml-0.5 size-4 fill-current" />
+                      </span>
                     </span>
-                  )}
-                </button>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="min-w-0 flex-1 truncate text-left text-sm font-medium"
-                      onClick={() =>
-                        navigate(`/recordings/${recording.id}/analysis`)
-                      }
-                    >
-                      {recording.name}
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={t("recordings.actionsFor", {
-                              arg0: recording.name,
-                            })}
-                          >
-                            <MoreHorizontal />
-                          </Button>
-                        }
-                      />
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigate(`/recordings/${recording.id}/analysis`)
-                          }
-                        >
-                          <Video />
-                          {t("recordings.previewRecording")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setRenaming(recording);
-                            setName(recording.name);
-                          }}
-                        >
-                          <Pencil />
-                          {t("recordings.rename")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={async () => {
-                            try {
-                              await downloadRecording(recording);
-                            } catch (error) {
-                              failed(error);
-                            }
-                          }}
-                        >
-                          <Download />
-                          {t("recordings.downloadRecording")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => setDeleting(recording)}
-                        >
-                          <Trash2 />
-                          {t("common.delete")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {recording.duration > 0
-                      ? formatDuration(recording.duration)
-                      : t("recordings.analysis.durationUnavailable")}{" "}
-                    ·{" "}
-                    {new Date(recording.created_at).toLocaleDateString(
-                      getLocale(),
+                    {recording.duration > 0 && (
+                      <span
+                        className="absolute right-2 bottom-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white tabular-nums"
+                        aria-hidden="true"
+                      >
+                        {formatDuration(recording.duration)}
+                      </span>
                     )}
-                  </p>
-                  <RecordingStatus recording={recording} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center rounded-xl border border-dashed py-20">
-            <Video className="mb-4 size-9 text-muted-foreground" />
-            <p className="font-medium">
-              {search.trim()
-                ? t("recordings.noMatchingRecordings")
-                : t("recordings.noRecordingsYet")}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {search.trim()
-                ? t("recordings.tryDifferentKeywords")
-                : t(
-                    "recordings.startRecordingOrImportAnExistingVideoOrAudioFile",
-                  )}
-            </p>
-            {search.trim() ? (
-              <Button
-                variant="outline"
-                className="mt-5"
-                onClick={() => setSearch("")}
-              >
-                {t("recordings.viewAllRecordings")}
-              </Button>
-            ) : (
-              <div className="mt-6 flex gap-2">
-                <RecorderButton prominent />
+                  </button>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="min-w-0 flex-1 truncate text-left text-sm font-medium"
+                        onClick={() =>
+                          navigate(`/recordings/${recording.id}/analysis`)
+                        }
+                      >
+                        {recording.name}
+                      </button>
+                      <RecordingCardMenu
+                        name={recording.name}
+                        onPreview={() =>
+                          navigate(`/recordings/${recording.id}/analysis`)
+                        }
+                        onRename={() => {
+                          setRenaming(recording);
+                          setName(recording.name);
+                        }}
+                        onDownload={async () => {
+                          try {
+                            const { downloadRecording } =
+                              await import("@/recording/files");
+                            await downloadRecording(recording);
+                          } catch (error) {
+                            failed(error);
+                          }
+                        }}
+                        onDelete={() => setDeleting(recording)}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {recording.duration > 0
+                        ? formatDuration(recording.duration)
+                        : t("recordings.analysis.durationUnavailable")}{" "}
+                      ·{" "}
+                      {new Date(recording.created_at).toLocaleDateString(
+                        getLocale(),
+                      )}
+                    </p>
+                    <RecordingStatus recording={recording} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center rounded-xl border border-dashed py-20">
+              <Video className="mb-4 size-9 text-muted-foreground" />
+              <p className="font-medium">
+                {search.trim()
+                  ? t("recordings.noMatchingRecordings")
+                  : t("recordings.noRecordingsYet")}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {search.trim()
+                  ? t("recordings.tryDifferentKeywords")
+                  : t(
+                      "recordings.startRecordingOrImportAnExistingVideoOrAudioFile",
+                    )}
+              </p>
+              {search.trim() && (
                 <Button
                   variant="outline"
-                  onClick={() => input.current?.click()}
-                  disabled={busy}
+                  className="mt-5"
+                  onClick={() => setSearch("")}
                 >
-                  <Upload />
-                  {t("recordings.importRecording")}
+                  {t("recordings.viewAllRecordings")}
                 </Button>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </LoadingRegion>
       </main>
       <Dialog
         open={!!renaming}
@@ -453,6 +445,35 @@ export function RecordingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function RecordingCardMenu({
+  name,
+  ...props
+}: Omit<RecordingCardMenuProps, "trigger"> & { name: string }) {
+  const trigger = {
+    variant: "ghost",
+    size: "icon-xs",
+    "aria-label": t("recordings.actionsFor", { arg0: name }),
+  } as const;
+  return (
+    <Suspense
+      fallback={
+        <Button {...trigger} disabled>
+          <MoreHorizontal />
+        </Button>
+      }
+    >
+      <DeferredRecordingCardMenu
+        {...props}
+        trigger={
+          <Button {...trigger}>
+            <MoreHorizontal />
+          </Button>
+        }
+      />
+    </Suspense>
   );
 }
 

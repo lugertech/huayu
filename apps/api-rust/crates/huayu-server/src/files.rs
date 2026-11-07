@@ -4,7 +4,7 @@ use std::{
 };
 
 use axum::{
-    Json,
+    Extension, Json,
     body::Body,
     extract::{Multipart, Path, Request, State},
     http::{HeaderValue, header},
@@ -20,7 +20,7 @@ use tower::ServiceExt;
 use tower_http::services::ServeFile;
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState};
+use crate::{ApiError, ApiResult, AppState, access::CanvasAccess};
 
 const MAX_UPLOAD_BYTES: i64 = 512 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES: i64 = 10 * 1024 * 1024;
@@ -31,8 +31,8 @@ struct PendingAsset {
 }
 
 impl PendingAsset {
-    async fn save(mut self, store: &Store) -> ApiResult<Asset> {
-        let asset = store.save_asset(self.asset).await?;
+    async fn save(mut self, store: &Store, project_id: Option<&str>) -> ApiResult<Asset> {
+        let asset = store.save_asset(self.asset, project_id).await?;
         self.path.disable_cleanup(true);
         Ok(asset)
     }
@@ -56,10 +56,15 @@ impl From<Asset> for AssetResponse {
 
 pub(crate) async fn upload(
     State(state): State<AppState>,
+    Extension(access): Extension<CanvasAccess>,
     multipart: Multipart,
 ) -> ApiResult<Json<AssetResponse>> {
     let upload = receive_asset(&state, multipart, MAX_UPLOAD_BYTES).await?;
-    Ok(Json(upload.save(&state.store).await?.into()))
+    let _guard = state.mutations.lock().await;
+    access.ensure_active(&state).await?;
+    Ok(Json(
+        upload.save(&state.store, access.project_id()).await?.into(),
+    ))
 }
 
 /// Streams one upload to a UUID-named file. Client paths never influence the filesystem path.
@@ -178,6 +183,7 @@ pub(crate) struct ParsedDocument {
 
 pub(crate) async fn parse(
     State(state): State<AppState>,
+    Extension(access): Extension<CanvasAccess>,
     multipart: Multipart,
 ) -> ApiResult<Json<ParsedDocument>> {
     let upload = receive_asset(&state, multipart, MAX_DOCUMENT_BYTES).await?;
@@ -192,8 +198,10 @@ pub(crate) async fn parse(
     let text = tokio::task::spawn_blocking(move || extract_document(&bytes, &extension))
         .await
         .map_err(ApiError::internal)??;
+    let _guard = state.mutations.lock().await;
+    access.ensure_active(&state).await?;
     Ok(Json(ParsedDocument {
-        asset: upload.save(&state.store).await?.into(),
+        asset: upload.save(&state.store, access.project_id()).await?.into(),
         text,
     }))
 }
