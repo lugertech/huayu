@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { getTranslator, getLocale, type Locale } from "@/i18n";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -268,9 +269,9 @@ export async function exportPNG(
   ids: string[],
   options: { background?: boolean; padding?: number; scale?: number } = {},
 ) {
-  const t = getTranslator(editor.locale);
   const output = await exportSVG(editor, ids, options);
-  if (!output) throw new Error(t("canvas.theresNothingToExportYet"));
+  if (!output)
+    throw new LocalizedError({ key: "canvas.theresNothingToExportYet" });
   const scale = Math.max(
     0.05,
     Math.min(
@@ -282,7 +283,8 @@ export async function exportPNG(
   canvas.width = Math.max(1, Math.ceil(output.width * scale));
   canvas.height = Math.max(1, Math.ceil(output.height * scale));
   const context = canvas.getContext("2d");
-  if (!context) throw new Error(t("canvas.theBrowserCannotExportTheImage"));
+  if (!context)
+    throw new LocalizedError({ key: "canvas.theBrowserCannotExportTheImage" });
   const url = URL.createObjectURL(
     new Blob([output.svg], { type: "image/svg+xml;charset=utf-8" }),
   );
@@ -297,7 +299,7 @@ export async function exportPNG(
         (value) =>
           value
             ? resolve(value)
-            : reject(new Error(t("canvas.imageExportFailed"))),
+            : reject(new LocalizedError({ key: "canvas.imageExportFailed" })),
         "image/png",
       ),
     );

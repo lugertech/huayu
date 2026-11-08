@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 import {
   knownErrorTranslation,
@@ -221,7 +222,9 @@ export function transcriptExport(
     (segment) => segment.end > segment.start,
   );
   if (!segments.length)
-    throw new Error(t("recordings.report.thisTranscriptHasNoTimestamps"));
+    throw new LocalizedError({
+      key: "recordings.report.thisTranscriptHasNoTimestamps",
+    });
   return (
     (format === "vtt" ? "WEBVTT\n\n" : "") +
     segments

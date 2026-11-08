@@ -1,4 +1,5 @@
 import { t, useLocale } from "@/i18n";
+import { errorText } from "@/i18n/errors";
 import { lazy, Suspense, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -72,8 +73,7 @@ export function AppSidebar({
     } catch (error) {
       showToast({
         title: t("projects.createFailed"),
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: errorText(error),
         variant: "destructive",
       });
     } finally {

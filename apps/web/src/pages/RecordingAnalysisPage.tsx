@@ -1,5 +1,5 @@
 import { t, useLocale, getLocale } from "@/i18n";
-import { translatedErrorMessage } from "@/i18n/errors";
+import { errorText, translatedErrorMessage } from "@/i18n/errors";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   Link,
@@ -104,7 +104,7 @@ export function RecordingAnalysisPage() {
 function AnalysisWorkspace({ id }: { id: string }) {
   useLocale();
   const [recording, setRecording] = useState<Recording | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Error | null>(null);
   const [time, setTime] = useState(0);
   const [search, setSearch] = useState("");
   const [follow, setFollow] = useState(true);
@@ -157,13 +157,13 @@ function AnalysisWorkspace({ id }: { id: string }) {
     let cancelled = false;
     setRecording(null);
     setTime(0);
-    setError("");
+    setError(null);
     api<Recording>(`/api/recordings/${id}`)
       .then((value) => {
         if (!cancelled) setRecording(value);
       })
-      .catch((error) => {
-        if (!cancelled) setError(error.message);
+      .catch((error: Error) => {
+        if (!cancelled) setError(error);
       });
     return () => {
       cancelled = true;
@@ -286,8 +286,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
   function failed(error: unknown) {
     showToast({
       title: t("recordings.analysis.actionIncomplete"),
-      description:
-        error instanceof Error ? error.message : t("common.tryAgain"),
+      description: errorText(error),
       variant: "destructive",
     });
   }
@@ -583,7 +582,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
       {!recording ? (
         <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
           {!error && <Loader2 className="size-4 animate-spin" />}
-          {error || t("recordings.analysis.openingRecording")}
+          {error ? errorText(error) : t("recordings.analysis.openingRecording")}
         </div>
       ) : (
         <div

@@ -1,6 +1,6 @@
 import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
-import { t } from "@/i18n";
+import { getLocale, t } from "@/i18n";
 import { requireConnection } from "@/ai/settings";
 import { api, uploadAsset, type Asset } from "./client";
 import { canvasRequestHeaders } from "@/lib/canvas-access";
@@ -79,7 +79,7 @@ export async function blobForSource(
     credentials: url.origin === window.location.origin ? "same-origin" : "omit",
     headers:
       url.origin === window.location.origin && url.pathname.startsWith("/api/")
-        ? canvasRequestHeaders()
+        ? { ...canvasRequestHeaders(), "Accept-Language": getLocale() }
         : undefined,
     referrerPolicy: "no-referrer",
     signal,
@@ -416,7 +416,9 @@ export const isAPISuccess = (response: { status: string; code: number }) =>
   response.status === "success" && response.code === 200;
 export function extractAPIData(response: AIAPIResponse): AIAPIValue {
   if (!isAPISuccess(response) || !response.data.ok)
-    throw new Error(response.message || t("api.generationFailed"));
+    throw new LocalizedError(
+      response.message || { key: "api.generationFailed" },
+    );
   const value = Array.isArray(response.data.value)
     ? response.data.value[0]
     : response.data.value;

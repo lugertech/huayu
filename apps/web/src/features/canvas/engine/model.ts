@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 /** Application-owned records. Legacy document records remain readable without their original SDK. */
 export type ShapeId = string;
@@ -146,14 +147,16 @@ export function defaultProps(type: string): Record<string, any> {
 }
 export function normalizeRecord(value: unknown, key?: string): CanvasRecord {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error(t("canvas.invalidCanvasRecordFormat"));
+    throw new LocalizedError({ key: "canvas.invalidCanvasRecordFormat" });
   const record = structuredClone(value) as Record<string, any>;
   if (typeof record.id !== "string" || !record.id || (key && record.id !== key))
-    throw new Error(t("canvas.invalidCanvasRecordId"));
+    throw new LocalizedError({ key: "canvas.invalidCanvasRecordId" });
   if (
     !["document", "page", "shape", "binding", "asset"].includes(record.typeName)
   )
-    throw new Error(t("canvas.theProjectFileContainsInvalidRecords"));
+    throw new LocalizedError({
+      key: "canvas.theProjectFileContainsInvalidRecords",
+    });
   if (record.typeName === "shape") {
     if (
       typeof record.type !== "string" ||
@@ -161,13 +164,13 @@ export function normalizeRecord(value: unknown, key?: string): CanvasRecord {
       typeof record.props !== "object" ||
       Array.isArray(record.props)
     )
-      throw new Error(t("canvas.invalidShapeData"));
+      throw new LocalizedError({ key: "canvas.invalidShapeData" });
     for (const field of ["x", "y", "rotation"])
       if (
         record[field] !== undefined &&
         (!Number.isFinite(record[field]) || Math.abs(record[field]) > 1e9)
       )
-        throw new Error(t("canvas.invalidShapeCoordinates"));
+        throw new LocalizedError({ key: "canvas.invalidShapeCoordinates" });
     for (const field of ["w", "h"])
       if (
         record.props[field] !== undefined &&
@@ -175,7 +178,7 @@ export function normalizeRecord(value: unknown, key?: string): CanvasRecord {
           record.props[field] <= 0 ||
           record.props[field] > 1e7)
       )
-        throw new Error(t("canvas.invalidShapeDimensions"));
+        throw new LocalizedError({ key: "canvas.invalidShapeDimensions" });
     Object.assign(record, {
       x: record.x || 0,
       y: record.y || 0,
@@ -196,6 +199,6 @@ export function normalizeRecord(value: unknown, key?: string): CanvasRecord {
       typeof record.toId !== "string" ||
       !["start", "end"].includes(record.props?.terminal))
   )
-    throw new Error(t("canvas.invalidConnectionBinding"));
+    throw new LocalizedError({ key: "canvas.invalidConnectionBinding" });
   return record as CanvasRecord;
 }

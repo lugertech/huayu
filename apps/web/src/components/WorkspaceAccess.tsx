@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { LockKeyhole, Loader2 } from "lucide-react";
 import { t, useLocale } from "@/i18n";
+import { errorText } from "@/i18n/errors";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +20,7 @@ function OwnerWorkspace({ children }: { children: ReactNode }) {
   useLocale();
   const [access, setAccess] = useState<
     | { status: "checking" | "owner" | "denied" }
-    | { status: "error"; error: string }
+    | { status: "error"; error: Error }
   >({ status: "checking" });
   useEffect(() => {
     const controller = new AbortController();
@@ -28,9 +29,9 @@ function OwnerWorkspace({ children }: { children: ReactNode }) {
         if (!controller.signal.aborted)
           setAccess({ status: value.owner ? "owner" : "denied" });
       })
-      .catch((reason) => {
+      .catch((reason: Error) => {
         if (!controller.signal.aborted)
-          setAccess({ status: "error", error: reason.message });
+          setAccess({ status: "error", error: reason });
       });
     return () => controller.abort();
   }, []);
@@ -50,7 +51,7 @@ function OwnerWorkspace({ children }: { children: ReactNode }) {
           </h1>
           <p className="max-w-md text-sm text-muted-foreground">
             {access.status === "error"
-              ? access.error
+              ? errorText(access.error)
               : t("canvas.access.openWithLink")}
           </p>
           <Button variant="outline" onClick={() => location.reload()}>

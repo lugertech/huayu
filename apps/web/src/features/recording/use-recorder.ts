@@ -1,4 +1,5 @@
-import { t, type MessageKey } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
+import { type MessageKey } from "@/i18n";
 import { createContext, useContext } from "react";
 import { type CaptureState } from "./capture-state";
 
@@ -22,6 +23,8 @@ export const RecorderContext = createContext<RecorderState | null>(null);
 export function useRecorder() {
   const value = useContext(RecorderContext);
   if (!value)
-    throw new Error(t("recordings.recorder.theRecordingServiceIsntReady"));
+    throw new LocalizedError({
+      key: "recordings.recorder.theRecordingServiceIsntReady",
+    });
   return value;
 }

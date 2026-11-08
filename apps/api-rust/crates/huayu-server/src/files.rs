@@ -20,12 +20,13 @@ use tower::ServiceExt;
 use tower_http::services::ServeFile;
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState, access::CanvasAccess};
+use crate::{ApiError, ApiResult, AppState, ErrorCode, access::CanvasAccess};
 
-const MAX_UPLOAD_BYTES: usize = 512 * 1024 * 1024;
+pub(crate) const MAX_FILE_NAME_CHARS: usize = 240;
+pub(crate) const MAX_UPLOAD_BYTES: usize = 512 * 1024 * 1024;
 // Multipart boundaries and field headers do not consume the file's byte allowance.
 pub(crate) const MAX_UPLOAD_BODY_BYTES: usize = MAX_UPLOAD_BYTES + 64 * 1024;
-const MAX_DOCUMENT_BYTES: usize = 10 * 1024 * 1024;
+pub(crate) const MAX_DOCUMENT_BYTES: usize = 10 * 1024 * 1024;
 
 struct PendingAsset {
     asset: Asset,
@@ -78,7 +79,7 @@ async fn receive_asset(
     while let Some(mut field) = multipart
         .next_field()
         .await
-        .map_err(|_| ApiError::invalid("文件上传数据有误"))?
+        .map_err(|_| ApiError::new(ErrorCode::InvalidUpload))?
     {
         if field.name() != Some("file") {
             continue;
@@ -90,8 +91,8 @@ async fn receive_asset(
             .next()
             .unwrap_or("file")
             .to_owned();
-        if name.chars().count() > 240 || name.contains(['\r', '\n', '\0']) {
-            return Err(ApiError::invalid("文件名过长或包含无效字符"));
+        if name.chars().count() > MAX_FILE_NAME_CHARS || name.contains(['\r', '\n', '\0']) {
+            return Err(ApiError::new(ErrorCode::InvalidFilename));
         }
         let mime = field.content_type().map(str::to_owned).unwrap_or_else(|| {
             mime_guess::from_path(&name)
@@ -112,14 +113,14 @@ async fn receive_asset(
             while let Some(chunk) = field
                 .chunk()
                 .await
-                .map_err(|_| ApiError::invalid("文件上传中断，请重试"))?
+                .map_err(|_| ApiError::new(ErrorCode::UploadInterrupted))?
             {
                 size += chunk.len();
                 if size > max_bytes {
-                    return Err(ApiError::invalid(if max_bytes == MAX_DOCUMENT_BYTES {
-                        "待解析文档不能超过 10 MB"
+                    return Err(ApiError::new(if max_bytes == MAX_DOCUMENT_BYTES {
+                        ErrorCode::DocumentUploadTooLarge
                     } else {
-                        "文件不能超过 512 MB"
+                        ErrorCode::FileTooLarge
                     }));
                 }
                 file.write_all(&chunk).await.map_err(ApiError::internal)?;
@@ -139,7 +140,7 @@ async fn receive_asset(
         };
         return Ok(PendingAsset { asset, path });
     }
-    Err(ApiError::invalid("请选择需要上传的文件"))
+    Err(ApiError::new(ErrorCode::UploadRequired))
 }
 
 pub(crate) async fn download(
@@ -211,22 +212,22 @@ pub(crate) async fn parse(
 fn extract_document(bytes: &[u8], extension: &str) -> ApiResult<String> {
     let text = match extension {
         "pdf" => pdf_extract::extract_text_from_mem(bytes)
-            .map_err(|_| ApiError::invalid("无法提取 PDF 文本，请使用包含文字的 PDF"))?,
+            .map_err(|_| ApiError::new(ErrorCode::PdfTextUnreadable))?,
         "docx" => {
             let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
-                .map_err(|_| ApiError::invalid("DOCX 文件格式有误"))?;
+                .map_err(|_| ApiError::new(ErrorCode::InvalidDocx))?;
             let file = archive
                 .by_name("word/document.xml")
-                .map_err(|_| ApiError::invalid("DOCX 中缺少正文"))?;
+                .map_err(|_| ApiError::new(ErrorCode::DocxBodyMissing))?;
             if file.size() > 8 * 1024 * 1024 {
-                return Err(ApiError::invalid("DOCX 正文过大"));
+                return Err(ApiError::new(ErrorCode::DocxBodyTooLarge));
             }
             let mut xml = String::new();
             file.take(8 * 1024 * 1024 + 1)
                 .read_to_string(&mut xml)
-                .map_err(|_| ApiError::invalid("无法读取 DOCX 正文"))?;
+                .map_err(|_| ApiError::new(ErrorCode::DocxBodyUnreadable))?;
             let document = roxmltree::Document::parse(&xml)
-                .map_err(|_| ApiError::invalid("DOCX 正文格式有误"))?;
+                .map_err(|_| ApiError::new(ErrorCode::InvalidDocxBody))?;
             let mut text = String::new();
             for paragraph in document.descendants().filter(|node| node.has_tag_name("p")) {
                 for node in paragraph
@@ -243,12 +244,12 @@ fn extract_document(bytes: &[u8], extension: &str) -> ApiResult<String> {
         }
         "xlsx" | "xls" | "ods" => {
             let mut workbook = open_workbook_auto_from_rs(Cursor::new(bytes.to_vec()))
-                .map_err(|_| ApiError::invalid("无法读取工作簿"))?;
+                .map_err(|_| ApiError::new(ErrorCode::WorkbookUnreadable))?;
             let mut text = String::new();
             for name in workbook.sheet_names() {
                 let range = workbook
                     .worksheet_range(&name)
-                    .map_err(|_| ApiError::invalid("无法读取工作表"))?;
+                    .map_err(|_| ApiError::new(ErrorCode::WorksheetUnreadable))?;
                 text.push_str(&format!("[{name}]\n"));
                 for row in range.rows() {
                     text.push_str(
@@ -259,7 +260,7 @@ fn extract_document(bytes: &[u8], extension: &str) -> ApiResult<String> {
                     );
                     text.push('\n');
                     if text.len() > 4 * 1024 * 1024 {
-                        return Err(ApiError::invalid("工作簿文本过多，请拆分文件"));
+                        return Err(ApiError::new(ErrorCode::WorkbookTextTooLarge));
                     }
                 }
             }
@@ -267,14 +268,14 @@ fn extract_document(bytes: &[u8], extension: &str) -> ApiResult<String> {
         }
         "txt" | "md" | "csv" | "tsv" | "json" | "yaml" | "yml" | "xml" | "html" | "css" | "js" => {
             String::from_utf8(bytes.to_vec())
-                .map_err(|_| ApiError::invalid("文本文件应使用 UTF-8 编码"))?
+                .map_err(|_| ApiError::new(ErrorCode::TextNotUtf8))?
                 .trim_start_matches('\u{feff}')
                 .to_owned()
         }
-        _ => return Err(ApiError::invalid("不支持解析该文件格式")),
+        _ => return Err(ApiError::new(ErrorCode::UnsupportedDocumentFormat)),
     };
     if text.len() > 4 * 1024 * 1024 {
-        return Err(ApiError::invalid("文档文本过多，请拆分文件"));
+        return Err(ApiError::new(ErrorCode::DocumentTextTooLarge));
     }
     Ok(text)
 }

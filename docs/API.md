@@ -2,11 +2,17 @@
 
 默认地址为 `http://127.0.0.1:5858`，开发页面通过 Vite 的同源 `/api` 代理访问。本机管理端具有工作区权限；远端请求需要有效协作链接，且仅限对应画布和附件。请求同时校验连接来源、Host 和 Origin。
 
-成功响应直接返回 JSON 对象或数组。创建项目、模板和录屏返回 `201`；删除返回 `204`。错误结构为：
+成功响应直接返回 JSON 对象或数组。创建项目、模板和录屏返回 `201`；删除返回 `204`。错误使用稳定、具体的 `code`、用于显示的 `message` 和命名参数 `params`：
 
 ```json
-{"code":"VALIDATION_FAILED","message":"请求数据格式有误"}
+{"code":"INVALID_NAME","message":"Names must contain 1–120 characters","params":{"min":1,"max":120}}
 ```
+
+请求通过 `Accept-Language` 选择错误文案，支持 `zh-CN` 和 `en`，兼容 `zh-*`、`en-*` 区域标签及 `q` 权重；未提供或没有匹配语言时默认使用 `zh-CN`。错误响应包含 `Content-Language`、`Vary: Accept-Language` 和 `Cache-Control: no-store`。语言只在当前请求中使用，不写入项目、模板或数据库；用户输入、文件正文和成功响应不随界面语言改写。
+
+客户端依据 `code` 和 `params` 翻译错误，不依赖 `message` 的字面内容。名称校验使用 `INVALID_NAME`，画布格式使用 `INVALID_DOCUMENT`，上传大小使用 `FILE_TOO_LARGE` 或 `DOCUMENT_UPLOAD_TOO_LARGE`，不再统一使用 `VALIDATION_FAILED`。既有协作权限码和音轨解码不可用码保持稳定。未知错误码可回退显示服务端的 `message`。错误码与后端文案集中在 [error.rs](../apps/api-rust/crates/huayu-server/src/error.rs)，前端映射见 [errors.ts](../apps/web/src/api/errors.ts)。
+
+JSON、查询参数、multipart 和请求方法等入口拒绝也返回相同的 JSON 错误结构，并保留对应 HTTP 状态及 `Allow` 等响应头。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |

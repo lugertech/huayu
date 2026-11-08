@@ -1,6 +1,18 @@
 import type { Message } from "../locale";
 
 export const zhCN = {
+  "api.errors.coverDecoderUnavailable": "暂时无法生成录屏封面",
+  "api.errors.coverTimedOut": "录屏封面读取超时，请重试",
+  "api.errors.recordingCoverUnavailable": "这段录屏暂时无法显示预览",
+  "api.errors.methodNotAllowed": "此接口不支持该请求方法",
+  "api.errors.requestTooLarge": "请求内容过大",
+  "api.errors.unsupportedMediaType": "请求内容类型不受支持",
+  "api.errors.invalidName": "名称应包含 {min} 至 {max} 个字符",
+  "api.errors.roomFull": "房间已有 {max} 位协作者，请稍后重试",
+  "api.errors.invalidFilename":
+    "文件名不能超过 {max} 个字符，且不能包含无效字符",
+  "api.errors.documentUploadTooLarge": "待解析文档不能超过 {maxMb} MB",
+  "api.errors.fileTooLarge": "文件不能超过 {maxMb} MB",
   "assets.emptyFilesHint": "可以上传文件，或调整搜索和文件夹。",
   "assets.restoreHint": "可以在回收站中恢复。",
   "assets.dropFiles": "将文件拖到这里，批量上传",

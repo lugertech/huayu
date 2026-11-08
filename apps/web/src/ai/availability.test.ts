@@ -1,3 +1,4 @@
+import { translatedErrorMessage } from "@/i18n/errors";
 import {
   afterEach,
   beforeEach,
@@ -264,7 +265,7 @@ describe("SDK transport errors and bounded tests", () => {
     const { testConnection } = await import("./provider");
     const result = await testConnection("image", connection);
     expect(result.status).toBe("warning");
-    expect(result.message).toContain("仍需实际生成");
+    expect(translatedErrorMessage(result.message)).toContain("仍需实际生成");
   });
   it("tests search with the unsaved connection instead of the saved text service", async () => {
     const fetchMock = vi.fn().mockResolvedValue(json({ results: [] }));

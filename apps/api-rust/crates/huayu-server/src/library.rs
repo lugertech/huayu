@@ -7,7 +7,7 @@ use huayu_core::{AssetFolder, LibraryAsset, LibraryAssetDetails};
 use huayu_store::LibraryQuery;
 use serde::{Deserialize, Serialize};
 
-use crate::{ApiError, ApiResult, AppState, error::ApiJson};
+use crate::{ApiError, ApiResult, AppState, ErrorCode, error::ApiJson};
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -76,7 +76,7 @@ pub(crate) async fn create(
         || input.height < 0
         || (file.mime.starts_with("image/") && (input.width == 0 || input.height == 0))
     {
-        return Err(ApiError::invalid("请选择可读取的图片素材"));
+        return Err(ApiError::new(ErrorCode::ImageAssetRequired));
     }
     state
         .store

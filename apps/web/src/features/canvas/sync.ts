@@ -1,4 +1,5 @@
-import { t, type MessageKey } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
+import { type MessageKey } from "@/i18n";
 import {
   createCanvasStore,
   getSnapshot,
@@ -386,8 +387,10 @@ export class CanvasSync {
     }, 400);
   }
   async flush(): Promise<void> {
-    if (this.deleted) throw new Error(t("canvas.thisProjectWasDeleted"));
-    if (this.accessRevoked) throw new Error(t("canvas.share.linkUnavailable"));
+    if (this.deleted)
+      throw new LocalizedError({ key: "canvas.thisProjectWasDeleted" });
+    if (this.accessRevoked)
+      throw new LocalizedError({ key: "canvas.share.linkUnavailable" });
     if (this.saving) {
       await this.saving;
       if (this.pending.size) return this.flush();
@@ -405,9 +408,10 @@ export class CanvasSync {
           `/api/projects/${this.project.id}/document${this.accessQuery}`,
           { method: "PATCH", body: JSON.stringify(patch) },
         );
-        if (this.deleted) throw new Error(t("canvas.thisProjectWasDeleted"));
+        if (this.deleted)
+          throw new LocalizedError({ key: "canvas.thisProjectWasDeleted" });
         if (this.accessRevoked)
-          throw new Error(t("canvas.share.linkUnavailable"));
+          throw new LocalizedError({ key: "canvas.share.linkUnavailable" });
         this.inFlight.clear();
         this.store.mergeRemoteChanges(() => {
           for (const [id, change] of this.deferredRemote) {

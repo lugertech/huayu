@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 export interface Crop {
   x: number;
   y: number;
@@ -57,7 +57,9 @@ export async function rotateImage(
     canvas.height = quarter % 2 ? bitmap.width : bitmap.height;
     const context = canvas.getContext("2d");
     if (!context)
-      throw new Error(t("results.image.thisImageCannotBeEditedRightNow"));
+      throw new LocalizedError({
+        key: "results.image.thisImageCannotBeEditedRightNow",
+      });
     context.translate(canvas.width / 2, canvas.height / 2);
     context.rotate((quarter * Math.PI) / 2);
     context.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
@@ -72,14 +74,17 @@ export async function croppedImage(source: HTMLCanvasElement, crop: Crop) {
   canvas.width = box.w;
   canvas.height = box.h;
   const context = canvas.getContext("2d");
-  if (!context) throw new Error(t("results.image.cannotSaveImage"));
+  if (!context)
+    throw new LocalizedError({ key: "results.image.cannotSaveImage" });
   context.drawImage(source, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (value) =>
         value
           ? resolve(value)
-          : reject(new Error(t("results.image.cannotSaveTheImage"))),
+          : reject(
+              new LocalizedError({ key: "results.image.cannotSaveTheImage" }),
+            ),
       "image/png",
     ),
   );

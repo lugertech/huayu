@@ -1,3 +1,4 @@
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { getLocale, t, useLocale, type MessageKey } from "@/i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Loader2, Pause, Play, Square } from "lucide-react";
@@ -63,7 +64,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     capture.status === "pending" || capture.status === "saving"
       ? capture.blob
       : null;
-  const saveError = capture.status === "pending" ? capture.error : "";
+  const saveError = capture.status === "pending" ? capture.error : null;
   const [elapsed, setElapsed] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const [preview, setPreview] = useState("");
@@ -317,8 +318,8 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         type: "save-failed",
         error:
           error instanceof APIError
-            ? error.message
-            : t("recordings.recorder.cannotSave"),
+            ? error
+            : new LocalizedError({ key: "recordings.recorder.cannotSave" }),
       });
     }
   }
@@ -484,7 +485,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
           )}
           {saveError && (
             <p role="alert" className="text-sm text-destructive">
-              {saveError}
+              {errorText(saveError)}
             </p>
           )}
           <DialogFooter>

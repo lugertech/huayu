@@ -1,5 +1,6 @@
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
+import { errorText } from "@/i18n/errors";
 import { projectCopyName } from "@/features/projects/project-name";
 import {
   lazy,
@@ -142,7 +143,7 @@ export function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   const [templateError, setTemplateError] = useState(false);
   const [activeTab, setActiveTab] = useState<"projects" | "templates">(
     requestedExample ? "templates" : "projects",
@@ -291,9 +292,9 @@ export function ProjectsPage() {
     if (controller.signal.aborted) return;
     if (projectResult.status === "fulfilled") {
       setProjects(projectResult.value);
-      setError("");
+      setError(false);
     } else {
-      setError(t("projects.projectsCannotBeLoaded"));
+      setError(true);
       if (hasLoaded && projects.length)
         showToast({
           title: t("projects.projectsCannotBeLoaded"),
@@ -345,8 +346,7 @@ export function ProjectsPage() {
   function failed(error: unknown) {
     showToast({
       title: t("common.operationFailed"),
-      description:
-        error instanceof Error ? error.message : t("common.tryAgain"),
+      description: errorText(error),
       variant: "destructive",
     });
   }
@@ -773,7 +773,7 @@ export function ProjectsPage() {
                       className="rounded-xl border p-8 text-center"
                     >
                       <p className="mb-4 text-sm text-muted-foreground">
-                        {error}
+                        {t("projects.projectsCannotBeLoaded")}
                       </p>
                       <Button
                         variant="outline"

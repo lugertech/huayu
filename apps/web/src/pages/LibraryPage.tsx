@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { errorText } from "@/i18n/errors";
 import { Link } from "react-router-dom";
 import {
   ArrowDownUp,
@@ -65,7 +66,7 @@ export function LibraryPage() {
   const { showToast } = useToast();
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Error | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [version, setVersion] = useState(0);
   const [search, setSearch] = useState("");
@@ -102,10 +103,10 @@ export function LibraryPage() {
               ? item
               : current;
         });
-        setError("");
+        setError(null);
       })
       .catch((error: Error) => {
-        if (!controller.signal.aborted) setError(error.message);
+        if (!controller.signal.aborted) setError(error);
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -159,7 +160,7 @@ export function LibraryPage() {
     } catch (error) {
       showToast({
         title: t("common.downloadFailed"),
-        description: (error as Error).message,
+        description: errorText(error, locale),
         variant: "destructive",
       });
     } finally {
@@ -385,7 +386,7 @@ export function LibraryPage() {
         </div>
         {error && loaded && (
           <div className="library-error" role="alert">
-            <span>{error}</span>
+            <span>{errorText(error, locale)}</span>
             <Button variant="outline" onClick={refresh}>
               {t("library.retry")}
             </Button>

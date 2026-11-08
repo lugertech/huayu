@@ -1,4 +1,5 @@
-import { t, type Locale } from "@/i18n";
+import { getTranslator, type Locale, type MessageKey } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import type { CanvasShape, Editor, VecLike } from "@/features/canvas/editor";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import {
@@ -38,6 +39,15 @@ export function connectionProblem(
   to: string,
   locale?: Locale,
 ): string | null {
+  const key = connectionProblemKey(editor, from, to);
+  return key ? getTranslator(locale)(key) : null;
+}
+
+function connectionProblemKey(
+  editor: Editor,
+  from: string,
+  to: string,
+): MessageKey | null {
   const source = editor.getShape(from);
   const target = editor.getShape(to);
   const page = editor.getCurrentPageId();
@@ -47,23 +57,22 @@ export function connectionProblem(
     editor.pageOf(from) !== page ||
     editor.pageOf(to) !== page
   )
-    return t("workflow.thisCardIsNoLongerOnTheCurrentPage", undefined, locale);
-  if (from === to) return t("workflow.chooseADifferentCard", undefined, locale);
+    return "workflow.thisCardIsNoLongerOnTheCurrentPage";
+  if (from === to) return "workflow.chooseADifferentCard";
   if (
     !(target.type in COMPONENT_CONFIGS) ||
     ["frame", "ai-draw", "interactive-web"].includes(target.type)
   )
-    return t("workflow.connectToACreativeStep", undefined, locale);
+    return "workflow.connectToACreativeStep";
   if (["arrow", "group"].includes(source.type))
-    return t("workflow.chooseAvailableMaterial", undefined, locale);
+    return "workflow.chooseAvailableMaterial";
   if (connectedShapes(editor, from, "next").some((shape) => shape.id === to))
-    return t("workflow.theseCardsAreAlreadyConnected", undefined, locale);
+    return "workflow.theseCardsAreAlreadyConnected";
   const pending = [to];
   const visited = new Set<string>();
   while (pending.length) {
     const id = pending.pop()!;
-    if (id === from)
-      return t("workflow.thisConnectionWouldCreateACycle", undefined, locale);
+    if (id === from) return "workflow.thisConnectionWouldCreateACycle";
     if (visited.has(id)) continue;
     visited.add(id);
     pending.push(
@@ -122,14 +131,9 @@ export function connectionTarget(
     });
 }
 
-export function linkWorkflow(
-  editor: Editor,
-  from: string,
-  to: string,
-  locale?: Locale,
-) {
-  const problem = connectionProblem(editor, from, to, locale);
-  if (problem) throw new Error(problem);
+export function linkWorkflow(editor: Editor, from: string, to: string) {
+  const problem = connectionProblemKey(editor, from, to);
+  if (problem) throw new LocalizedError({ key: problem });
   let id: string | undefined;
   editor.run(() => {
     id = connectShapes(editor, from, to);

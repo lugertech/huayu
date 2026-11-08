@@ -1,9 +1,7 @@
 import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
-import { t } from "@/i18n";
 import type OpenAI from "openai";
 import { APIError } from "openai/core/error";
 import {
-  CAPABILITY_LABELS,
   CAPABILITY_MESSAGE_KEYS,
   connectionFor,
   modelEndpoint,
@@ -431,8 +429,11 @@ export async function testConnection(
   capability: Capability,
   connection: Connection,
   signal?: AbortSignal,
-): Promise<{ status: "success" | "warning"; message: string }> {
-  return modelRequest(
+): Promise<{ status: "success" | "warning"; message: ErrorTranslation }> {
+  return modelRequest<{
+    status: "success" | "warning";
+    message: ErrorTranslation;
+  }>(
     capability,
     connection,
     signal,
@@ -441,7 +442,7 @@ export async function testConnection(
         await searchWeb("Huayu", requestSignal, connection);
         return {
           status: "success",
-          message: t("models.connection.searchTestPassed"),
+          message: { key: "models.connection.searchTestPassed" },
         };
       }
       if (capability === "text" || capability === "vision") {
@@ -451,10 +452,10 @@ export async function testConnection(
           capability,
         });
         return capability === "text"
-          ? { status: "success", message: t("models.connected") }
+          ? { status: "success", message: { key: "models.connected" } }
           : {
               status: "warning",
-              message: t("models.connection.visionTestLimited"),
+              message: { key: "models.connection.visionTestLimited" },
             };
       }
       let data: OpenAI.Models.ModelsPage;
@@ -467,7 +468,7 @@ export async function testConnection(
         )
           return {
             status: "warning",
-            message: t("models.connection.modelListUnsupported"),
+            message: { key: "models.connection.modelListUnsupported" },
           };
         throw error;
       }
@@ -478,13 +479,16 @@ export async function testConnection(
       if (!data.data.some((model) => model.id === connection.model.trim()))
         return {
           status: "warning",
-          message: t("models.serviceConnectedButThisModelWasntInTheList"),
+          message: { key: "models.serviceConnectedButThisModelWasntInTheList" },
         };
       return {
         status: "warning",
-        message: t("models.connection.capabilityTestLimited", {
-          capability: CAPABILITY_LABELS[capability],
-        }),
+        message: {
+          key: "models.connection.capabilityTestLimited",
+          values: {
+            capability: { key: CAPABILITY_MESSAGE_KEYS[capability] },
+          },
+        },
       };
     },
     15_000,

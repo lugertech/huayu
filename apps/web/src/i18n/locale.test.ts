@@ -9,6 +9,7 @@ import {
   interpolate,
 } from "./locale";
 import { en, zhCN, messages } from "./messages";
+import { assetMessages } from "@/features/asset-library/messages";
 import {
   getLocale,
   t,
@@ -230,6 +231,54 @@ function literalKeys(file: string) {
 }
 
 describe("translation coverage and static documentation", () => {
+  it("keeps the asset library catalog complete with matching interpolation parameters", () => {
+    expect(Object.keys(assetMessages.en).sort()).toEqual(
+      Object.keys(assetMessages["zh-CN"]).sort(),
+    );
+    for (const [key, chinese] of Object.entries(assetMessages["zh-CN"])) {
+      const english = assetMessages.en[key];
+      const parameters = (text: string) =>
+        [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+      expect(english, key).not.toMatch(/\p{Script=Han}/u);
+      expect(parameters(english), key).toEqual(parameters(chinese));
+    }
+  });
+  it("keeps system exceptions as semantic translations until they are rendered", () => {
+    const frozen: string[] = [];
+    for (const file of files(resolve(import.meta.dirname, "..")).filter(
+      (file) => /\.tsx?$/.test(file) && !file.includes(".test."),
+    )) {
+      const source = ts.createSourceFile(
+        file,
+        readFileSync(file, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+        file.endsWith("tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+      );
+      function visit(node: ts.Node) {
+        if (
+          ts.isNewExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text.endsWith("Error")
+        ) {
+          const message = node.arguments?.[0];
+          if (
+            message &&
+            ts.isCallExpression(message) &&
+            ts.isIdentifier(message.expression) &&
+            message.expression.text === "t"
+          ) {
+            frozen.push(
+              `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}`,
+            );
+          }
+        }
+        ts.forEachChild(node, visit);
+      }
+      visit(source);
+    }
+    expect(frozen).toEqual([]);
+  });
   it("keeps the lightweight route list aligned with the static documentation", () => {
     expect(documentsFor("zh-CN").map((doc) => doc.slug)).toEqual(documentSlugs);
     for (const route of routes) expect(hasSiteRoute(route)).toBe(true);

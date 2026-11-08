@@ -4,7 +4,7 @@ type UploadedAsset = Awaited<ReturnType<typeof uploadAsset>>;
 type Capture = { blob: Blob; asset: UploadedAsset | null };
 export type CaptureState =
   | { status: "idle" | "starting" | "recording" | "paused" | "stopping" }
-  | ({ status: "pending"; error: string } & Capture)
+  | ({ status: "pending"; error: Error | null } & Capture)
   | ({ status: "saving"; phase: "uploading" | "creating" } & Capture);
 export type CaptureEvent =
   | {
@@ -21,7 +21,7 @@ export type CaptureEvent =
     }
   | { type: "stopped"; blob: Blob }
   | { type: "uploaded"; asset: UploadedAsset }
-  | { type: "save-failed"; error: string };
+  | { type: "save-failed"; error: Error };
 
 /** Owns the capture and its uploaded asset until save or explicit discard. */
 export function transitionCapture(
@@ -47,7 +47,7 @@ export function transitionCapture(
       if (!["recording", "paused", "stopping"].includes(state.status))
         return state;
       return event.blob.size
-        ? { status: "pending", blob: event.blob, asset: null, error: "" }
+        ? { status: "pending", blob: event.blob, asset: null, error: null }
         : { status: "idle" };
     case "save":
       return state.status === "pending"

@@ -1,4 +1,5 @@
-import { getTranslator, getLocale, type Locale } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
+import { getLocale, type Locale } from "@/i18n";
 import { exportToCanvas, exportToSvg } from "@excalidraw/excalidraw";
 import type { BinaryFiles, AppState } from "@excalidraw/excalidraw/types";
 import type {
@@ -18,7 +19,6 @@ export async function exportScene(
   ids: string[],
   locale: Locale = editor.locale ?? getLocale(),
 ) {
-  const t = getTranslator(locale);
   const wanted = new Set(ids);
   for (const id of ids)
     for (const child of editor.descendants(id)) wanted.add(child.id);
@@ -34,7 +34,7 @@ export async function exportScene(
   for (const element of selected)
     if (element.type === "image") {
       if (!element.fileId || !inputFiles[element.fileId])
-        throw new Error(t("canvas.imagesAreStillLoading"));
+        throw new LocalizedError({ key: "canvas.imagesAreStillLoading" });
       files[element.fileId] = inputFiles[element.fileId];
     }
   const elements: ExcalidrawElement[] = [];
@@ -62,7 +62,8 @@ export async function exportScene(
       padding: 0,
       scale: 2,
     });
-    if (!snapshot) throw new Error(t("canvas.cardPreviewsCannotBeGenerated"));
+    if (!snapshot)
+      throw new LocalizedError({ key: "canvas.cardPreviewsCannotBeGenerated" });
     const fileId = `snapshot-${element.id}` as ExcalidrawImageElement["fileId"];
     const dataURL = await blobAsDataURL(snapshot.blob);
     files[fileId] = {
@@ -129,7 +130,6 @@ export function nativeExporter(
       options: { background?: boolean; padding?: number; scale?: number } = {},
     ) {
       const locale = editor.locale ?? getLocale();
-      const t = getTranslator(locale);
       const current = await getScene();
       const scene = await exportScene(
         editor,
@@ -139,7 +139,9 @@ export function nativeExporter(
         locale,
       );
       if (!scene.elements.length)
-        throw new Error(t("canvas.theresNothingOnTheCanvasToExportYet"));
+        throw new LocalizedError({
+          key: "canvas.theresNothingOnTheCanvasToExportYet",
+        });
       const canvas = await exportToCanvas({
         ...scene,
         appState: {
@@ -167,7 +169,7 @@ export function nativeExporter(
           (value) =>
             value
               ? resolve(value)
-              : reject(new Error(t("canvas.imageExportFailed"))),
+              : reject(new LocalizedError({ key: "canvas.imageExportFailed" })),
           "image/png",
         ),
       );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslations } from "@/i18n";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { APIError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +36,7 @@ export function LibraryPreview({
   const [resource, setResource] = useState<
     | { status: "loading" }
     | { status: "ready"; value: LibraryItem }
-    | { status: "error"; error: string }
+    | { status: "error"; error: Error }
   >({
     status: "loading",
   });
@@ -53,12 +54,15 @@ export function LibraryPreview({
       .catch((error: Error) => {
         if (controller.signal.aborted) return;
         if (error instanceof APIError && error.status === 404) {
-          setResource({ status: "error", error: t("library.removed") });
+          setResource({
+            status: "error",
+            error: new LocalizedError({ key: "library.removed" }),
+          });
           onMissing();
-        } else setResource({ status: "error", error: error.message });
+        } else setResource({ status: "error", error });
       });
     return () => controller.abort();
-  }, [item, attempt, t, onMissing]);
+  }, [item, attempt, onMissing]);
   const url = detail ? libraryItemUrl(detail) : undefined;
   const name = libraryItemName(detail || item);
   return (
@@ -101,7 +105,7 @@ export function LibraryPreview({
                   .catch((error: Error) =>
                     showToast({
                       title: t("common.downloadFailed"),
-                      description: error.message,
+                      description: errorText(error),
                       variant: "destructive",
                     }),
                   )
@@ -120,7 +124,7 @@ export function LibraryPreview({
         <div className="library-preview-body">
           {error ? (
             <div className="library-state" role="alert">
-              <p>{error}</p>
+              <p>{errorText(error)}</p>
               <Button
                 variant="outline"
                 onClick={() => {

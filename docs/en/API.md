@@ -2,11 +2,17 @@
 
 The default address is `http://127.0.0.1:5858`. Development requests use Vite’s same-origin `/api` proxy. The service computer has workspace management access. Remote requests need a valid collaboration link and are limited to its canvas and attachments. Connection source, Host and Origin are checked.
 
-Successful responses return an object or array directly. Creation returns `201`; deletion returns `204`. Errors use stable codes with a message; the interface localizes known messages without changing API data:
+Successful responses return an object or array directly. Creation returns `201`; deletion returns `204`. Errors contain a stable, specific `code`, a display `message`, and named `params`:
 
 ```json
-{"code":"VALIDATION_FAILED","message":"请求数据格式有误"}
+{"code":"INVALID_NAME","message":"Names must contain 1–120 characters","params":{"min":1,"max":120}}
 ```
+
+`Accept-Language` selects error wording. The API supports `zh-CN` and `en`, including `zh-*` and `en-*` regional tags and `q` weights. Missing or unsupported languages fall back to `zh-CN`. Error responses include `Content-Language`, `Vary: Accept-Language`, and `Cache-Control: no-store`. Language is scoped to the current request and is never persisted in projects, templates, or the database. Authored names, file contents, and successful responses retain their original content.
+
+Clients translate `code` and `params` instead of matching the literal `message`. Name validation uses `INVALID_NAME`, canvas validation uses `INVALID_DOCUMENT`, and upload size failures use `FILE_TOO_LARGE` or `DOCUMENT_UPLOAD_TOO_LARGE`, replacing the generic `VALIDATION_FAILED` category. Existing collaboration access codes and the unavailable audio decoder code remain stable. Clients can display the server message for unknown codes. The backend catalog lives in [error.rs](../../apps/api-rust/crates/huayu-server/src/error.rs); the frontend mapping is in [errors.ts](../../apps/web/src/api/errors.ts).
+
+JSON, query, multipart, and request-method rejections use the same JSON error structure while preserving their HTTP status and headers such as `Allow`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |

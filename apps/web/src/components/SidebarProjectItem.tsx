@@ -2,6 +2,7 @@ import { useId, useLayoutEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Ellipsis, Loader2, Pencil, Trash2 } from "lucide-react";
 import { t, useLocale } from "@/i18n";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { api, type Project } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ export function SidebarProjectItem({
   const [action, setAction] = useState<"rename" | "delete" | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Error | null>(null);
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
   const menu = useRef<HTMLButtonElement>(null);
@@ -186,7 +187,7 @@ export function SidebarProjectItem({
       return;
     }
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       await api<Project>(`/api/projects/${project.id}`, {
         method: "PATCH",
@@ -196,8 +197,8 @@ export function SidebarProjectItem({
     } catch (error) {
       setError(
         error instanceof Error
-          ? error.message
-          : t("common.operationFailedRetry"),
+          ? error
+          : new LocalizedError({ key: "common.operationFailedRetry" }),
       );
     } finally {
       setBusy(false);
@@ -206,7 +207,7 @@ export function SidebarProjectItem({
   async function remove() {
     if (busy) return;
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       await api(`/api/projects/${project.id}`, { method: "DELETE" });
       deleted.current = true;
@@ -218,8 +219,8 @@ export function SidebarProjectItem({
     } catch (error) {
       setError(
         error instanceof Error
-          ? error.message
-          : t("common.operationFailedRetry"),
+          ? error
+          : new LocalizedError({ key: "common.operationFailedRetry" }),
       );
     } finally {
       setBusy(false);
@@ -268,7 +269,7 @@ export function SidebarProjectItem({
             <DropdownMenuItem
               onClick={() => {
                 setName(project.name);
-                setError("");
+                setError(null);
                 setAction("rename");
               }}
             >
@@ -279,7 +280,7 @@ export function SidebarProjectItem({
             <DropdownMenuItem
               variant="destructive"
               onClick={() => {
-                setError("");
+                setError(null);
                 setAction("delete");
               }}
             >
@@ -323,7 +324,7 @@ export function SidebarProjectItem({
               onFocus={(event) => event.currentTarget.select()}
               onChange={(event) => {
                 setName(event.target.value);
-                setError("");
+                setError(null);
               }}
               onKeyDown={(event) => {
                 if (
@@ -340,7 +341,7 @@ export function SidebarProjectItem({
                 role="alert"
                 className="text-sm text-destructive"
               >
-                {error}
+                {errorText(error)}
               </p>
             )}
             <DialogFooter>
@@ -392,7 +393,7 @@ export function SidebarProjectItem({
           </AlertDialogDescription>
           {error && (
             <p role="alert" className="text-sm text-destructive">
-              {error}
+              {errorText(error)}
             </p>
           )}
           <AlertDialogFooter>

@@ -121,7 +121,7 @@ export function parseProjectFile(value: unknown): {
   document: CanvasDocument;
 } {
   if (!value || typeof value !== "object")
-    throw new Error(t("canvas.invalidProjectFileFormat"));
+    throw new LocalizedError({ key: "canvas.invalidProjectFileFormat" });
   const object = value as Record<string, unknown>;
   if (object.type === "excalidraw") {
     if (
@@ -136,7 +136,9 @@ export function parseProjectFile(value: unknown): {
           ),
       )
     )
-      throw new Error(t("canvas.theExcalidrawFileHasNoValidCanvasContent"));
+      throw new LocalizedError({
+        key: "canvas.theExcalidrawFileHasNoValidCanvasContent",
+      });
     const store = createCanvasStore();
     const editor = new Editor(store);
     const files =
@@ -174,7 +176,9 @@ export function parseProjectFile(value: unknown): {
     };
   }
   if (object.format && (object.format !== "huayu" || object.version !== 1))
-    throw new Error(t("canvas.thisProjectFileVersionIsntSupported"));
+    throw new LocalizedError({
+      key: "canvas.thisProjectFileVersionIsntSupported",
+    });
   let document = (object.document || object) as Record<string, unknown>;
   if (document["document"])
     document = document["document"] as Record<string, unknown>;
@@ -191,14 +195,16 @@ export function parseProjectFile(value: unknown): {
     typeof document.store !== "object" ||
     Array.isArray(document.store)
   )
-    throw new Error(t("canvas.theProjectFileIsMissingCanvasData"));
+    throw new LocalizedError({
+      key: "canvas.theProjectFileIsMissingCanvasData",
+    });
   const store = createCanvasStore();
   try {
     loadSnapshot(store, {
       document: document as unknown as DocumentSnapshot<CanvasRecord>,
     });
   } catch {
-    throw new Error(t("canvas.cannotReadCanvasData"));
+    throw new LocalizedError({ key: "canvas.cannotReadCanvasData" });
   }
   const name =
     typeof object.name === "string" && object.name.trim()
@@ -213,7 +219,7 @@ export async function importProject(file: File): Promise<Project> {
   try {
     parsed = JSON.parse(await file.text());
   } catch {
-    throw new Error(t("canvas.theProjectFileIsntValidJson"));
+    throw new LocalizedError({ key: "canvas.theProjectFileIsntValidJson" });
   }
   const { name, document: source } = parseProjectFile(parsed);
   const document = await rewriteProjectResources(source, async (src) => {

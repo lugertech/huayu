@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import {
   createShapeId,
   createBindingId,
@@ -57,7 +57,7 @@ export interface AgentResponse {
   actions?: AgentEvent[]; // 兼容两种格式
 }
 
-export class AgentAPIError extends Error {}
+export class AgentAPIError extends LocalizedError {}
 
 export function completeAgentEvents(text: string): AgentEvent[] {
   const start = text.search(/"(?:events|actions)"\s*:\s*\[/);
@@ -141,7 +141,9 @@ export async function callAgentSSE(
   const response = parseModelJSON<AgentResponse>(raw);
   const events = response.events || response.actions;
   if (!Array.isArray(events))
-    throw new AgentAPIError(t("canvas.theModelReturnedInvalidDrawingActions"));
+    throw new AgentAPIError({
+      key: "canvas.theModelReturnedInvalidDrawingActions",
+    });
   signal?.throwIfAborted();
   if (events.length > delivered) onProgress?.(events.slice(delivered));
   return events;
@@ -220,7 +222,7 @@ export class AgentEventExecutor {
       });
     } catch {
       loadSnapshot(this.editor.store, { document: before });
-      throw new AgentAPIError(t("canvas.drawingActionsCannotBeApplied"));
+      throw new AgentAPIError({ key: "canvas.drawingActionsCannotBeApplied" });
     }
   }
 
@@ -587,9 +589,9 @@ export class AgentEventExecutor {
         if (!source) continue;
         const target = normalizeShapeId(source);
         if (!this.editor.getShape(target))
-          throw new AgentAPIError(
-            t("canvas.aShapeConnectedByThisArrowNoLongerExists"),
-          );
+          throw new AgentAPIError({
+            key: "canvas.aShapeConnectedByThisArrowNoLongerExists",
+          });
         this.editor.createBinding({
           id: createBindingId(),
           type: "arrow",

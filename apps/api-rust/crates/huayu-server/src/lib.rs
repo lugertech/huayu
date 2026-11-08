@@ -3,6 +3,7 @@
 mod access;
 mod error;
 mod files;
+mod i18n;
 mod library;
 mod media;
 mod project_library;
@@ -21,7 +22,7 @@ use std::{
 use axum::{
     Router,
     extract::{ConnectInfo, DefaultBodyLimit, OriginalUri, Request, State},
-    http::{HeaderValue, StatusCode, header, uri::Authority},
+    http::{HeaderValue, header, uri::Authority},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{delete, get, patch, post},
@@ -36,7 +37,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 
-pub use error::{ApiError, ApiResult};
+pub use error::{ApiError, ApiResult, ErrorCode};
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -180,6 +181,7 @@ impl Application {
             )
             .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
             .layer(middleware::from_fn_with_state(state.clone(), local_request))
+            .layer(middleware::from_fn(i18n::localize_errors))
             .layer(TraceLayer::new_for_http())
             .with_state(state);
         Ok(Self { config, router })
@@ -247,12 +249,7 @@ async fn local_request(
             })
     });
     if !allowed {
-        return ApiError::new(
-            StatusCode::FORBIDDEN,
-            "INVALID_HOST",
-            "当前访问地址不被允许",
-        )
-        .into_response();
+        return ApiError::new(ErrorCode::InvalidHost).into_response();
     }
     if let Some(origin) = request
         .headers()
@@ -262,8 +259,7 @@ async fn local_request(
         let expected_http = format!("http://{host}");
         let expected_https = format!("https://{host}");
         if origin != expected_http && origin != expected_https {
-            return ApiError::new(StatusCode::FORBIDDEN, "INVALID_ORIGIN", "请求来源不被允许")
-                .into_response();
+            return ApiError::new(ErrorCode::InvalidOrigin).into_response();
         }
     }
     let uri = request

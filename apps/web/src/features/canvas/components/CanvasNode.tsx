@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { errorText } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -196,7 +197,7 @@ export function CanvasNode({
       "width=1200,height=800,scrollbars=yes,resizable=yes",
     );
     if (!popup) {
-      failed(new Error(t("canvas.tools.popupBlocked")));
+      failed(new LocalizedError({ key: "canvas.tools.popupBlocked" }));
       return;
     }
     popup.opener = null;

@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { errorText } from "@/i18n/errors";
 import { useTranslations, formatNumber, type MessageKey } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -166,7 +167,7 @@ export function ResultWorkbench({
   }
   async function saveImage(blob: Blob, width: number, height: number) {
     if (!editor.getShape(shape.id))
-      throw new Error(t("results.theOriginalImageWasRemoved"));
+      throw new LocalizedError({ key: "results.theOriginalImageWasRemoved" });
     const asset = await uploadAsset(
       blob,
       `${shape.props.name || t("common.image")}-edited.png`,
@@ -177,7 +178,9 @@ export function ResultWorkbench({
     try {
       if (kind === "image") {
         if (!navigator.clipboard.write || typeof ClipboardItem === "undefined")
-          throw new Error(t("results.thisBrowserCannotCopyImages"));
+          throw new LocalizedError({
+            key: "results.thisBrowserCannotCopyImages",
+          });
         const png = blobForSource(source)
           .then((blob) => rotateImage(blob, 0))
           .then((canvas) => croppedImage(canvas, fullCrop()))

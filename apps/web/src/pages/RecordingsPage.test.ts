@@ -3,6 +3,8 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { Recording } from "@/api/client";
+import { errorText, LocalizedError } from "@/i18n/errors";
+import { setLanguage } from "@/i18n";
 
 // Exercise the page's actual async callback without replacing it with a second
 // implementation or requiring a DOM for the rest of the recording workspace.
@@ -31,16 +33,22 @@ function page() {
     reject: (error: Error) => void;
     signal?: AbortSignal;
   }> = [];
-  const state = { recordings: [] as Recording[], loading: false, error: "" };
+  const state = {
+    recordings: [] as Recording[],
+    loading: false,
+    error: null as Error | null,
+  };
   const showToast = vi.fn();
   const refresh = runInNewContext(`${compiled}\nrefresh`, {
     AbortController,
     Error,
+    LocalizedError,
+    errorText,
     refreshRequest: { current: null },
     hasLoaded: true,
     setRecordings: (value: Recording[]) => (state.recordings = value),
     setLoading: (value: boolean) => (state.loading = value),
-    setError: (value: string) => (state.error = value),
+    setError: (value: Error | null) => (state.error = value),
     setHasLoaded: vi.fn(),
     showToast,
     t: (key: string) => key,
@@ -81,13 +89,26 @@ describe("recording list refresh ordering", () => {
       else requests[0].reject(new Error("Old failure"));
       await older;
       expect(state.loading).toBe(true);
-      expect(state.error).toBe("");
+      expect(state.error).toBeNull();
       expect(showToast).not.toHaveBeenCalled();
       requests[1].reject(new Error("Current failure"));
       await latest;
       expect(state.loading).toBe(false);
-      expect(state.error).toBe("Current failure");
+      expect(state.error?.message).toBe("Current failure");
       expect(showToast).toHaveBeenCalledOnce();
     },
   );
+
+  it("retains the received error so its wording can follow a later language change", async () => {
+    const { refresh, requests, state } = page();
+    const pending = refresh();
+    const error = new LocalizedError({ key: "api.errors.contentNotFound" });
+    requests[0].reject(error);
+    await pending;
+    expect(state.error).toBe(error);
+    setLanguage("en");
+    expect(errorText(state.error)).toBe("Content not found");
+    setLanguage("zh-CN");
+    expect(errorText(state.error)).toBe("未找到对应内容");
+  });
 });

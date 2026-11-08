@@ -19,7 +19,7 @@ use tokio::sync::broadcast;
 use uuid::Uuid;
 
 use crate::{
-    ApiError, ApiResult, AppState,
+    ApiError, ApiResult, AppState, ErrorCode,
     access::{CanvasAccess, project_assets, referenced_assets},
     error::ApiJson,
 };
@@ -38,11 +38,7 @@ fn check_shared_access(project: &Project, query: &AccessQuery) -> ApiResult<()> 
     if let Some(token) = &query.share
         && (!project.is_collaborative || project.share_token.as_ref() != Some(token))
     {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "COLLABORATION_CLOSED",
-            "协作链接已关闭或失效",
-        ));
+        return Err(ApiError::new(ErrorCode::CollaborationClosed));
     }
     Ok(())
 }
@@ -135,7 +131,7 @@ pub(crate) enum MemberRole {
     Collaborator,
 }
 
-const MAX_COLLABORATORS: usize = 15;
+pub(crate) const MAX_COLLABORATORS: usize = 15;
 const MAX_DOCUMENT_PATCH_BYTES: usize = 32 * 1024 * 1024;
 // The live message adds a type and optional target UUID around the document patch.
 const MAX_CLIENT_MESSAGE_BYTES: usize = MAX_DOCUMENT_PATCH_BYTES + 1024;
@@ -254,7 +250,7 @@ pub(crate) async fn update(
                 || (cover.starts_with("data:image/png;base64,") && cover.len() <= 512 * 1024))
         })
     {
-        return Err(ApiError::invalid("封面应使用本地图片"));
+        return Err(ApiError::new(ErrorCode::LocalCoverRequired));
     }
     let _guard = state.mutations.lock().await;
     // Preview validation and document writes share this lock, so a late
@@ -263,11 +259,7 @@ pub(crate) async fn update(
         && let Some(revision) = body.cover_revision
         && state.store.project(&id).await?.revision != revision
     {
-        return Err(ApiError::new(
-            StatusCode::CONFLICT,
-            "STALE_PREVIEW",
-            "画布已更新，请重试",
-        ));
+        return Err(ApiError::new(ErrorCode::StalePreview));
     }
     Ok(Json(
         state
@@ -306,7 +298,7 @@ pub(crate) async fn patch_document(
         .len()
         > MAX_DOCUMENT_PATCH_BYTES
     {
-        return Err(ApiError::invalid("画布数据过大，请减少嵌入内容后重试"));
+        return Err(ApiError::new(ErrorCode::CanvasTooLarge));
     }
     let _guard = state.mutations.lock().await;
     access.ensure_active(&state).await?;
@@ -370,7 +362,7 @@ pub(crate) async fn promote(
         || body.tags.len() > 20
         || body.tags.iter().any(|tag| tag.len() > 120)
     {
-        return Err(ApiError::invalid("模板描述或标签过长"));
+        return Err(ApiError::new(ErrorCode::TemplateMetadataTooLong));
     }
     let _guard = state.mutations.lock().await;
     Ok((
@@ -389,7 +381,7 @@ pub(crate) async fn delete_template(
     Path(id): Path<String>,
 ) -> ApiResult<StatusCode> {
     if id.starts_with("builtin-") {
-        return Err(ApiError::invalid("内置示例无法删除"));
+        return Err(ApiError::new(ErrorCode::BuiltinTemplateReadOnly));
     }
     let _guard = state.mutations.lock().await;
     state.store.delete_template(&id).await?;
@@ -406,7 +398,7 @@ pub(crate) async fn remove_member(
         .share_token
         .as_deref()
         .filter(|_| project.is_collaborative)
-        .ok_or_else(|| ApiError::invalid("协作尚未开启"))?;
+        .ok_or_else(|| ApiError::new(ErrorCode::CollaborationNotOpen))?;
     state
         .store
         .remove_collaboration_member(&id, &member_id, token)
@@ -481,7 +473,7 @@ async fn stream_events(
     let admission = {
         let _guard = state.mutations.lock().await;
         if let Err(error) = access.ensure_active(&state).await {
-            Some(if error.code == "COLLABORATOR_REMOVED" {
+            Some(if error.code == ErrorCode::CollaboratorRemoved {
                 RoomEvent::MemberRemoved {
                     member_id: peer.member_id.clone(),
                 }
@@ -607,7 +599,7 @@ async fn stream_events(
                         match state.store.project(&id).await {
                             Ok(project) => {
                                 if let Err(error) = access.ensure_active(&state).await {
-                                    let event = if error.code == "COLLABORATOR_REMOVED" {
+                                    let event = if error.code == ErrorCode::CollaboratorRemoved {
                                         RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }
                                     } else { RoomEvent::Collaboration { enabled: false } };
                                     let _ = send_event(&mut sender, &event).await;

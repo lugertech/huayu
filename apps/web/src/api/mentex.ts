@@ -58,10 +58,16 @@ export async function generateChart(params: {
 export function validateFile(
   file: File,
   options: { maxSize?: number; allowedTypes?: string[] } = {},
-) {
+): { valid: true } | { valid: false; error: LocalizedError } {
   if (file.size > (options.maxSize || 10 * 1024 * 1024))
-    return { valid: false, error: t("api.fileExceedsTheSizeLimit") };
+    return {
+      valid: false,
+      error: new LocalizedError({ key: "api.fileExceedsTheSizeLimit" }),
+    };
   if (options.allowedTypes && !options.allowedTypes.includes(file.type))
-    return { valid: false, error: t("api.unsupportedFileFormat") };
+    return {
+      valid: false,
+      error: new LocalizedError({ key: "api.unsupportedFileFormat" }),
+    };
   return { valid: true };
 }

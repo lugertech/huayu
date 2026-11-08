@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { translate, useTranslations, type Values } from "@/i18n";
 
-const messages = {
+export const assetMessages = {
   "zh-CN": {
     "{arg0} 个文件夹 · 已加载 {arg1}/{arg2} 个文件":
       "{arg0} 个文件夹 · 已加载 {arg1}/{arg2} 个文件",
@@ -230,11 +230,13 @@ const messages = {
   },
 } as const;
 
+export type AssetMessageKey = keyof (typeof assetMessages)["zh-CN"];
+
 export function useAssetTranslations() {
   const { locale, t } = useTranslations();
   const at = useCallback(
-    (key: keyof (typeof messages)["zh-CN"], values?: Values) =>
-      translate(messages, locale, key, values),
+    (key: keyof (typeof assetMessages)["zh-CN"], values?: Values) =>
+      translate(assetMessages, locale, key, values),
     [locale],
   );
   return { locale, t, at };

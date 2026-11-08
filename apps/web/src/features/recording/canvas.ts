@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 import {
   createCanvasStore,
@@ -96,7 +97,7 @@ export function recordingCanvas(
           : []),
       ];
   if (!materials.some((material) => material.text.trim()))
-    throw new Error(t("recordings.canvas.transcriptRequired"));
+    throw new LocalizedError({ key: "recordings.canvas.transcriptRequired" });
   const ids: string[] = [];
   editor.run(() => {
     for (const [index, material] of materials.entries()) {

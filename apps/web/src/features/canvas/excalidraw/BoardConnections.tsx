@@ -83,7 +83,6 @@ export function BoardConnections() {
         editor,
         start.side === "right" ? start.id : target,
         start.side === "right" ? target : start.id,
-        locale,
       );
       editor.select(start.side === "right" ? target : start.id);
     } catch (error) {

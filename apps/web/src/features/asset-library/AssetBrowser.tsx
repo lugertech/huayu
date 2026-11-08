@@ -14,7 +14,8 @@ import {
 import Viewer from "viewerjs";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { useAssetTranslations } from "./messages";
+import { useAssetTranslations, type AssetMessageKey } from "./messages";
+import { errorText } from "@/i18n/errors";
 import { assetUrl, ASSET_DRAG_TYPE, assetMasonryColumns } from "./assets";
 import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/backend";
@@ -108,7 +109,6 @@ interface UploadDialogItem {
   size: number;
   previewUrl: string | null;
   status: "pending" | "uploading" | "done" | "error";
-  message: string;
 }
 
 type ContextMenuTarget =
@@ -126,7 +126,6 @@ type DialogState =
   | {
       type: "create-group";
       parentId: string | null;
-      parentName: string;
       value: string;
     }
   | { type: "rename-group"; group: AssetGroupItem; value: string }
@@ -380,12 +379,17 @@ export function AssetBrowser({
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   const [dialogRequest, setDialogRequest] = useState<
-    { phase: "editing" | "submitting" } | { phase: "error"; message: string }
+    | { phase: "editing" | "submitting" }
+    | { phase: "error"; message: Error | AssetMessageKey }
   >({ phase: "editing" });
   const dialogSubmitting = dialogRequest.phase === "submitting";
   const dialogError =
-    dialogRequest.phase === "error" ? dialogRequest.message : null;
-  function setDialogError(message: string | null) {
+    dialogRequest.phase === "error"
+      ? dialogRequest.message instanceof Error
+        ? errorText(dialogRequest.message, locale)
+        : at(dialogRequest.message)
+      : null;
+  function setDialogError(message: Error | AssetMessageKey | null) {
     setDialogRequest(
       message ? { phase: "error", message } : { phase: "editing" },
     );
@@ -929,7 +933,6 @@ export function AssetBrowser({
         ? URL.createObjectURL(file)
         : null,
       status: "pending" as const,
-      message: at("等待上传"),
     }));
 
     setUploadDialogItems((prev) => [...prev, ...newItems]);
@@ -959,7 +962,7 @@ export function AssetBrowser({
       };
 
       try {
-        updateItem({ status: "uploading", message: at("上传中...") });
+        updateItem({ status: "uploading" });
 
         await uploadAsset({
           file: dialogItem.file,
@@ -967,11 +970,11 @@ export function AssetBrowser({
           folder_id: targetGroupId,
         });
         successCount += 1;
-        updateItem({ status: "done", message: at("已完成") });
+        updateItem({ status: "done" });
       } catch (error) {
         console.error(at("上传素材失败:"), error);
         failedCount += 1;
-        updateItem({ status: "error", message: at("上传失败") });
+        updateItem({ status: "error" });
       }
     }
 
@@ -1032,12 +1035,9 @@ export function AssetBrowser({
       return;
     }
 
-    const parentGroup = findGroupById(groups, parentId);
-
     setDialogState({
       type: "create-group",
       parentId,
-      parentName: parentGroup?.name ?? at("素材"),
       value: at("新建文件夹"),
     });
   };
@@ -1745,7 +1745,7 @@ export function AssetBrowser({
       if (dialogState.type === "create-group") {
         const name = dialogState.value.trim();
         if (!name) {
-          setDialogError(at("请输入文件夹名称"));
+          setDialogError("请输入文件夹名称");
           return;
         }
 
@@ -1757,7 +1757,7 @@ export function AssetBrowser({
       if (dialogState.type === "rename-group") {
         const name = dialogState.value.trim();
         if (!name) {
-          setDialogError(at("请输入文件夹名称"));
+          setDialogError("请输入文件夹名称");
           return;
         }
 
@@ -1774,7 +1774,7 @@ export function AssetBrowser({
       if (dialogState.type === "rename-asset") {
         const name = dialogState.value.trim();
         if (!name) {
-          setDialogError(at("请输入素材名称"));
+          setDialogError("请输入素材名称");
           return;
         }
 
@@ -1805,9 +1805,7 @@ export function AssetBrowser({
         setDialogState(null);
       }
     } catch (error) {
-      setDialogError(
-        error instanceof Error ? error.message : at("操作失败，请重试"),
-      );
+      setDialogError(error instanceof Error ? error : "操作失败，请重试");
     } finally {
       setDialogRequest((current) =>
         current.phase === "submitting" ? { phase: "editing" } : current,
@@ -1824,7 +1822,9 @@ export function AssetBrowser({
       addToast({
         type: "error",
         message:
-          error instanceof Error ? error.message : t("assets.insertFailed"),
+          error instanceof Error
+            ? errorText(error, locale)
+            : t("assets.insertFailed"),
       });
     } finally {
       setInserting(false);
@@ -1838,7 +1838,10 @@ export function AssetBrowser({
     } catch (error) {
       addToast({
         type: "error",
-        message: error instanceof Error ? error.message : t("common.tryAgain"),
+        message:
+          error instanceof Error
+            ? errorText(error, locale)
+            : t("common.tryAgain"),
       });
     }
   }
@@ -1848,7 +1851,10 @@ export function AssetBrowser({
     } catch (error) {
       addToast({
         type: "error",
-        message: error instanceof Error ? error.message : t("common.tryAgain"),
+        message:
+          error instanceof Error
+            ? errorText(error, locale)
+            : t("common.tryAgain"),
       });
     }
   }
@@ -3032,7 +3038,13 @@ export function AssetBrowser({
               </DialogTitle>
               <DialogDescription>
                 {dialogState.type === "create-group"
-                  ? at("将在「{arg0}」中创建", { arg0: dialogState.parentName })
+                  ? at("将在「{arg0}」中创建", {
+                      arg0:
+                        dialogState.parentId === null
+                          ? at("素材")
+                          : (findGroupById(groups, dialogState.parentId)
+                              ?.name ?? at("素材")),
+                    })
                   : dialogState.type === "rename-group"
                     ? at("当前名称：{arg0}", { arg0: dialogState.group.name })
                     : dialogState.type === "rename-asset"
@@ -3254,7 +3266,7 @@ export function AssetBrowser({
                       ? at("上传中...")
                       : item.status === "done"
                         ? at("已完成")
-                        : item.message}
+                        : at("上传失败")}
                 </span>
                 <div className="text-right">
                   {item.status === "pending" && (

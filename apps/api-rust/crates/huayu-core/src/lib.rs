@@ -8,6 +8,7 @@ use serde_json::Value;
 pub mod project_library;
 
 const MAX_DOCUMENT_RECORDS: usize = 50_000;
+pub const MAX_NAME_CHARS: usize = 120;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -32,9 +33,9 @@ pub struct DocumentPatch {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ValidationError {
-    #[error("名称应包含 1 至 120 个字符")]
+    #[error("invalid name")]
     InvalidName,
-    #[error("画布数据格式有误")]
+    #[error("invalid canvas document")]
     InvalidDocument,
 }
 
@@ -117,7 +118,7 @@ impl Document {
 
 pub fn validate_name(name: &str) -> Result<&str, ValidationError> {
     let name = name.trim();
-    if name.is_empty() || name.chars().count() > 120 {
+    if name.is_empty() || name.chars().count() > MAX_NAME_CHARS {
         return Err(ValidationError::InvalidName);
     }
     Ok(name)

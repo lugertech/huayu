@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vite-plus/test";
 import { transitionCapture, type CaptureState } from "./capture-state";
 import type { Asset } from "@/api/client";
+import { errorText, LocalizedError } from "@/i18n/errors";
+import { setLanguage } from "@/i18n";
 
 describe("capture ownership", () => {
   const blob = new Blob(["recording"]);
+  it("retains a save failure for translation after changing language", () => {
+    const error = new LocalizedError({ key: "recordings.recorder.cannotSave" });
+    const state = transitionCapture(
+      { status: "saving", phase: "creating", blob, asset: null },
+      { type: "save-failed", error },
+    );
+    expect(state.status).toBe("pending");
+    if (state.status !== "pending") return;
+    expect(state.error).toBe(error);
+    expect(errorText(state.error)).toMatch(/\p{Script=Han}/u);
+    setLanguage("en");
+    expect(errorText(state.error)).not.toMatch(/\p{Script=Han}/u);
+  });
   it("keeps an unsaved capture after stopping and refuses another start", () => {
     const pending = transitionCapture(
       { status: "stopping" },
@@ -21,16 +36,19 @@ describe("capture ownership", () => {
       status: "pending",
       blob,
       asset: null,
-      error: "",
+      error: null,
     };
     state = transitionCapture(state, { type: "save" });
     state = transitionCapture(state, { type: "uploaded", asset });
-    state = transitionCapture(state, { type: "save-failed", error: "offline" });
+    state = transitionCapture(state, {
+      type: "save-failed",
+      error: new Error("offline"),
+    });
     expect(state).toMatchObject({
       status: "pending",
       asset,
       blob,
-      error: "offline",
+      error: new Error("offline"),
     });
     state = transitionCapture(state, { type: "save" });
     expect(state).toMatchObject({ status: "saving", phase: "creating", asset });
@@ -47,11 +65,14 @@ describe("capture ownership", () => {
       ),
     ).toEqual({ status: "idle" });
     const discarded = transitionCapture(
-      { status: "pending", blob, asset: null, error: "" },
+      { status: "pending", blob, asset: null, error: null },
       { type: "discard" },
     );
     expect(
-      transitionCapture(discarded, { type: "save-failed", error: "late" }),
+      transitionCapture(discarded, {
+        type: "save-failed",
+        error: new Error("late"),
+      }),
     ).toBe(discarded);
   });
 });

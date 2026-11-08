@@ -1,4 +1,5 @@
 import type { Recording } from "@/api/client";
+import { getLocale } from "@/i18n";
 
 /** A null cover identifies audio; decoding failure is handled by the card. */
 export async function loadRecordingCover(
@@ -7,6 +8,7 @@ export async function loadRecordingCover(
 ): Promise<Blob | null> {
   try {
     const response = await fetch(`/api/recordings/${recording.id}/cover`, {
+      headers: { "Accept-Language": getLocale() },
       signal,
       credentials: "omit",
       cache: "force-cache",

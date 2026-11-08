@@ -1,8 +1,32 @@
+import { translatedErrorMessage } from "@/i18n/errors";
+import { setLanguage } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { readChatStream, parseModelJSON, testConnection } from "./provider";
 import { defaultSettings } from "./settings";
 
 describe("provider response handling", () => {
+  it("translates the tested capability and result again after a language change", async () => {
+    vi.stubGlobal("window", { location: { origin: "http://127.0.0.1:5861" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: [{ id: "image-test-model" }] }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+    const result = await testConnection("image", {
+      ...defaultSettings().connections.image,
+      apiKey: "test-only-key",
+      baseUrl: "https://provider.example/v1",
+      model: "image-test-model",
+    });
+    expect(translatedErrorMessage(result.message)).toMatch(/\p{Script=Han}/u);
+    setLanguage("en");
+    const english = translatedErrorMessage(result.message);
+    expect(english).not.toMatch(/\p{Script=Han}/u);
+    expect(english).toContain("Image");
+  });
   it("decodes UTF-8 and SSE lines split at every byte, including a final line without newline", async () => {
     const text =
       'data: {"choices":[{"delta":{"content":"中文"}}]}\r\n\r\ndata: {"choices":[{"delta":{"content":"测试"}}]}\n\ndata: [DONE]';
@@ -88,6 +112,10 @@ describe("connection tests", () => {
       apiKey: "test-only-key",
     });
     expect(result.status).toBe("warning");
-    expect(result.message).toContain("未找到此模型");
+    expect(translatedErrorMessage(result.message)).toContain("未找到此模型");
+    setLanguage("en");
+    expect(translatedErrorMessage(result.message)).not.toMatch(
+      /\p{Script=Han}/u,
+    );
   });
 });

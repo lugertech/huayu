@@ -1,4 +1,10 @@
 import { t, useLocale } from "@/i18n";
+import {
+  errorText,
+  LocalizedError,
+  translatedErrorMessage,
+  type ErrorTranslation,
+} from "@/i18n/errors";
 import { useEffect, useRef, useState } from "react";
 import {
   CircleAlert,
@@ -46,11 +52,19 @@ export function ModelSettings({
     | { status: "idle" | "testing" }
     | {
         status: "complete";
-        result: { status: "success" | "warning" | "error"; message: string };
+        result: {
+          status: "success" | "warning" | "error";
+          message: Error | ErrorTranslation;
+        };
       }
   >({ status: "idle" });
   const testing = testState.status === "testing";
   const result = testState.status === "complete" ? testState.result : null;
+  const resultMessage = result
+    ? result.message instanceof Error
+      ? errorText(result.message)
+      : translatedErrorMessage(result.message)
+    : "";
   const request = useRef<AbortController | null>(null);
   const { showToast } = useToast();
   const connection = draft.connections[capability];
@@ -104,7 +118,7 @@ export function ModelSettings({
     if (issue) {
       setTestState({
         status: "complete",
-        result: { status: "error", message: issue.message },
+        result: { status: "error", message: issue.error },
       });
       document
         .getElementById(
@@ -134,8 +148,10 @@ export function ModelSettings({
             status: "error",
             message:
               error instanceof Error
-                ? error.message
-                : t("settings.models.connectionFailed"),
+                ? error
+                : new LocalizedError({
+                    key: "settings.models.connectionFailed",
+                  }),
           },
         });
     } finally {
@@ -276,7 +292,7 @@ export function ModelSettings({
                   role="alert"
                   className="text-xs leading-5 text-destructive"
                 >
-                  {result.message}
+                  {resultMessage}
                 </p>
               )}
             </div>
@@ -319,7 +335,7 @@ export function ModelSettings({
                   role="alert"
                   className="text-xs leading-5 text-destructive"
                 >
-                  {result.message}
+                  {resultMessage}
                 </p>
               )}
             </div>
@@ -349,7 +365,7 @@ export function ModelSettings({
                     role="alert"
                     className="text-xs leading-5 text-destructive"
                   >
-                    {result.message}
+                    {resultMessage}
                   </p>
                 )}
               </div>
@@ -417,7 +433,7 @@ export function ModelSettings({
                   ) : (
                     <CircleAlert className="mt-0.5 size-4 shrink-0" />
                   )}
-                  {result.message}
+                  {resultMessage}
                 </p>
               )}
             </div>

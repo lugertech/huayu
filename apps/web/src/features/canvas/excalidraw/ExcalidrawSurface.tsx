@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { errorText } from "@/i18n/errors";
 import { t as appT, useTranslations } from "@/i18n";
 import {
@@ -694,7 +695,9 @@ export function ExcalidrawSurface({
           padding: 24,
         });
         if (!svg)
-          throw new Error(t("canvas.theresNothingOnTheCanvasToExportYet"));
+          throw new LocalizedError({
+            key: "canvas.theresNothingOnTheCanvasToExportYet",
+          });
         downloadBlob(
           new Blob([svg.svg], { type: "image/svg+xml" }),
           `${name}.svg`,
@@ -838,7 +841,9 @@ export function ExcalidrawSurface({
       ?.focus({ preventScroll: true });
     void (async () => {
       if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined")
-        throw new Error(t("results.thisBrowserCannotCopyImages"));
+        throw new LocalizedError({
+          key: "results.thisBrowserCannotCopyImages",
+        });
       // Pass a promise to ClipboardItem while the original user gesture is active.
       const content =
         format === "png"
@@ -853,9 +858,9 @@ export function ExcalidrawSurface({
               .getSvgString(ids, { background: state.exportBackground })
               .then((value) => {
                 if (!value)
-                  throw new Error(
-                    t("canvas.theresNothingOnTheCanvasToExportYet"),
-                  );
+                  throw new LocalizedError({
+                    key: "canvas.theresNothingOnTheCanvasToExportYet",
+                  });
                 return new Blob([value.svg], { type: "text/plain" });
               });
       await navigator.clipboard.write([
@@ -1102,7 +1107,7 @@ export function ExcalidrawSurface({
                     nodeExecution(editor, target.id).status,
                   )
                 )
-                  throw new Error(t("assets.targetUnavailable"));
+                  throw new LocalizedError({ key: "assets.targetUnavailable" });
                 editor.updateShape({ id: target.id, props });
               }
             })()

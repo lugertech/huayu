@@ -1,4 +1,5 @@
 import { useTranslations } from "@/i18n";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -14,7 +15,7 @@ import type { DrawingCanvasProps } from "../features/canvas/DrawingCanvas";
 const loadCanvas = () => import("../features/canvas/DrawingCanvas");
 
 export function DrawingPage() {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [searchParams] = useSearchParams();
   const shareToken = searchParams.get("share");
   const { id } = useParams();
@@ -29,7 +30,7 @@ export function DrawingPage() {
     | {
         status: "error";
         key: string;
-        error: string;
+        error: Error;
         exitReason: CollaborationExit | null;
       }
   >({ status: "loading", key: `${id}:${shareToken}` });
@@ -68,7 +69,10 @@ export function DrawingPage() {
           setLoad({
             status: "error",
             key: requestKey,
-            error: error.message,
+            error:
+              error instanceof Error
+                ? error
+                : new LocalizedError({ key: "common.tryAgain" }),
             exitReason:
               error instanceof APIError
                 ? error.code === "COLLABORATOR_REMOVED"
@@ -106,7 +110,9 @@ export function DrawingPage() {
             <CollaborationNotice reason={exitReason} />
           ) : error ? (
             <>
-              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="text-sm text-muted-foreground">
+                {errorText(error, locale)}
+              </p>
               <Button onClick={() => location.reload()}>
                 {t("common.reload")}
               </Button>

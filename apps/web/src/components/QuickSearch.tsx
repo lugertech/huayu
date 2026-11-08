@@ -1,4 +1,5 @@
 import { t, useLocale, type MessageKey } from "@/i18n";
+import { errorText } from "@/i18n/errors";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -219,8 +220,7 @@ export function QuickSearch({
         input.current?.focus();
         showToast({
           title: t("projects.createFailed"),
-          description:
-            error instanceof Error ? error.message : t("common.tryAgain"),
+          description: errorText(error),
           variant: "destructive",
         });
       } finally {

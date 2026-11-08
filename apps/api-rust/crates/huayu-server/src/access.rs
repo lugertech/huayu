@@ -5,12 +5,12 @@ use std::{
     net::{IpAddr, SocketAddr},
 };
 
-use axum::http::{HeaderMap, Method, StatusCode, Uri, header};
+use axum::http::{HeaderMap, Method, Uri, header};
 use huayu_core::Project;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState};
+use crate::{ApiError, ApiResult, AppState, ErrorCode};
 
 #[derive(Clone)]
 pub(crate) enum CanvasAccess {
@@ -37,22 +37,14 @@ impl CanvasAccess {
         {
             let project = state.store.project(project_id).await?;
             if !project.is_collaborative || project.share_token.as_deref() != Some(token.as_str()) {
-                return Err(ApiError::new(
-                    StatusCode::FORBIDDEN,
-                    "COLLABORATION_CLOSED",
-                    "协作链接已关闭或失效",
-                ));
+                return Err(ApiError::new(ErrorCode::CollaborationClosed));
             }
             let member = state
                 .store
                 .collaboration_member(project_id, session_token)
                 .await?;
             if !member.is_some_and(|member| !member.removed && member.share_token == *token) {
-                return Err(ApiError::new(
-                    StatusCode::FORBIDDEN,
-                    "COLLABORATOR_REMOVED",
-                    "你已被移出协作，请联系房主",
-                ));
+                return Err(ApiError::new(ErrorCode::CollaboratorRemoved));
             }
         }
         Ok(())
@@ -96,11 +88,7 @@ impl CanvasAccess {
         if let Self::Shared { assets, .. } = self
             && !referenced.is_subset(assets)
         {
-            return Err(ApiError::new(
-                StatusCode::FORBIDDEN,
-                "SHARED_RESOURCE_FORBIDDEN",
-                "只能使用当前画布中的附件，请从本地上传文件",
-            ));
+            return Err(ApiError::new(ErrorCode::SharedResourceForbidden));
         }
         Ok(())
     }
@@ -163,19 +151,13 @@ async fn shared_access(
     token: &str,
     headers: &HeaderMap,
 ) -> ApiResult<CanvasAccess> {
-    let project = state.store.project(project_id).await.map_err(|_| {
-        ApiError::new(
-            StatusCode::FORBIDDEN,
-            "COLLABORATION_CLOSED",
-            "协作链接已关闭或失效",
-        )
-    })?;
+    let project = state
+        .store
+        .project(project_id)
+        .await
+        .map_err(|_| ApiError::new(ErrorCode::CollaborationClosed))?;
     if !project.is_collaborative || project.share_token.as_deref() != Some(token) {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "COLLABORATION_CLOSED",
-            "协作链接已关闭或失效",
-        ));
+        return Err(ApiError::new(ErrorCode::CollaborationClosed));
     }
     let cookie_name = format!("huayu_member_{project_id}");
     let session_token = headers
@@ -197,11 +179,7 @@ async fn shared_access(
         None => None,
     };
     if member.as_ref().is_some_and(|member| member.removed) {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "COLLABORATOR_REMOVED",
-            "你已被移出协作，请联系房主",
-        ));
+        return Err(ApiError::new(ErrorCode::CollaboratorRemoved));
     }
     if state
         .rooms
@@ -210,11 +188,7 @@ async fn shared_access(
         .get(project_id)
         .is_some_and(|room| !room.can_admit(member.as_ref().map(|member| member.id.as_str())))
     {
-        return Err(ApiError::new(
-            StatusCode::CONFLICT,
-            "ROOM_FULL",
-            "房间已有 15 位协作者，请稍后重试",
-        ));
+        return Err(ApiError::new(ErrorCode::RoomFull));
     }
     let member = match member {
         Some(member) => member,
@@ -259,13 +233,8 @@ pub(crate) async fn authorize(
     let project_path = path.strip_prefix("/api/projects/");
     let project_id = canvas.or_else(|| project_path.and_then(|path| path.split('/').next()));
     if let Some(token) = token {
-        let project_id = project_id.ok_or_else(|| {
-            ApiError::new(
-                StatusCode::FORBIDDEN,
-                "SHARED_SCOPE_FORBIDDEN",
-                "协作链接仅可访问当前画布",
-            )
-        })?;
+        let project_id =
+            project_id.ok_or_else(|| ApiError::new(ErrorCode::SharedScopeForbidden))?;
         let access = shared_access(state, project_id, token, headers).await?;
         let read = method == Method::GET || method == Method::HEAD;
         let project_route = project_path.and_then(|value| value.strip_prefix(project_id));
@@ -282,11 +251,7 @@ pub(crate) async fn authorize(
             return Ok(access);
         }
         if !allowed {
-            return Err(ApiError::new(
-                StatusCode::FORBIDDEN,
-                "SHARED_SCOPE_FORBIDDEN",
-                "协作链接仅可访问当前画布",
-            ));
+            return Err(ApiError::new(ErrorCode::SharedScopeForbidden));
         }
         return Ok(access);
     }
@@ -301,13 +266,10 @@ pub(crate) async fn authorize(
             .and_then(|value| value.to_str().ok())
     {
         for value in forwarded.rsplit(',') {
-            let ip = value.trim().parse::<IpAddr>().map_err(|_| {
-                ApiError::new(
-                    StatusCode::FORBIDDEN,
-                    "WORKSPACE_PRIVATE",
-                    "请通过协作链接打开画布",
-                )
-            })?;
+            let ip = value
+                .trim()
+                .parse::<IpAddr>()
+                .map_err(|_| ApiError::new(ErrorCode::WorkspacePrivate))?;
             if !local_ip(ip) {
                 peer = Some(ip);
                 break;
@@ -346,9 +308,5 @@ pub(crate) async fn authorize(
             }
         }
     }
-    Err(ApiError::new(
-        StatusCode::FORBIDDEN,
-        "WORKSPACE_PRIVATE",
-        "这是私人工作区，请通过协作链接打开画布",
-    ))
+    Err(ApiError::new(ErrorCode::WorkspacePrivate))
 }

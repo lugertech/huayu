@@ -1,6 +1,6 @@
+import { LocalizedError } from "@/i18n/errors";
 import { api, uploadAsset } from "@/api/client";
 import { nodeIsBusy } from "@/workflow/execute";
-import { t } from "@/i18n";
 import {
   createShapeId,
   type Editor,
@@ -39,9 +39,9 @@ export function applyLibraryImage(
 ) {
   const shape = editor.getShape(shapeId);
   if (!shape || !["ai-image", "image"].includes(shape.type))
-    throw new Error(t("assets.imageTargetRequired"));
+    throw new LocalizedError({ key: "assets.imageTargetRequired" });
   if (shape.isLocked || shape.props.isLocked || nodeIsBusy(editor, shapeId))
-    throw new Error(t("assets.targetUnavailable"));
+    throw new LocalizedError({ key: "assets.targetUnavailable" });
   editor.run(() => {
     if (shape.type === "image") {
       const assetId = `asset:${crypto.randomUUID()}`;
@@ -101,7 +101,8 @@ export async function importLibraryFile(file: File, folderId: string | null) {
       await image.decode();
       width = image.naturalWidth;
       height = image.naturalHeight;
-      if (!width || !height) throw new Error(t("assets.imageRequired"));
+      if (!width || !height)
+        throw new LocalizedError({ key: "assets.imageRequired" });
     } finally {
       URL.revokeObjectURL(url);
     }

@@ -1,19 +1,8 @@
-import type { MessageKey } from "@/i18n";
+import { getLocale } from "@/i18n";
 import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
-import { zhCN } from "@/i18n/messages";
 import { canvasRequestHeaders } from "@/lib/canvas-access";
+import { readApiError } from "./errors";
 
-// The local API still returns human-readable messages. Translate known messages
-// at this boundary and preserve unknown details instead of treating them as keys.
-const apiMessageKeys = new Map<string, MessageKey>(
-  (Object.keys(zhCN) as MessageKey[]).map((key) => [zhCN[key], key]),
-);
-function localizeApiError(message: unknown): string | ErrorTranslation {
-  if (typeof message !== "string" || !message)
-    return { key: "common.operationFailedRetry" };
-  const key = apiMessageKeys.get(message);
-  return key ? { key } : message;
-}
 export interface CanvasDocument {
   store: Record<string, unknown>;
   schema: unknown;
@@ -84,6 +73,8 @@ export async function api<T>(
   if (!path.startsWith("/api/"))
     throw new LocalizedError({ key: "api.invalidRequestUrl" });
   const headers = new Headers(options.headers);
+  if (!headers.has("Accept-Language"))
+    headers.set("Accept-Language", getLocale());
   for (const [key, value] of Object.entries(canvasRequestHeaders()))
     headers.set(key, value);
   if (options.body && !(options.body instanceof FormData))
@@ -109,13 +100,14 @@ export async function api<T>(
     );
   }
   if (!response.ok) {
-    const error = await response.json().catch(() => null);
+    const value: unknown = await response.json().catch(() => null);
+    const error = readApiError(value);
     throw new APIError(
-      error
-        ? localizeApiError(error.message)
+      value
+        ? error.message
         : { key: "api.requestFailed", values: { arg0: response.status } },
       response.status,
-      error?.code || "REQUEST_FAILED",
+      error.code,
     );
   }
   const result =

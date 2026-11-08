@@ -51,6 +51,50 @@ Avoid unnecessary secondary labels and descriptions. Let the layout do the expla
 
 参考：[Thinking in React](https://react.dev/learn/thinking-in-react)、[组件导入与导出](https://react.dev/learn/importing-and-exporting-components)、[不一定需要 Effect](https://react.dev/learn/you-might-not-need-an-effect)、[Hooks 规则](https://react.dev/reference/rules/rules-of-hooks)。
 
+## 多语言系统
+
+当前应用文案支持 `zh-CN` 和 `en`，使用项目内词典与类型化错误，不依赖 UniFFI 或 Fluent。
+
+### 语言来源与前端入口
+
+- Web 语言入口是 [apps/web/src/i18n/index.ts](./apps/web/src/i18n/index.ts)，纯语言解析、插值和单复数选择在 [locale.ts](./apps/web/src/i18n/locale.ts)。浏览器偏好使用 `huayu:language`，取值为 `zh-CN`、`en` 或跟随浏览器的 `system`；选择 `system` 时移除存储项。显式选择优先，否则按浏览器语言列表匹配中英文，无匹配时回退英文。
+- 主词典为 [zh-CN.ts](./apps/web/src/i18n/locales/zh-CN.ts) 和 [en.ts](./apps/web/src/i18n/locales/en.ts)。新增文案使用语义化 `MessageKey`，同时补齐中英文及相同的命名插值参数；单复数文案使用 `one` / `other` 和 `count`。词条缺失时回退中文，未知键返回空串；这些回退不能代替完整翻译。
+- React 组件使用 `useTranslations()` 获取当前作用域的 `{ locale, t }`。它优先读取 `LocaleContext`，否则订阅应用语言；仅需全局语言时使用 `useLocale()`。订阅同时响应语言选择、浏览器语言变化和其他标签页的存储变化，不通过重新挂载编辑器切换语言。
+- 非 React 逻辑用 `getLocale()` 读取应用语言；需要局部语言的逻辑显式接收 `locale`，并通过 `getTranslator(locale)` 绑定翻译函数，避免反复传递空占位参数。未绑定语言的 `getTranslator()` 会在每次调用时读取应用语言。不要在模块初始化时保存翻译结果。
+- 画布的 Excalidraw 语言由 [board-language.ts](./apps/web/src/features/canvas/excalidraw/board-language.ts) 管理，偏好键为 `huayu:board-language`。跟随模式使用应用语言偏好或浏览器语言；画布原生工具支持其自身语言列表，应用内卡片界面将中文映射为 `zh-CN`，其他语言映射为 `en`。附件、导出、错误提示及默认标签应使用画布作用域的语言，不能直接取全局语言替代；`Editor.locale` 只用于内存中的运行与导出上下文。
+- 素材库现有局部词典在 [features/asset-library/messages.ts](./apps/web/src/features/asset-library/messages.ts)，通过 `useAssetTranslations()` 的 `at()` 使用，键由 `AssetMessageKey` 约束。其历史中文键属于词典标识，仍需保持中英文键和插值参数一致。
+- 官网使用 [apps/site/src/i18n.ts](./apps/site/src/i18n.ts) 和自身的 [中文词典](./apps/site/src/locales/zh-CN.ts)、[英文词典](./apps/site/src/locales/en.ts)。默认路径为中文，`/en/` 路径为英文；组件使用 `useSiteI18n()`，站内链接使用语言路径工具。官网复用纯语言工具，不依赖 Web 应用的浏览器状态入口。
+
+### 文案、状态与错误的显示时机
+
+- 日期和数字按当前有效 `locale` 格式化。全局场景可以用 `formatDate()` / `formatNumber()`；局部语言场景向 `Intl` 或 `toLocale*` 显式传入 `locale`。
+- 状态保存业务标识、翻译键和参数，显示时再翻译。模型连接测试结果、表单错误、上传状态和系统目录标签都遵循此规则；不要把 `t(...)` 或 `at(...)` 的结果长期放入 state，再期望语言切换自动更新它们。异步操作完成后也应使用有效的显示语言。
+- 系统异常使用 [i18n/errors.ts](./apps/web/src/i18n/errors.ts) 中的 `LocalizedError` 与 `ErrorTranslation`。例如 `throw new LocalizedError({ key: "api.fileExceedsTheSizeLimit" })`；不要使用 `new Error(t(...))`。能力名称等需要翻译的参数也保留嵌套翻译引用，不提前转成某种语言的字符串。
+- 内存中的错误状态保留错误对象或翻译引用，在渲染处调用 `errorText(error, locale)` 或 `translatedErrorMessage(reference, locale)`。不要先读取 `error.message` 再存入状态；局部语言界面须传入该作用域的 `locale`。错误边界的提示界面也应订阅语言变化。
+- 检查点等持久化状态保存可序列化的 `ErrorTranslation`，在读取边界通过 `readErrorTranslation()` 校验，不直接序列化 `Error` 对象。旧检查点的已知原文兼容由现有读取逻辑处理；新的 API 错误不能再依赖中文原文匹配。未知第三方详情保留原文，不将其当作翻译键。
+
+### Rust API 错误协议
+
+错误链路为：业务错误码与参数 → Rust 按请求语言生成响应 → 前端按错误码映射翻译引用 → 界面按当前作用域语言显示。
+
+- 业务 handler 使用 [error.rs](./apps/api-rust/crates/huayu-server/src/error.rs) 中的 `ErrorCode` 和 `ApiError`，不在 handler 中拼写用户可见错误文案。HTTP 状态、中英文文案及命名参数在错误目录集中维护；限制值从实际业务常量取得。
+- 本地 API 客户端 [api/client.ts](./apps/web/src/api/client.ts) 默认发送当前应用语言的 `Accept-Language`，允许调用方显式覆盖。直接读取本地 API 资源的请求也应带上合适的语言；不要向模型服务转发本地 API 的画布或协作访问头。
+- [Rust i18n.rs](./apps/api-rust/crates/huayu-server/src/i18n.rs) 在统一响应边界处理业务错误、提前返回的权限错误和框架入口拒绝，保留原 HTTP 状态及 `Allow` 等响应头。错误正文统一为 `code`、`message`、`params`；`code` 和 `params` 不因语言改变。
+
+```json
+{"code":"INVALID_NAME","message":"Names must contain 1–120 characters","params":{"min":1,"max":120}}
+```
+
+- 后端按每个请求的 `Accept-Language` 选择中英文，兼容区域标签和 `q` 权重；未提供或没有支持的语言时默认中文。这与 Web 浏览器语言无匹配时回退英文是两个独立规则。错误响应带有 `Content-Language`、`Vary: Accept-Language` 和 `Cache-Control: no-store`；`HEAD` 错误不返回正文。
+- 前端在 [api/errors.ts](./apps/web/src/api/errors.ts) 一次校验错误响应，并将 `code` 和 `params` 转成翻译引用。已知错误不匹配 `message` 的字面内容；未知错误码可回退显示服务端消息。新增或修改后端错误码时，同步前端映射、双语词条、契约测试和 [API 文档](./docs/API.md)。内部诊断留在日志，不作为用户错误正文返回。
+
+### 内容边界与验证
+
+- 语言偏好保存在浏览器，API 的协商语言只属于当前请求，不写入服务端配置、项目、模板或数据库。切换语言不改写用户名称、正文、代码、引用、已有作品或编辑中的用户输入。
+- 内置模板元数据、新建示例和新发起的生成操作按当前语言选择文案；已有内容保留原文。[modelPrompts()](./apps/web/src/ai/prompts/index.ts) 选择提示词并附加默认输出语言要求，同时遵循用户明确的语言要求；JSON 字段、动作格式等机器标识不翻译。模型连接和密钥仍只由浏览器管理。
+- 多语言回归测试见 [locale.test.ts](./apps/web/src/i18n/locale.test.ts)、[errors.test.ts](./apps/web/src/i18n/errors.test.ts)、[API 错误契约测试](./apps/web/src/api/errors.test.ts) 和 [Rust 错误语言测试](./apps/api-rust/crates/huayu-server/tests/error_localization.rs)。保持词典覆盖、插值参数、错误码映射及禁止提前翻译系统异常的检查通过。
+- 修改显示行为时验证中英文、局部画布语言、错误出现后再切换语言、异步完成和检查点恢复，并确认用户内容保持不变。按 `REVIEW.md` 运行检查、相关测试及受影响应用构建；API 改动同时验证实际请求头、响应头和错误正文。
+
 ## 代码审查
 
 - 执行代码审查或提交前自查时，先阅读 [REVIEW.md](./REVIEW.md)，并遵守修改目录的局部约定。

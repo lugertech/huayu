@@ -1,4 +1,5 @@
-import { t, useLocale } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
+import { useLocale } from "@/i18n";
 import {
   createContext,
   useContext,
@@ -12,7 +13,8 @@ export * from "./engine/store";
 export const EditorContext = createContext<Editor | null>(null);
 export function useEditor() {
   const editor = useContext(EditorContext);
-  if (!editor) throw new Error(t("canvas.theCanvasIsntReadyYet"));
+  if (!editor)
+    throw new LocalizedError({ key: "canvas.theCanvasIsntReadyYet" });
   useSyncExternalStore(editor.subscribe, editor.getVersion);
   return editor;
 }

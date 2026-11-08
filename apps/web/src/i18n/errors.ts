@@ -73,7 +73,7 @@ export function readErrorTranslation(
   return { key, values };
 }
 
-// Older checkpoints and the local API contain literal, human-readable system messages.
+// Older checkpoints may contain literal, human-readable system messages.
 const knownMessages = new Map<string, MessageKey>();
 for (const catalog of Object.values(messages))
   for (const [key, message] of Object.entries(catalog))

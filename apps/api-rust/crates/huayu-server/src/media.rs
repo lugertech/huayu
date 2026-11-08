@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{process::Command, sync::Semaphore, time::timeout};
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState};
+use crate::{ApiError, ApiResult, AppState, ErrorCode};
 
 const CHUNK_SECONDS: f64 = 300.0;
 const MEDIA_FORMATS: &str =
@@ -67,7 +67,7 @@ async fn recording_asset(state: &AppState, id: &str) -> ApiResult<(Asset, PathBu
     Uuid::parse_str(&recording.asset_id).map_err(|_| ApiError::not_found())?;
     let asset = state.store.asset(&recording.asset_id).await?;
     if !asset.mime.starts_with("audio/") && !asset.mime.starts_with("video/") {
-        return Err(ApiError::invalid("请选择视频或音频文件"));
+        return Err(ApiError::new(ErrorCode::MediaFileRequired));
     }
     let path = state.data_dir.join("assets").join(&asset.id);
     Ok((asset, path))
@@ -81,17 +81,9 @@ enum MediaTask {
 
 fn decoder_unavailable(task: MediaTask) -> ApiError {
     if matches!(task, MediaTask::Cover) {
-        return ApiError::new(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "COVER_DECODER_UNAVAILABLE",
-            "暂时无法生成录屏封面",
-        );
+        return ApiError::new(ErrorCode::CoverDecoderUnavailable);
     }
-    ApiError::new(
-        StatusCode::SERVICE_UNAVAILABLE,
-        "AUDIO_DECODER_UNAVAILABLE",
-        "本地音轨解码暂不可用",
-    )
+    ApiError::new(ErrorCode::AudioDecoderUnavailable)
 }
 
 async fn media_command(command: &mut Command, task: MediaTask) -> ApiResult<Vec<u8>> {
@@ -103,13 +95,7 @@ async fn media_command(command: &mut Command, task: MediaTask) -> ApiResult<Vec<
         MEDIA_WORKERS.get_or_init(|| Semaphore::new(2)).acquire(),
     )
     .await
-    .map_err(|_| {
-        ApiError::new(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "MEDIA_BUSY",
-            "正在处理其他录屏，请稍后重试",
-        )
-    })?
+    .map_err(|_| ApiError::new(ErrorCode::MediaBusy))?
     .map_err(ApiError::internal)?;
     let result = timeout(
         Duration::from_secs(match task {
@@ -120,14 +106,10 @@ async fn media_command(command: &mut Command, task: MediaTask) -> ApiResult<Vec<
     )
     .await
     .map_err(|_| {
-        ApiError::new(
-            StatusCode::GATEWAY_TIMEOUT,
-            "MEDIA_TIMEOUT",
-            match task {
-                MediaTask::Audio => "音轨读取超时，请重试",
-                MediaTask::Cover => "录屏封面读取超时，请重试",
-            },
-        )
+        ApiError::new(match task {
+            MediaTask::Audio => ErrorCode::MediaTimeout,
+            MediaTask::Cover => ErrorCode::CoverTimeout,
+        })
     })?
     .map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
@@ -138,14 +120,8 @@ async fn media_command(command: &mut Command, task: MediaTask) -> ApiResult<Vec<
     })?;
     if !result.status.success() {
         return Err(match task {
-            MediaTask::Audio => {
-                ApiError::invalid("无法读取这段录屏的音轨，请确认文件完整且包含声音")
-            }
-            MediaTask::Cover => ApiError::new(
-                StatusCode::UNPROCESSABLE_ENTITY,
-                "RECORDING_COVER_UNAVAILABLE",
-                "这段录屏暂时无法显示预览",
-            ),
+            MediaTask::Audio => ApiError::new(ErrorCode::AudioUnreadable),
+            MediaTask::Cover => ApiError::new(ErrorCode::RecordingCoverUnavailable),
         });
     }
     Ok(result.stdout)
@@ -215,7 +191,7 @@ pub(crate) async fn audio(
         || query.duration <= 0.0
         || query.duration > CHUNK_SECONDS
     {
-        return Err(ApiError::invalid("音轨分段范围有误，单次最多读取五分钟"));
+        return Err(ApiError::new(ErrorCode::InvalidAudioRange));
     }
     let (_, path) = recording_asset(&state, &id).await?;
     let output = media_command(
@@ -253,7 +229,7 @@ pub(crate) async fn audio(
     )
     .await?;
     if output.len() < 44 || output.len() > 11 * 1024 * 1024 {
-        return Err(ApiError::invalid("录屏没有可读取的音轨"));
+        return Err(ApiError::new(ErrorCode::NoAudioTrack));
     }
     Response::builder()
         .header(header::CONTENT_TYPE, "audio/wav")
@@ -308,11 +284,7 @@ pub(crate) async fn cover(
     )
     .await?;
     if !output.starts_with(&[0xff, 0xd8]) || !output.ends_with(&[0xff, 0xd9]) {
-        return Err(ApiError::new(
-            StatusCode::UNPROCESSABLE_ENTITY,
-            "RECORDING_COVER_UNAVAILABLE",
-            "这段录屏暂时无法显示预览",
-        ));
+        return Err(ApiError::new(ErrorCode::RecordingCoverUnavailable));
     }
     Response::builder()
         .header(header::CONTENT_TYPE, "image/jpeg")

@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import { type CanvasShape, type Editor } from "@/features/canvas/editor";
 
 const shapeId = (value: string) =>
@@ -67,7 +67,9 @@ export function executeLayoutEvent(
     move(shape, x - a.x, y - a.y);
   } else if (type === "rotate" || type === "resize") {
     if (![event.centerX, event.centerY].every(Number.isFinite))
-      throw new Error(t("canvas.theShapeTransformIsMissingItsCenterPoint"));
+      throw new LocalizedError({
+        key: "canvas.theShapeTransformIsMissingItsCenterPoint",
+      });
     const angle = ((event.degrees || 0) * Math.PI) / 180;
     const sx = Number(event.scaleX);
     const sy = Number(event.scaleY);
@@ -75,7 +77,7 @@ export function executeLayoutEvent(
       type === "resize" &&
       (![sx, sy].every(Number.isFinite) || sx <= 0 || sy <= 0)
     )
-      throw new Error(t("canvas.invalidShapeScale"));
+      throw new LocalizedError({ key: "canvas.invalidShapeScale" });
     for (const shape of shapes) {
       const origin = editor.getPageTransform(shape);
       const dx = origin.x - event.centerX;

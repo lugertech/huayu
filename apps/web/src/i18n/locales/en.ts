@@ -2,6 +2,24 @@ import type { Message } from "../locale";
 import type { MessageKey } from "./zh-CN";
 
 export const en = {
+  "api.errors.coverDecoderUnavailable":
+    "Recording cover generation is unavailable",
+  "api.errors.coverTimedOut":
+    "Recording cover loading timed out. Please try again.",
+  "api.errors.recordingCoverUnavailable":
+    "A preview is unavailable for this recording",
+  "api.errors.methodNotAllowed":
+    "This endpoint does not support this request method",
+  "api.errors.requestTooLarge": "The request body is too large",
+  "api.errors.unsupportedMediaType": "Unsupported request content type",
+  "api.errors.invalidName": "Names must contain {min}–{max} characters",
+  "api.errors.roomFull":
+    "This room already has {max} collaborators. Try again later.",
+  "api.errors.invalidFilename":
+    "File names must contain at most {max} characters and no invalid characters",
+  "api.errors.documentUploadTooLarge":
+    "Documents to parse can’t exceed {maxMb} MB",
+  "api.errors.fileTooLarge": "Files can’t exceed {maxMb} MB",
   "assets.emptyFilesHint": "Upload files or adjust the search and folder.",
   "assets.restoreHint": "You can restore this file from Trash.",
   "assets.dropFiles": "Drop files here to upload",

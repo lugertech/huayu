@@ -1,4 +1,5 @@
 import { t, useLocale, getLocale } from "@/i18n";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { useNavigate } from "react-router-dom";
 import { useAnalysisTask } from "@/features/recording/analysis-task";
 import {
@@ -64,7 +65,7 @@ export function RecordingsPage() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Error | null>(null);
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<Recording | null>(null);
   const [renaming, setRenaming] = useState<Recording | null>(null);
@@ -78,8 +79,7 @@ export function RecordingsPage() {
   function failed(error: unknown) {
     showToast({
       title: t("common.operationFailed"),
-      description:
-        error instanceof Error ? error.message : t("common.tryAgain"),
+      description: errorText(error),
       variant: "destructive",
     });
   }
@@ -88,7 +88,7 @@ export function RecordingsPage() {
     const controller = new AbortController();
     refreshRequest.current = controller;
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       const recordings = await api<Recording[]>("/api/recordings", {
         signal: controller.signal,
@@ -98,12 +98,13 @@ export function RecordingsPage() {
       setHasLoaded(true);
     } catch (error) {
       if (controller.signal.aborted) return;
-      const message =
+      const failure =
         error instanceof Error
-          ? error.message
-          : t("recordings.cannotLoadRecording");
-      setError(message);
-      if (hasLoaded) showToast({ title: message, variant: "destructive" });
+          ? error
+          : new LocalizedError({ key: "recordings.cannotLoadRecording" });
+      setError(failure);
+      if (hasLoaded)
+        showToast({ title: errorText(failure), variant: "destructive" });
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
@@ -274,7 +275,9 @@ export function RecordingsPage() {
         >
           {error && !hasLoaded ? (
             <div role="alert" className="rounded-xl border p-8 text-center">
-              <p className="mb-4 text-sm text-muted-foreground">{error}</p>
+              <p className="mb-4 text-sm text-muted-foreground">
+                {errorText(error)}
+              </p>
               <Button variant="outline" onClick={refresh}>
                 {t("common.reload")}
               </Button>

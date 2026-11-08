@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import type { CanvasDocument } from "@/api/client";
 
 export interface RecordPatch {
@@ -36,7 +36,9 @@ function openDatabase(): Promise<IDBDatabase> {
       resolve(connection);
     };
     request.onerror = () =>
-      reject(new Error(t("canvas.theBrowserCannotSaveRecoveryData")));
+      reject(
+        new LocalizedError({ key: "canvas.theBrowserCannotSaveRecoveryData" }),
+      );
   }).catch((error) => {
     database = { phase: "closed" };
     throw error;
@@ -59,8 +61,11 @@ async function transaction<T>(
     };
     tx.oncomplete = () => resolve(result);
     tx.onerror = () =>
-      reject(new Error(t("canvas.theBrowserCannotSaveRecoveryData")));
-    tx.onabort = () => reject(new Error(t("canvas.localSavingInterrupted")));
+      reject(
+        new LocalizedError({ key: "canvas.theBrowserCannotSaveRecoveryData" }),
+      );
+    tx.onabort = () =>
+      reject(new LocalizedError({ key: "canvas.localSavingInterrupted" }));
   });
 }
 export const canvasDraftKey = (id: string, shareToken: string | null) =>

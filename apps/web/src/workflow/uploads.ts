@@ -32,7 +32,7 @@ export async function uploadComponentFile(
   file: File,
 ): Promise<Partial<NodeData>> {
   const validation = validateFile(file);
-  if (!validation.valid) throw new Error(validation.error);
+  if (validation.valid === false) throw validation.error;
   if (type === "file") {
     const value = extractAPIData(await documentUploadAPI(file));
     return {

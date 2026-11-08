@@ -1,4 +1,5 @@
-import { t, type Locale } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
+import { type Locale } from "@/i18n";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import { CanvasStore } from "./store";
 import {
@@ -406,7 +407,7 @@ export class Editor {
     },
   ) {
     if (!this.getShape(input.fromId) || !this.getShape(input.toId))
-      throw new Error(t("canvas.aConnectedShapeNoLongerExists"));
+      throw new LocalizedError({ key: "canvas.aConnectedShapeNoLongerExists" });
     this.store.put([
       {
         id: input.id || createBindingId(),

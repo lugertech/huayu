@@ -6,7 +6,7 @@ use axum::{
 use huayu_core::Recording;
 use serde::Deserialize;
 
-use crate::{ApiError, ApiResult, AppState, error::ApiJson};
+use crate::{ApiError, ApiResult, AppState, ErrorCode, error::ApiJson};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -42,11 +42,11 @@ pub(crate) async fn create(
     ApiJson(body): ApiJson<CreateRecording>,
 ) -> ApiResult<(StatusCode, Json<Recording>)> {
     if !body.duration.is_finite() || body.duration < 0.0 {
-        return Err(ApiError::invalid("录屏时长有误"));
+        return Err(ApiError::new(ErrorCode::InvalidRecordingDuration));
     }
     let asset = state.store.asset(&body.asset_id).await?;
     if !asset.mime.starts_with("video/") && !asset.mime.starts_with("audio/") {
-        return Err(ApiError::invalid("请选择视频或音频文件"));
+        return Err(ApiError::new(ErrorCode::MediaFileRequired));
     }
     Ok((
         StatusCode::CREATED,
@@ -68,7 +68,7 @@ pub(crate) async fn update(
         .duration
         .is_some_and(|duration| !duration.is_finite() || duration < 0.0)
     {
-        return Err(ApiError::invalid("录屏时长有误"));
+        return Err(ApiError::new(ErrorCode::InvalidRecordingDuration));
     }
     if body
         .transcript
@@ -79,7 +79,7 @@ pub(crate) async fn update(
             .as_ref()
             .is_some_and(|text| text.len() > 2 * 1024 * 1024)
     {
-        return Err(ApiError::invalid("分析文本过长"));
+        return Err(ApiError::new(ErrorCode::AnalysisTooLong));
     }
     Ok(Json(
         state

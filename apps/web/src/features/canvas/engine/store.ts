@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import {
   normalizeRecord,
   SCHEMA,
@@ -187,12 +187,12 @@ export class CanvasStore {
       Array.isArray(snapshot.store) ||
       Object.keys(snapshot.store).length > 50000
     )
-      throw new Error(t("canvas.invalidCanvasData"));
+      throw new LocalizedError({ key: "canvas.invalidCanvasData" });
     const records = Object.entries(snapshot.store).map(([id, record]) =>
       normalizeRecord(record, id),
     );
     if (!records.some((record) => record.typeName === "page"))
-      throw new Error(t("canvas.theCanvasHasNoPages"));
+      throw new LocalizedError({ key: "canvas.theCanvasHasNoPages" });
     this.batch(() => {
       this.records = new Map(records.map((record) => [record.id, record]));
       this.schemaValue = snapshot.schema || SCHEMA;

@@ -10,8 +10,9 @@ describe("local API connection errors", () => {
       vi.fn().mockResolvedValue(
         Response.json(
           {
-            code: "VALIDATION_FAILED",
-            message: "名称应包含 1 至 120 个字符",
+            code: "INVALID_NAME",
+            message: "Server wording can change independently",
+            params: { min: 1, max: 120 },
           },
           { status: 422 },
         ),
@@ -20,25 +21,26 @@ describe("local API connection errors", () => {
     const error = await api("/api/projects").catch((reason: unknown) => reason);
     setLanguage("en");
     expect(errorText(error)).toBe("Names must contain 1–120 characters");
-    expect(error).toMatchObject({ status: 422, code: "VALIDATION_FAILED" });
+    expect(error).toMatchObject({ status: 422, code: "INVALID_NAME" });
   });
-  it("localizes a known server message through its semantic key", async () => {
+  it("uses the error code and parameters independently of the server message", async () => {
     setLanguage("en");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
-            code: "VALIDATION_ERROR",
-            message: "名称应包含 1 至 120 个字符",
+            code: "INVALID_NAME",
+            message: "Different server wording",
+            params: { min: 2, max: 80 },
           }),
           { status: 400 },
         ),
       ),
     );
     await expect(api("/api/projects")).rejects.toMatchObject({
-      message: "Names must contain 1–120 characters",
-      code: "VALIDATION_ERROR",
+      message: "Names must contain 2–80 characters",
+      code: "INVALID_NAME",
     });
   });
   it("preserves unknown server details as text", async () => {
@@ -54,6 +56,23 @@ describe("local API connection errors", () => {
     await expect(api("/api/projects")).rejects.toMatchObject({
       message: "保留原始错误详情",
     });
+  });
+
+  it("sends the selected application language on each request and allows an explicit override", async () => {
+    const fetch = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json({ ok: true })));
+    vi.stubGlobal("fetch", fetch);
+    setLanguage("en");
+    await api("/api/projects");
+    setLanguage("zh-CN");
+    await api("/api/projects");
+    await api("/api/projects", { headers: { "Accept-Language": "en" } });
+    expect(
+      fetch.mock.calls.map(([, options]) =>
+        options.headers.get("Accept-Language"),
+      ),
+    ).toEqual(["en", "zh-CN", "en"]);
   });
   it("uses a readable fallback for a non-text server error", async () => {
     setLanguage("en");
