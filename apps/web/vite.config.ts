@@ -7,6 +7,7 @@ import { createReadStream, readdirSync, readFileSync } from "node:fs";
 import { externalFontWasm } from "./build/external-font-wasm";
 import { precompressAssets } from "./build/precompress-assets.ts";
 import { bundleBudget } from "../../scripts/build/bundle-budget";
+import { getDevApiConfig } from "../../scripts/dev-api-config.ts";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const fontsRoot = resolve(
@@ -80,7 +81,7 @@ function whiteboardAssets(): Plugin {
   };
 }
 
-export default defineConfig({
+const config = defineConfig({
   root,
   test: {
     name: "web",
@@ -118,14 +119,15 @@ export default defineConfig({
       deferredModules: [
         /[\\/]node_modules[\\/](?:@excalidraw[\\/]excalidraw|@pdf-lib[\\/]fontkit|pdf-lib|docx|mermaid|@mermaid-js[\\/]parser)[\\/]/,
         /[\\/]node_modules[\\/]react-dom[\\/](?:server|static|cjs[\\/]react-dom-(?:server|static))/,
-        /[\\/]src[\\/]ui[\\/]tooltip\.tsx$/,
-        /[\\/]src[\\/]Components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
+        /[\\/]src[\\/]components[\\/]ui[\\/]tooltip\.tsx$/,
+        /[\\/]src[\\/]components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
       ],
       deferredEntries: [/^\0huayu:font-worker$/],
     }),
   ]),
   resolve: { alias: { "@": resolve(root, "src") } },
   define: {
+    __HUAYU_DEV_API_ORIGIN__: JSON.stringify(""),
     "process.env.NODE_ENV": JSON.stringify(
       process.env.NODE_ENV || "development",
     ),
@@ -134,10 +136,6 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5173,
     strictPort: true,
-    proxy: {
-      "/api": { target: "http://127.0.0.1:5858", ws: true, xfwd: true },
-      "/uploads": "http://127.0.0.1:5858",
-    },
     fs: { allow: [resolve(root, "../..")] },
   },
   build: {
@@ -178,7 +176,7 @@ export default defineConfig({
             },
             {
               name: "shell-panels",
-              test: /[\\/]src[\\/]Components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
+              test: /[\\/]src[\\/]components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
               priority: 10,
               entriesAware: true,
               includeDependenciesRecursively: false,
@@ -196,4 +194,23 @@ export default defineConfig({
       },
     },
   },
+});
+
+export default defineConfig(({ command }) => {
+  if (command === "build") return config;
+  const api = getDevApiConfig(resolve(root, "../.."));
+  return {
+    ...config,
+    define: {
+      ...config.define,
+      __HUAYU_DEV_API_ORIGIN__: JSON.stringify(api.origin),
+    },
+    server: {
+      ...config.server,
+      proxy: {
+        "/api": { target: api.origin, ws: true, xfwd: true },
+        "/uploads": api.origin,
+      },
+    },
+  };
 });

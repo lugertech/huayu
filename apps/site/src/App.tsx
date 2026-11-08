@@ -1,14 +1,17 @@
-import { useEffect, type ReactNode } from "react";
-import { ArrowRight, IconContext } from "@phosphor-icons/react";
+import { type ReactNode } from "react";
+import { IconContext } from "@phosphor-icons/react";
 import {
   useSiteI18n,
   LocaleContext,
   localeForPath,
   withoutLocale,
 } from "./i18n";
-import { Header, Footer } from "./SiteChrome";
-import { Home } from "./Home";
+import { HomePage } from "./pages/HomePage";
 import { hasSiteRoute } from "./routes";
+
+import { NotFoundPage } from "./pages/NotFoundPage";
+
+import { DocsFallback } from "./components/DocsFallback";
 
 function SiteContent({
   path,
@@ -24,39 +27,12 @@ function SiteContent({
         {t("home.skipToContent")}
       </a>
       {!hasSiteRoute(path) ? (
-        <NotFound />
+        <NotFoundPage />
       ) : path.startsWith("/docs") ? (
         documentation || <DocsFallback />
       ) : (
-        <Home />
+        <HomePage />
       )}
-    </>
-  );
-}
-
-function NotFound() {
-  const { t, path: link } = useSiteI18n();
-  useEffect(() => {
-    document.title = t("errors.notFound.metaTitle");
-  }, [t]);
-  return (
-    <>
-      <Header />
-      <main id="main-content" className="not-found container">
-        <span>404 / Huayu</span>
-        <h1>{t("errors.notFound.title")}</h1>
-        <p>{t("errors.notFound.description")}</p>
-        <div className="hero-actions">
-          <a className="site-button primary" href={link()}>
-            {t("errors.notFound.home")}
-            <ArrowRight size={18} />
-          </a>
-          <a className="text-link" href={link("docs/getting-started/")}>
-            {t("errors.notFound.docs")}
-          </a>
-        </div>
-      </main>
-      <Footer />
     </>
   );
 }
@@ -74,29 +50,5 @@ export function App({
         <SiteContent path={withoutLocale(path)} documentation={documentation} />
       </IconContext>
     </LocaleContext>
-  );
-}
-
-export function DocsFallback({ failed = false }: { failed?: boolean }) {
-  const { t } = useSiteI18n();
-  return (
-    <>
-      <Header docs />
-      <main id="main-content" className="not-found container">
-        <h1>{t(failed ? "docs.loadFailed.title" : "docs.loading")}</h1>
-        {failed && (
-          <>
-            <p>{t("docs.loadFailed.description")}</p>
-            <button
-              className="site-button primary"
-              onClick={() => window.location.reload()}
-            >
-              {t("docs.loadFailed.retry")}
-            </button>
-          </>
-        )}
-      </main>
-      <Footer />
-    </>
   );
 }

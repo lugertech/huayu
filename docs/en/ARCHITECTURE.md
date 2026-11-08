@@ -5,15 +5,23 @@
 ```text
 apps/
   site/                    React site and prerendered bilingual docs
+    src/pages/             Home and documentation page entries
+    src/features/          Examples, canvas previews and recording demos
+    src/components/        Site chrome, language and appearance controls
   web/                     React, Vite, shadcn/Base UI, Excalidraw, React Flow
     src/ai/                Browser model connections, clients and prompts
+    src/pages/             Route entries, page requests and page state
+    src/features/          Business components, state, pure logic and tests
+      canvas/              Canvas UI, engine, Excalidraw bridge, sync and transfer
+      recording/           Capture, audio processing, transcription and analysis
+      projects/            Project menus and previews
+      asset-library/       Asset management and insertion
+      library/             Cross-project library browsing
+      results/             Work previews and editing
     src/i18n/              Locale detection, preferences and English catalog
-    src/canvas/            UI, recovery, synchronization, transfer and examples
-      engine/              Application records, geometry and card exports
-      excalidraw/          Native scenes, interactions, overlays and pages
     src/workflow/          Dependency planning and execution
-    src/recording/         Capture, audio processing, transcription and analysis
-    src/ui/                shadcn Base UI source components
+    src/components/        Application chrome and shared components
+      ui/                  shadcn Base UI source components
   api-rust/
     crates/huayu-core/     Pure domain types, record validation and merge
     crates/huayu-store/    SQLite, SeaORM entities and migrations

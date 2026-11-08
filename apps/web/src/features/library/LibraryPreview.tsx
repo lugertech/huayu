@@ -3,16 +3,16 @@ import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslations } from "@/i18n";
 import { APIError } from "@/api/client";
-import { Button } from "@/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from "@/ui/dialog";
-import { Markdown } from "@/Components/common/Markdown";
-import { WebPreview } from "@/Components/results/WebPreview";
-import { useToast } from "@/Components/common/ToastProvider";
+} from "@/components/ui/dialog";
+import { Markdown } from "@/components/common/Markdown";
+import { WebPreview } from "@/features/results/WebPreview";
+import { useToast } from "@/components/common/ToastProvider";
 import {
   libraryItemDetail,
   libraryItemName,

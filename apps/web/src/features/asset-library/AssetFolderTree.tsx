@@ -8,7 +8,7 @@ import { useTranslations } from "@/i18n";
 import type { AssetGroupItem } from "./library-api";
 import { useAssetTranslations } from "./messages";
 import { cn } from "@/lib/utils";
-import { Button } from "@/ui/button";
+import { Button } from "@/components/ui/button";
 import folderIcon from "./folder.svg";
 
 interface AssetFolderTreeProps {

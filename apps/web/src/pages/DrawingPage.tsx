@@ -2,16 +2,16 @@ import { useTranslations } from "@/i18n";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { ShellSidebarTrigger } from "@/Components/Shell";
-import { CanvasPageLayout } from "@/Components/canvas/CanvasPageLayout";
+import { ShellSidebarTrigger } from "@/components/Shell";
+import { CanvasPageLayout } from "@/features/canvas/components/CanvasPageLayout";
 import { api, APIError, type Project } from "@/api/client";
-import type { CollaborationExit } from "@/canvas/sync";
-import { readDraft, canvasDraftKey, readView } from "@/canvas/drafts";
-import { Button } from "@/ui/button";
-import { CollaborationNotice } from "./CollaborationNotice";
-import type { DrawingCanvasProps } from "./DrawingCanvas";
+import type { CollaborationExit } from "@/features/canvas/sync";
+import { readDraft, canvasDraftKey, readView } from "@/features/canvas/drafts";
+import { Button } from "@/components/ui/button";
+import { CollaborationNotice } from "../features/canvas/components/CollaborationNotice";
+import type { DrawingCanvasProps } from "../features/canvas/DrawingCanvas";
 
-const loadCanvas = () => import("./DrawingCanvas");
+const loadCanvas = () => import("../features/canvas/DrawingCanvas");
 
 export function DrawingPage() {
   const { t } = useTranslations();
@@ -23,7 +23,7 @@ export function DrawingPage() {
     | {
         status: "ready";
         key: string;
-        Canvas: typeof import("./DrawingCanvas").DrawingCanvas;
+        Canvas: typeof import("../features/canvas/DrawingCanvas").DrawingCanvas;
         props: Omit<DrawingCanvasProps, "shareToken">;
       }
     | {
@@ -53,7 +53,7 @@ export function DrawingPage() {
       .then(async ([project, draft, view, module]) => {
         const initializeRecipe =
           !project.document && !draft && project.recipe
-            ? (await import("@/canvas/recipes")).applyRecipe
+            ? (await import("@/features/canvas/recipes")).applyRecipe
             : undefined;
         if (!cancelled)
           setLoad({

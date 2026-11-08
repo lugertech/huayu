@@ -17,6 +17,8 @@ vp run dev
 
 Open [Huayu locally](http://127.0.0.1:5173). The first startup creates the local database; no cloud storage or separate database server is required. Development uses port 5173 for the interface and 5858 for the API. Both processes must be running.
 
+These are defaults. After changing `HUAYU_HOST` or `HUAYU_PORT` in the root `.env`, restart development processes; the frontend proxy follows the API configuration. See [deployment configuration](./DEPLOYMENT.md).
+
 To use a production build:
 
 ```sh

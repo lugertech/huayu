@@ -1,6 +1,6 @@
 import { t, type Locale } from "@/i18n";
-import type { CanvasShape, Editor } from "@/canvas/editor";
-import { connectedShapes } from "@/utils/connectionParser";
+import type { CanvasShape, Editor } from "@/features/canvas/editor";
+import { connectedShapes } from "@/features/canvas/connection-parser";
 import { drawingShapes } from "./context";
 
 export interface GenerationInfo {

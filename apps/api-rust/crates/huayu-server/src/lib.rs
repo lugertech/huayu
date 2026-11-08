@@ -133,7 +133,10 @@ impl Application {
                 axum::routing::delete(projects::delete_template),
             )
             .route("/templates/{id}/fork", post(projects::fork))
-            .route("/assets", post(files::upload))
+            .route(
+                "/assets",
+                post(files::upload).layer(DefaultBodyLimit::max(files::MAX_UPLOAD_BODY_BYTES)),
+            )
             .route("/assets/{id}", get(files::download))
             .route("/library/assets", get(library::list).post(library::create))
             .route(

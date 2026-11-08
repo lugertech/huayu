@@ -10,8 +10,6 @@ pub struct Model {
     pub height: i32,
     pub folder_id: Option<String>,
     pub trashed: bool,
-    pub source_project_id: Option<String>,
-    pub source_project_name: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

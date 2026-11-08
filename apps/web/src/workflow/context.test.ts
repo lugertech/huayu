@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createCanvasStore, Editor } from "@/canvas/editor";
+import { createCanvasStore, Editor } from "@/features/canvas/editor";
 import {
   createConnectedComponent,
   connectedShapes,
-} from "@/utils/connectionParser";
+} from "@/features/canvas/connection-parser";
 
 const board = () => new Editor(createCanvasStore());
 describe("connected component creation", () => {

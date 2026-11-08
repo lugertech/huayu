@@ -25,6 +25,9 @@ pub struct DocumentPatch {
     pub remove: Vec<String>,
     pub schema: Option<Value>,
     pub client_id: String,
+    /// Source browser edit order, echoed with patches but never stored in the document.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<u64>,
 }
 
 #[derive(Debug, thiserror::Error)]

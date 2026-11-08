@@ -1,11 +1,11 @@
 import { t, useLocale, getLocale } from "@/i18n";
 import { useNavigate } from "react-router-dom";
-import { useAnalysisTask } from "@/recording/analysis-task";
+import { useAnalysisTask } from "@/features/recording/analysis-task";
 import {
   readTranscript,
   readAnalysis,
   readCheckpoint,
-} from "@/recording/report";
+} from "@/features/recording/report";
 import {
   lazy,
   Suspense,
@@ -25,17 +25,23 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { ShellSidebarTrigger } from "@/Components/Shell";
-import { useToast } from "@/Components/common/ToastProvider";
+import { ShellSidebarTrigger } from "@/components/Shell";
+import { useToast } from "@/components/common/ToastProvider";
 import { api, uploadAsset, type Recording } from "@/api/client";
-import { RecorderButton, formatDuration } from "@/recording/Recorder";
-import { RecordingCover } from "@/recording/RecordingCover";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { LoadingRegion } from "@/ui/loading-region";
+import { RecorderButton } from "@/features/recording/RecorderButton";
+import { formatDuration } from "@/features/recording/duration";
+import { RecordingCover } from "@/features/recording/RecordingCover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { searchScore } from "@/lib/search";
-import { Card, CardContent } from "@/ui/card";
-import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -44,11 +50,11 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/ui/alert-dialog";
-import type { RecordingCardMenuProps } from "./RecordingCardMenu";
+} from "@/components/ui/alert-dialog";
+import type { RecordingCardMenuProps } from "../features/recording/RecordingCardMenu";
 
 const DeferredRecordingCardMenu = lazy(() =>
-  import("./RecordingCardMenu").then((module) => ({
+  import("../features/recording/RecordingCardMenu").then((module) => ({
     default: module.RecordingCardMenu,
   })),
 );
@@ -161,7 +167,7 @@ export function RecordingsPage() {
           try {
             const [asset, duration] = await Promise.all([
               uploadAsset(file),
-              import("@/recording/files").then(({ mediaDuration }) =>
+              import("@/features/recording/files").then(({ mediaDuration }) =>
                 mediaDuration(file),
               ),
             ]);
@@ -327,7 +333,7 @@ export function RecordingsPage() {
                         onDownload={async () => {
                           try {
                             const { downloadRecording } =
-                              await import("@/recording/files");
+                              await import("@/features/recording/files");
                             await downloadRecording(recording);
                           } catch (error) {
                             failed(error);

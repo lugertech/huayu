@@ -26,6 +26,8 @@ Copy `.env.example` to `.env` if needed. The startup scripts read the root `.env
 
 Relative paths are based on the repository root. When launching the binary directly, set environment variables yourself and check the working directory or use appropriate paths.
 
+The development launcher and Web proxy share `HUAYU_HOST` and `HUAYU_PORT`: values in the root `.env` take precedence, followed by the process environment and then the defaults above. Restart development processes after changing them; the `/api`, `/uploads` and WebSocket proxies follow automatically. Development requires a port from 1 to 65535. Wildcard bind addresses use the corresponding loopback address as the proxy target.
+
 Browser connections, language choices and drafts belong to an origin. Moving files or changing ports does not transfer browser data. Configure connections again at the new origin.
 
 ## Local-network collaboration

@@ -185,4 +185,6 @@ Use the previous-version button or version list to view existing versions. Cropp
 
 Import from the project page. Compatible Excalidraw and legacy tldraw JSON can also be read. Keep the original file; unsupported third-party extensions may not retain identical behavior.
 
+Project imports and complete `.huayu.json` exports share a 128 MiB limit. An oversized export reports an error before creating a download; split the content before trying again.
+
 Model connections are excluded from exports. Configure them again in another browser or origin. Switching the interface language does not modify existing work or user-defined names.

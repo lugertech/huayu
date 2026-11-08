@@ -505,6 +505,71 @@ async fn failed_document_parsing_does_not_keep_uploaded_assets() {
     );
 }
 
+#[tokio::test]
+async fn attachment_limit_counts_file_bytes_separately_from_multipart_overhead() {
+    let directory = TempDir::new().unwrap();
+    let router = application(&directory).await.router();
+    let limit = 512 * 1024 * 1024;
+    let chunk = axum::body::Bytes::from(vec![b'a'; 1024 * 1024]);
+    for (size, expected) in [
+        (limit, StatusCode::OK),
+        (limit + 1, StatusCode::UNPROCESSABLE_ENTITY),
+    ] {
+        let mut chunks = vec![Ok::<_, std::convert::Infallible>(axum::body::Bytes::from_static(
+            b"--huayu-boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"limit.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n",
+        ))];
+        chunks.extend(std::iter::repeat_n(Ok(chunk.clone()), size / chunk.len()));
+        if size % chunk.len() != 0 {
+            chunks.push(Ok(chunk.slice(..size % chunk.len())));
+        }
+        chunks.push(Ok(axum::body::Bytes::from_static(
+            b"\r\n--huayu-boundary--\r\n",
+        )));
+        let request = Request::post("/api/assets")
+            .extension(axum::extract::ConnectInfo(std::net::SocketAddr::from((
+                [127, 0, 0, 1],
+                12345,
+            ))))
+            .header("host", "127.0.0.1")
+            .header(
+                "content-type",
+                "multipart/form-data; boundary=huayu-boundary",
+            )
+            .body(Body::from_stream(futures_util::stream::iter(chunks).then(
+                |chunk| async move {
+                    tokio::task::yield_now().await;
+                    chunk
+                },
+            )))
+            .unwrap();
+        let response = router.clone().oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = to_bytes(response.into_body(), 1024 * 1024).await.unwrap();
+        let value: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(status, expected, "file size {size}: {value}");
+        if status == StatusCode::OK {
+            assert_eq!(value["size"], size);
+            let path = directory
+                .path()
+                .join("data/assets")
+                .join(value["id"].as_str().unwrap());
+            assert_eq!(
+                tokio::fs::metadata(path).await.unwrap().len(),
+                u64::try_from(size).unwrap()
+            );
+        } else {
+            assert_eq!(value["message"], "文件不能超过 512 MB");
+        }
+        assert_eq!(
+            std::fs::read_dir(directory.path().join("data/assets"))
+                .unwrap()
+                .count(),
+            1,
+            "the rejected upload must not retain its temporary file"
+        );
+    }
+}
+
 async fn multipart_request(
     router: &Router,
     route: &str,
@@ -1542,6 +1607,94 @@ async fn websocket_event(
     })
     .await
     .expect("WebSocket event arrives within the test timeout")
+}
+
+#[tokio::test]
+async fn realtime_messages_accept_the_same_patch_boundary_as_http() {
+    let directory = TempDir::new().unwrap();
+    let router = application(&directory).await.router();
+    let (_, project) = request(
+        &router,
+        "POST",
+        "/api/projects",
+        json!({"name": "消息边界"}),
+    )
+    .await;
+    let path = format!("/api/projects/{}", project["id"].as_str().unwrap());
+    let mut patch: huayu_core::DocumentPatch = serde_json::from_value(json!({
+        "upsert": [{"id": "shape:limit", "typeName": "shape", "type": "ai-text", "props": {"text": ""}}],
+        "remove": [],
+        "client_id": "boundary-test"
+    })).unwrap();
+    let limit = 32 * 1024 * 1024;
+    let base_size = serde_json::to_vec(&patch).unwrap().len();
+    patch.upsert[0]["props"]["text"] = Value::String("a".repeat(limit - base_size));
+    assert_eq!(serde_json::to_vec(&patch).unwrap().len(), limit);
+    let (status, _) = request(
+        &router,
+        "PATCH",
+        &format!("{path}/document"),
+        serde_json::to_value(&patch).unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "the patch is accepted by durable HTTP saving"
+    );
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let service = router.clone();
+    let server = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            service.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .await
+        .expect("test HTTP server runs");
+    });
+    let config = tokio_tungstenite::tungstenite::protocol::WebSocketConfig::default()
+        .max_frame_size(Some(64 * 1024 * 1024));
+    let (mut socket, _) = tokio_tungstenite::connect_async_with_config(
+        format!("ws://{address}{path}/events"),
+        Some(config),
+        false,
+    )
+    .await
+    .unwrap();
+    assert_eq!(websocket_event(&mut socket).await["type"], "snapshot");
+    let peers = websocket_event(&mut socket).await;
+    assert_eq!(peers["type"], "peers");
+    let joined = websocket_event(&mut socket).await;
+    assert_eq!(joined["type"], "peer_joined");
+    assert_eq!(joined["peer"]["id"], peers["client_id"]);
+    let message = serde_json::to_string(&json!({
+        "type": "scene_init", "target": peers["client_id"], "patch": patch
+    }))
+    .unwrap();
+    assert!(
+        message.len() > limit,
+        "the live protocol adds an envelope to the patch"
+    );
+    socket.send(Message::Text(message.into())).await.unwrap();
+    socket
+        .send(Message::Text(
+            json!({
+                "type": "presence",
+                "presence": {"pointer": null, "button": "up", "selectedElementIds": {}}
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(
+        websocket_event(&mut socket).await["type"],
+        "presence",
+        "the connection must remain usable after the boundary-sized live message"
+    );
+    server.abort();
 }
 
 #[tokio::test]

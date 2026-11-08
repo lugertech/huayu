@@ -23,12 +23,15 @@ import {
 } from "lucide-react";
 import { api, PROJECTS_CHANGED_EVENT, type ProjectChange } from "@/api/client";
 import { useTranslations } from "@/i18n";
-import { ShellSidebarTrigger } from "@/Components/Shell";
-import { useToast } from "@/Components/common/ToastProvider";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/ui/native-select";
-import { LoadingRegion } from "@/ui/loading-region";
+import { ShellSidebarTrigger } from "@/components/Shell";
+import { useToast } from "@/components/common/ToastProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -36,7 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { LibraryPreview } from "@/features/library/LibraryPreview";
 import {
   LIBRARY_KINDS,

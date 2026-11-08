@@ -4,8 +4,8 @@ import {
   createCanvasStore,
   getSnapshot,
   loadSnapshot,
-} from "@/canvas/editor";
-import { connectShapes } from "@/utils/connectionParser";
+} from "@/features/canvas/editor";
+import { connectShapes } from "@/features/canvas/connection-parser";
 import { generationFingerprint, resultIsStale } from "./freshness";
 import {
   createImageRevision,

@@ -1,0 +1,97 @@
+import { getTranslator, getLocale, type Locale } from "@/i18n";
+import type { Editor } from "@/features/canvas/editor";
+import { downloadBlob } from "@/api/client";
+import { blobForSource } from "@/api/backend";
+import { createDocumentBlob } from "@/ai/documents";
+import type { NodeData } from "@/workflow/execute";
+import { resultSource } from "@/workflow/results";
+
+export interface DownloadableFile {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number;
+  source: "file" | "website" | "image" | "speech";
+  sourceLabel: string;
+  downloadUrl?: string;
+  content?: string;
+  shapeId: string;
+}
+export function collectDownloadableFiles(
+  editor: Editor,
+  locale: Locale = getLocale(),
+): DownloadableFile[] {
+  const t = getTranslator(locale);
+  const files: DownloadableFile[] = [];
+  for (const shape of editor.getCurrentPageShapes()) {
+    const props = shape.props as NodeData;
+    const imageAsset =
+      shape.type === "image"
+        ? editor.store.get(String(shape.props.assetId))
+        : undefined;
+    const imageName =
+      props.name ||
+      (imageAsset?.typeName === "asset"
+        ? String(imageAsset.props.name || "")
+        : "") ||
+      t("common.image");
+    if (shape.type === "file" && (props.src || props.result || props.text))
+      files.push({
+        id: shape.id,
+        shapeId: shape.id,
+        fileName: props.fileName || props.name || t("canvas.documentTxt"),
+        fileType:
+          props.fileExtension || props.fileName?.split(".").pop() || "txt",
+        source: "file",
+        sourceLabel: t("canvas.fileStep"),
+        downloadUrl: props.src,
+        content: props.result || props.text,
+        fileSize: props.fileSize,
+      });
+    else if (shape.type === "website" && props.htmlContent)
+      files.push({
+        id: shape.id,
+        shapeId: shape.id,
+        fileName: `${props.name || t("common.webPage")}.html`,
+        fileType: "html",
+        source: "website",
+        sourceLabel: t("canvas.websiteStep"),
+        content: props.htmlContent,
+      });
+    else if (
+      ["ai-image", "image"].includes(shape.type) &&
+      resultSource(editor, shape)
+    )
+      files.push({
+        id: shape.id,
+        shapeId: shape.id,
+        fileName: /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(imageName)
+          ? imageName
+          : `${imageName}.png`,
+        fileType: "png",
+        source: "image",
+        sourceLabel: t("canvas.imageStep"),
+        downloadUrl: resultSource(editor, shape),
+      });
+    else if (shape.type === "speech" && props.src)
+      files.push({
+        id: shape.id,
+        shapeId: shape.id,
+        fileName: /\.(mp3|wav|webm|m4a|flac)$/i.test(props.name || "")
+          ? props.name
+          : `${props.name || t("common.speech")}.mp3`,
+        fileType: "mp3",
+        source: "speech",
+        sourceLabel: t("canvas.audioStep"),
+        downloadUrl: props.src,
+      });
+  }
+  return files;
+}
+export async function downloadFile(file: DownloadableFile) {
+  // Preserve original binary bytes for PDF, DOCX, images, and audio.
+  const blob = file.downloadUrl
+    ? await blobForSource(file.downloadUrl)
+    : await createDocumentBlob(file.content || "", file.fileType);
+  downloadBlob(blob, file.fileName);
+}

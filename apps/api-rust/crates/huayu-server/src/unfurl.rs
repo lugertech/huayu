@@ -4,6 +4,7 @@ use std::{
 };
 
 use axum::{Json, extract::Query};
+use encoding_rs::{Encoding, UTF_8};
 use futures_util::StreamExt;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -81,6 +82,11 @@ pub(crate) async fn unfurl(Query(query): Query<UnfurlQuery>) -> ApiResult<Json<M
         if !response.status().is_success() {
             return Err(ApiError::invalid("网页未返回可读取的内容"));
         }
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
         let mut stream = response.bytes_stream();
         let mut bytes = Vec::new();
         while let Some(chunk) = stream.next().await {
@@ -90,10 +96,48 @@ pub(crate) async fn unfurl(Query(query): Query<UnfurlQuery>) -> ApiResult<Json<M
             }
             bytes.extend_from_slice(&chunk);
         }
-        let html = String::from_utf8_lossy(&bytes).into_owned();
+        let html = decode_html(&bytes, content_type.as_deref())?;
         return Ok(Json(metadata(&html, &url, query.include_html)?));
     }
     Err(ApiError::invalid("网页跳转次数过多"))
+}
+
+/// Decodes text before extracting metadata or forwarding HTML to the canvas.
+/// A BOM takes precedence over HTTP headers, then HTML declarations, then UTF-8.
+fn decode_html(bytes: &[u8], content_type: Option<&str>) -> ApiResult<String> {
+    let content_encoding = |content_type: &str| {
+        content_type.split(';').skip(1).find_map(|parameter| {
+            let (name, value) = parameter.trim().split_once('=')?;
+            if !name.trim().eq_ignore_ascii_case("charset") {
+                return None;
+            }
+            Encoding::for_label(value.trim().trim_matches(['\'', '"']).as_bytes())
+        })
+    };
+    let mut encoding = Encoding::for_bom(bytes)
+        .map(|(encoding, _)| encoding)
+        .or_else(|| content_type.and_then(content_encoding));
+    if encoding.is_none() {
+        // Charset labels and HTML attribute syntax are ASCII in legacy pages too.
+        let head = String::from_utf8_lossy(&bytes[..bytes.len().min(1024)]);
+        let document = Html::parse_document(&head);
+        let selector =
+            Selector::parse("meta[charset], meta[http-equiv]").map_err(ApiError::internal)?;
+        encoding = document.select(&selector).find_map(|node| {
+            if let Some(charset) = node.value().attr("charset") {
+                return Encoding::for_label(charset.as_bytes());
+            }
+            if node
+                .value()
+                .attr("http-equiv")
+                .is_some_and(|value| value.eq_ignore_ascii_case("content-type"))
+            {
+                return node.value().attr("content").and_then(content_encoding);
+            }
+            None
+        });
+    }
+    Ok(encoding.unwrap_or(UTF_8).decode(bytes).0.into_owned())
 }
 
 fn metadata(html: &str, url: &Url, include_html: bool) -> ApiResult<Metadata> {
@@ -157,5 +201,58 @@ fn public_address(ip: IpAddr) -> bool {
                 && (ip.segments()[0] & 0xfe00) != 0xfc00
                 && (ip.segments()[0] & 0xffc0) != 0xfe80
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{decode_html, metadata};
+    use encoding_rs::{GBK, SHIFT_JIS};
+    use url::Url;
+
+    #[test]
+    fn decodes_http_charset_before_reading_metadata_and_html() {
+        let source =
+            "<title>中文标题</title><meta name='description' content='网页摘要'><p>原始内容</p>";
+        let (bytes, _, errors) = GBK.encode(source);
+        assert!(!errors);
+        let html = decode_html(&bytes, Some("text/html; Charset=\"GB2312\"")).unwrap();
+        let value = metadata(&html, &Url::parse("https://example.com/").unwrap(), true).unwrap();
+        assert_eq!(value.title, "中文标题");
+        assert_eq!(value.description, "网页摘要");
+        assert_eq!(value.html.as_deref(), Some(source));
+    }
+
+    #[test]
+    fn reads_html_charset_and_legacy_content_type_declarations() {
+        let japanese = "<meta charset='Shift_JIS'><title>日本語のページ</title>";
+        let (bytes, _, errors) = SHIFT_JIS.encode(japanese);
+        assert!(!errors);
+        assert_eq!(decode_html(&bytes, None).unwrap(), japanese);
+        let chinese = "<meta http-equiv='Content-Type' content='text/html; charset=gb18030'><title>中文</title>";
+        let (bytes, _, errors) = GBK.encode(chinese);
+        assert!(!errors);
+        assert_eq!(
+            decode_html(&bytes, Some("text/html; charset=unknown")).unwrap(),
+            chinese
+        );
+    }
+
+    #[test]
+    fn preserves_utf8_and_respects_bom_and_http_precedence() {
+        let utf8 = "<title>中文 · English · 日本語</title>";
+        assert_eq!(decode_html(utf8.as_bytes(), None).unwrap(), utf8);
+        let bom = [b"\xef\xbb\xbf".as_slice(), utf8.as_bytes()].concat();
+        assert_eq!(
+            decode_html(&bom, Some("text/html; charset=gbk")).unwrap(),
+            utf8
+        );
+        let source = "<meta charset='utf-8'><title>中文</title>";
+        let (bytes, _, errors) = GBK.encode(source);
+        assert!(!errors);
+        assert_eq!(
+            decode_html(&bytes, Some("text/html; charset=gbk")).unwrap(),
+            source
+        );
     }
 }

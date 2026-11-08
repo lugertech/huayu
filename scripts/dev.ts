@@ -1,10 +1,17 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { getDevApiConfig } from "./dev-api-config.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const vp = fileURLToPath(import.meta.resolve("vite-plus/bin"));
+const api = getDevApiConfig(root);
 const processOptions = {
   cwd: root,
+  env: {
+    ...process.env,
+    HUAYU_HOST: api.host,
+    HUAYU_PORT: String(api.port),
+  },
   stdio: "inherit" as const,
   detached: process.platform !== "win32",
 };

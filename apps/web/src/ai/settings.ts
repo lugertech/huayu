@@ -1,6 +1,13 @@
+import {
+  LocalizedError,
+  errorText,
+  type ErrorTranslation,
+} from "@/i18n/errors";
 import { t } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "./errors";
+
+declare const __HUAYU_DEV_API_ORIGIN__: string;
 
 export const CAPABILITIES = [
   "text",
@@ -24,24 +31,32 @@ export interface ModelSettings {
   connections: Record<Capability, Connection>;
 }
 export const MODEL_STORAGE_KEY = "huayu:model-settings:v1";
+export const CAPABILITY_MESSAGE_KEYS = {
+  text: "models.textGeneration",
+  vision: "models.imageUnderstanding",
+  image: "models.imageGeneration",
+  speech: "models.textToSpeech",
+  transcription: "api.transcription",
+  search: "models.webSearch",
+} as const;
 export const CAPABILITY_LABELS: Record<Capability, string> = {
   get text() {
-    return t("models.textGeneration");
+    return t(CAPABILITY_MESSAGE_KEYS.text);
   },
   get vision() {
-    return t("models.imageUnderstanding");
+    return t(CAPABILITY_MESSAGE_KEYS.vision);
   },
   get image() {
-    return t("models.imageGeneration");
+    return t(CAPABILITY_MESSAGE_KEYS.image);
   },
   get speech() {
-    return t("models.textToSpeech");
+    return t(CAPABILITY_MESSAGE_KEYS.speech);
   },
   get transcription() {
-    return t("api.transcription");
+    return t(CAPABILITY_MESSAGE_KEYS.transcription);
   },
   get search() {
-    return t("models.webSearch");
+    return t(CAPABILITY_MESSAGE_KEYS.search);
   },
 };
 
@@ -49,7 +64,7 @@ export function defaultSettings(): ModelSettings {
   const models = {
     text: "gpt-4o-mini",
     vision: "gpt-4o-mini",
-    image: "gpt-image-1",
+    image: "gpt-image-1.5",
     speech: "tts-1",
     transcription: "whisper-1",
     search: "",
@@ -121,12 +136,6 @@ export function saveSettings(value: ModelSettings) {
   listeners.forEach((listener) => listener());
 }
 
-export function clearSettings() {
-  localStorage.removeItem(MODEL_STORAGE_KEY);
-  cached = defaultSettings();
-  listeners.forEach((listener) => listener());
-}
-
 if (typeof window !== "undefined")
   window.addEventListener("storage", (event) => {
     if (event.key === MODEL_STORAGE_KEY || event.key === null) {
@@ -152,38 +161,45 @@ export function connectionFor(capability: Capability): Connection {
 export function connectionIssue(
   capability: Capability,
   connection = connectionFor(capability),
-): { field: "baseUrl" | "model" | "apiKey"; message: string } | undefined {
-  const values = { capability: CAPABILITY_LABELS[capability] };
-  if (!connection.baseUrl.trim())
+) {
+  const values = { capability: { key: CAPABILITY_MESSAGE_KEYS[capability] } };
+  function issue(
+    field: "baseUrl" | "model" | "apiKey",
+    message: string | ErrorTranslation,
+  ) {
+    const error = new ModelConnectionError(
+      capability,
+      message,
+      "configuration",
+    );
     return {
-      field: "baseUrl",
-      message: t("models.connection.missingUrl", values),
+      field,
+      error,
+      get message() {
+        return errorText(error);
+      },
     };
+  }
+  if (!connection.baseUrl.trim())
+    return issue("baseUrl", { key: "models.connection.missingUrl", values });
   let endpoint: URL;
   try {
     endpoint = new URL(modelEndpoint(connection, ""));
   } catch (error) {
-    return {
-      field: "baseUrl",
-      message:
-        error instanceof Error
-          ? error.message
-          : t("models.invalidModelServiceUrl"),
-    };
+    return issue(
+      "baseUrl",
+      error instanceof LocalizedError
+        ? error.translation || error.message
+        : { key: "models.invalidModelServiceUrl" },
+    );
   }
   if (capability !== "search" && !connection.model.trim())
-    return {
-      field: "model",
-      message: t("models.connection.missingModel", values),
-    };
+    return issue("model", { key: "models.connection.missingModel", values });
   if (
     !connection.apiKey.trim() &&
     (capability === "search" || endpoint.hostname === "api.openai.com")
   )
-    return {
-      field: "apiKey",
-      message: t("models.connection.missingKey", values),
-    };
+    return issue("apiKey", { key: "models.connection.missingKey", values });
 }
 
 export function requireConnection(
@@ -191,8 +207,7 @@ export function requireConnection(
   connection = connectionFor(capability),
 ) {
   const issue = connectionIssue(capability, connection);
-  if (issue)
-    throw new ModelConnectionError(capability, issue.message, "configuration");
+  if (issue) throw issue.error;
   return connection;
 }
 
@@ -205,7 +220,7 @@ export function modelEndpoint(connection: Connection, path: string): string {
         path.replace(/^\/+/, ""),
     );
   } catch {
-    throw new Error(t("models.invalidModelServiceUrl"));
+    throw new LocalizedError({ key: "models.invalidModelServiceUrl" });
   }
   if (
     !["http:", "https:"].includes(url.protocol) ||
@@ -214,14 +229,13 @@ export function modelEndpoint(connection: Connection, path: string): string {
     url.search ||
     url.hash
   ) {
-    throw new Error(t("models.serviceUrl.invalid"));
+    throw new LocalizedError({ key: "models.serviceUrl.invalid" });
   }
   if (
-    (url.origin === window.location.origin ||
-      ["5858", "5173"].includes(url.port)) &&
+    [window.location.origin, __HUAYU_DEV_API_ORIGIN__].includes(url.origin) &&
     /^\/api(?:\/|$)/.test(url.pathname)
   ) {
-    throw new Error(t("models.enterTheUrlOfYourModelService"));
+    throw new LocalizedError({ key: "models.enterTheUrlOfYourModelService" });
   }
   return url.toString();
 }

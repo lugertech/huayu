@@ -23,6 +23,7 @@ tracing-subscriber.workspace = true
 reqwest.workspace = true
 url.workspace = true
 futures-util.workspace = true
+encoding_rs.workspace = true
 mime_guess.workspace = true
 zip.workspace = true
 roxmltree.workspace = true

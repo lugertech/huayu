@@ -237,5 +237,5 @@ export function useAssetTranslations() {
       translate(messages, locale, key, values),
     [locale],
   );
-  return { t, at };
+  return { locale, t, at };
 }

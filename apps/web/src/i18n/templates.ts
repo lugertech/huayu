@@ -4,7 +4,7 @@ import type { MessageKey } from "./messages";
 import {
   templatePresetForId,
   templatePreview,
-} from "@/canvas/template-catalog";
+} from "@/features/canvas/template-catalog";
 
 const builtinMessages = new Map<
   string,

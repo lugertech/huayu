@@ -1,4 +1,4 @@
-import { t, type Locale, type MessageKey } from "@/i18n";
+import { getTranslator, type Locale } from "@/i18n";
 import type {
   BaseAIComponentProps,
   ComponentPropsByType,
@@ -21,19 +21,16 @@ import {
 export type { ComponentType } from "@/types/components";
 
 export function componentPlaceholder(type: string, locale?: Locale) {
+  const t = getTranslator(locale);
   return (
     {
-      instruction: t(
-        "canvas.components.instruction.placeholder",
-        undefined,
-        locale,
-      ),
-      "ai-text": t("canvas.components.text.placeholder", undefined, locale),
-      "ai-image": t("canvas.components.image.placeholder", undefined, locale),
-      speech: t("canvas.components.speech.placeholder", undefined, locale),
-      website: t("canvas.components.website.placeholder", undefined, locale),
-      chart: t("canvas.components.chart.placeholder", undefined, locale),
-    }[type] || t("canvas.components.file.placeholder", undefined, locale)
+      instruction: t("canvas.components.instruction.placeholder"),
+      "ai-text": t("canvas.components.text.placeholder"),
+      "ai-image": t("canvas.components.image.placeholder"),
+      speech: t("canvas.components.speech.placeholder"),
+      website: t("canvas.components.website.placeholder"),
+      chart: t("canvas.components.chart.placeholder"),
+    }[type] || t("canvas.components.file.placeholder")
   );
 }
 
@@ -50,7 +47,7 @@ export interface ComponentConfig {
 function createComponentConfigs(
   locale?: Locale,
 ): Record<ComponentType, ComponentConfig> {
-  const translate = (key: MessageKey) => t(key, undefined, locale);
+  const translate = getTranslator(locale);
   return {
     instruction: {
       name: "Instruction",

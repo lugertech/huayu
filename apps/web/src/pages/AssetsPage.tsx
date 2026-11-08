@@ -1,4 +1,4 @@
-import { ShellSidebarTrigger } from "@/Components/Shell";
+import { ShellSidebarTrigger } from "@/components/Shell";
 import { AssetBrowser } from "@/features/asset-library/AssetBrowser";
 export function AssetsPage() {
   return (

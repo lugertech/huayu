@@ -1,5 +1,6 @@
 import { createRoot, hydrateRoot } from "react-dom/client";
-import { App, DocsFallback } from "./App";
+import { App } from "./App";
+import { DocsFallback } from "./components/DocsFallback";
 import { base } from "./config";
 import { localeForPath, withoutLocale } from "./i18n";
 import { hasSiteRoute } from "./routes";
@@ -16,8 +17,8 @@ async function start() {
   if (hasSiteRoute(path) && withoutLocale(path).startsWith("/docs")) {
     try {
       // Static guides remain readable while their interactive code loads.
-      const { Docs } = await import("./Docs");
-      documentation = <Docs path={withoutLocale(path)} />;
+      const { DocsPage } = await import("./pages/DocsPage");
+      documentation = <DocsPage path={withoutLocale(path)} />;
     } catch {
       documentation = <DocsFallback failed />;
       hydrate = false;

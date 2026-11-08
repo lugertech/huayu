@@ -11,7 +11,7 @@ vi.mock("@/api/backend", () => ({
   extractAPIData: (response: unknown) => response,
 }));
 import { applyComponentUpload, uploadComponentFile } from "./uploads";
-import { Editor, createCanvasStore } from "@/canvas/editor";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
 
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());

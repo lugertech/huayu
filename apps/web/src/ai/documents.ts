@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 export const FILE_EXTENSIONS = [
   "txt",
   "md",
@@ -40,7 +40,8 @@ export async function createDocumentBlob(
     const { PDFDocument, rgb } = await import("pdf-lib");
     const { default: fontkit } = await import("@pdf-lib/fontkit");
     const response = await fetch("/fonts/NotoSansSC.ttf");
-    if (!response.ok) throw new Error(t("models.cannotLoadThePdfFont"));
+    if (!response.ok)
+      throw new LocalizedError({ key: "models.cannotLoadThePdfFont" });
     const document = await PDFDocument.create();
     document.registerFontkit(fontkit);
     const font = await document.embedFont(await response.arrayBuffer(), {
@@ -87,6 +88,6 @@ export async function createDocumentBlob(
     js: "text/javascript",
   };
   if (!types[extension])
-    throw new Error(t("models.thisFileFormatCannotBeGenerated"));
+    throw new LocalizedError({ key: "models.thisFileFormatCannotBeGenerated" });
   return new Blob([text], { type: `${types[extension]};charset=utf-8` });
 }

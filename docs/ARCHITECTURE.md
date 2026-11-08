@@ -5,15 +5,23 @@
 ```text
 apps/
   site/                 React 静态介绍页与文档，构建时预渲染为 HTML
+    src/pages/          首页与文档页面入口
+    src/features/       示例浏览、画布预览与录制演示
+    src/components/     站点外壳、语言与外观切换
   web/                  React、Vite、shadcn/ui（Base UI）、Excalidraw、React Flow
     src/ai/             浏览器模型连接、调用和从原后端移入的提示词
-    src/canvas/         画布界面、本地恢复、记录同步、导入导出与示例
-      engine/           自有记录存储、几何、兼容读取和卡片快照导出
-      excalidraw/       原生场景转换、交互、组件覆盖层和本地字体
+    src/pages/          路由页面入口、页面级请求与状态
+    src/features/       按业务组织组件、状态、纯计算与测试
+      canvas/           画布界面、引擎、Excalidraw 适配、同步与导入导出
+      recording/        录制、音轨处理、转写与分析任务
+      projects/         项目菜单与预览
+      asset-library/    素材管理与导入
+      library/          跨项目资料浏览
+      results/          作品预览与编辑
     src/i18n/           界面语言检测、浏览器偏好与英文文案
     src/workflow/       工作流依赖规划与执行
-    src/recording/      录制、音轨处理、转写与分析任务
-    src/ui/             shadcn Base UI 组件源码
+    src/components/     应用外壳与跨功能共享组件
+      ui/               shadcn Base UI 组件源码
   api-rust/
     crates/huayu-core/  无 I/O 的业务类型、文档记录校验与合并
     crates/huayu-store/ SQLite、SeaORM entity 与版本迁移

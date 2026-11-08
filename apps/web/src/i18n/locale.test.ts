@@ -19,10 +19,14 @@ import {
 } from "./index";
 import { localizeTemplate, templateTag } from "./templates";
 import { modelPrompts } from "@/ai/prompts";
-import { Editor, createCanvasStore, getSnapshot } from "@/canvas/editor";
-import { applyRecipe } from "@/canvas/recipes";
+import {
+  Editor,
+  createCanvasStore,
+  getSnapshot,
+} from "@/features/canvas/editor";
+import { applyRecipe } from "@/features/canvas/recipes";
 import { generationFingerprint } from "@/workflow/freshness";
-import { analysisMarkdown } from "@/recording/report";
+import { analysisMarkdown } from "@/features/recording/report";
 import { render } from "../../../site/src/render";
 import { documentsFor, documentLink, routes } from "../../../site/src/content";
 import { en as siteEn, zhCN as siteZhCN } from "../../../site/src/messages";

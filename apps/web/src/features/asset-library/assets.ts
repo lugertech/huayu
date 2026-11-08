@@ -1,7 +1,11 @@
 import { api, uploadAsset } from "@/api/client";
 import { nodeIsBusy } from "@/workflow/execute";
 import { t } from "@/i18n";
-import { createShapeId, type Editor, type VecLike } from "@/canvas/editor";
+import {
+  createShapeId,
+  type Editor,
+  type VecLike,
+} from "@/features/canvas/editor";
 
 export interface AssetFolder {
   id: string;

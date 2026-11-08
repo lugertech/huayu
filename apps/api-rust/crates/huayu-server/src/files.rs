@@ -22,8 +22,10 @@ use uuid::Uuid;
 
 use crate::{ApiError, ApiResult, AppState, access::CanvasAccess};
 
-const MAX_UPLOAD_BYTES: i64 = 512 * 1024 * 1024;
-const MAX_DOCUMENT_BYTES: i64 = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES: usize = 512 * 1024 * 1024;
+// Multipart boundaries and field headers do not consume the file's byte allowance.
+pub(crate) const MAX_UPLOAD_BODY_BYTES: usize = MAX_UPLOAD_BYTES + 64 * 1024;
+const MAX_DOCUMENT_BYTES: usize = 10 * 1024 * 1024;
 
 struct PendingAsset {
     asset: Asset,
@@ -71,7 +73,7 @@ pub(crate) async fn upload(
 async fn receive_asset(
     state: &AppState,
     mut multipart: Multipart,
-    max_bytes: i64,
+    max_bytes: usize,
 ) -> ApiResult<PendingAsset> {
     while let Some(mut field) = multipart
         .next_field()
@@ -105,14 +107,14 @@ async fn receive_asset(
             .await
             .map_err(ApiError::internal)?;
         let path = TempPath::try_from_path(path).map_err(ApiError::internal)?;
-        let transfer: ApiResult<i64> = async {
-            let mut size: i64 = 0;
+        let transfer: ApiResult<usize> = async {
+            let mut size: usize = 0;
             while let Some(chunk) = field
                 .chunk()
                 .await
                 .map_err(|_| ApiError::invalid("文件上传中断，请重试"))?
             {
-                size += i64::try_from(chunk.len()).map_err(ApiError::internal)?;
+                size += chunk.len();
                 if size > max_bytes {
                     return Err(ApiError::invalid(if max_bytes == MAX_DOCUMENT_BYTES {
                         "待解析文档不能超过 10 MB"
@@ -127,7 +129,7 @@ async fn receive_asset(
         }
         .await;
         drop(file);
-        let size = transfer?;
+        let size = i64::try_from(transfer?).map_err(ApiError::internal)?;
         let asset = Asset {
             id,
             name,

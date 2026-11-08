@@ -2,6 +2,31 @@ use huayu_core::{Document, DocumentPatch};
 use serde_json::json;
 
 #[test]
+fn patch_sequence_is_optional_and_does_not_enter_the_document() {
+    for sequence in [None, Some(2)] {
+        let mut value = json!({
+            "upsert": [{"id": "shape:one", "typeName": "shape", "props": {"text": "saved"}}],
+            "remove": [],
+            "client_id": "browser"
+        });
+        if let Some(sequence) = sequence {
+            value["sequence"] = json!(sequence);
+        }
+        let patch: DocumentPatch = serde_json::from_value(value).unwrap();
+        let encoded = serde_json::to_value(&patch).unwrap();
+        assert_eq!(
+            encoded.get("sequence"),
+            sequence.map(|value| json!(value)).as_ref()
+        );
+        let mut document = Document::default();
+        assert!(document.apply(&patch).unwrap());
+        let saved = serde_json::to_value(document).unwrap();
+        assert!(saved.get("sequence").is_none());
+        assert_eq!(saved["store"]["shape:one"]["props"]["text"], "saved");
+    }
+}
+
+#[test]
 fn removing_and_restoring_a_record_does_not_change_the_document() {
     let record = json!({"id": "shape:one", "typeName": "shape", "props": {"text": "original"}});
     let mut document = Document {

@@ -1,5 +1,6 @@
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
+import { projectCopyName } from "@/features/projects/project-name";
 import {
   lazy,
   Suspense,
@@ -35,8 +36,8 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { ShellSidebarTrigger } from "@/Components/Shell";
-import { useToast } from "@/Components/common/ToastProvider";
+import { ShellSidebarTrigger } from "@/components/Shell";
+import { useToast } from "@/components/common/ToastProvider";
 import {
   api,
   PROJECTS_CHANGED_EVENT,
@@ -44,16 +45,16 @@ import {
   type Project,
   type Template,
 } from "@/api/client";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { LoadingRegion } from "@/ui/loading-region";
-import { Card, CardContent } from "@/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Card, CardContent } from "@/components/ui/card";
 import { searchScore } from "@/lib/search";
 import {
   recipeKind,
   templatePresetForRecipe,
   templateSummaries,
-} from "@/canvas/template-catalog";
+} from "@/features/canvas/template-catalog";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -62,17 +63,17 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/ui/alert-dialog";
-import type { ProjectCardMenuProps } from "./ProjectCardMenu";
+} from "@/components/ui/alert-dialog";
+import type { ProjectCardMenuProps } from "../features/projects/ProjectCardMenu";
 import "./projects.css";
 
 const ProjectViewTooltip = lazy(() =>
-  import("./ProjectViewTooltip").then((module) => ({
+  import("../features/projects/ProjectViewTooltip").then((module) => ({
     default: module.ProjectViewTooltip,
   })),
 );
 const DeferredProjectCardMenu = lazy(() =>
-  import("./ProjectCardMenu").then((module) => ({
+  import("../features/projects/ProjectCardMenu").then((module) => ({
     default: module.ProjectCardMenu,
   })),
 );
@@ -124,7 +125,7 @@ function editedDate(value: string) {
   });
 }
 export function ProjectsPage() {
-  useLocale();
+  const locale = useLocale();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedExample = templatePresetForRecipe(
@@ -147,13 +148,14 @@ export function ProjectsPage() {
     requestedExample ? "templates" : "projects",
   );
   const [search, setSearch] = useState("");
-  const [templateSearch, setTemplateSearch] = useState(() =>
-    requestedExample
-      ? getLocale() === "en"
+  const [templateSearchInput, setTemplateSearch] = useState<string>();
+  const templateSearch =
+    templateSearchInput ??
+    (requestedExample
+      ? locale === "en"
         ? requestedExample.en.name
         : requestedExample.name
-      : "",
-  );
+      : "");
   const [tag, setTag] = useState("all");
   const [view, setView] = useState<"grid" | "list">(() =>
     localStorage.getItem("huayu:projects-view") === "list" ? "list" : "grid",
@@ -395,8 +397,8 @@ export function ProjectsPage() {
       if (!document && original.recipe) {
         const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
           await Promise.all([
-            import("@/canvas/editor"),
-            import("@/canvas/recipes"),
+            import("@/features/canvas/editor"),
+            import("@/features/canvas/recipes"),
           ]);
         const store = createCanvasStore();
         applyRecipe(new Editor(store), original.recipe);
@@ -405,7 +407,7 @@ export function ProjectsPage() {
       const copy = await api<Project>("/api/projects", {
         method: "POST",
         body: JSON.stringify({
-          name: t("projects.copy", { arg0: project.name.slice(0, 116) }),
+          name: projectCopyName(project.name),
           document,
         }),
       });
@@ -528,7 +530,8 @@ export function ProjectsPage() {
           if (!file) return;
           setPending("import");
           try {
-            const { importProject } = await import("@/canvas/transfer");
+            const { importProject } =
+              await import("@/features/canvas/transfer");
             const project = await importProject(file);
             navigate(`/drawing/${project.id}`);
           } catch (error) {

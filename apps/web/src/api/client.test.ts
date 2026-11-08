@@ -1,8 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { api, PROJECTS_CHANGED_EVENT } from "./client";
 import { setLanguage } from "@/i18n";
+import { errorText } from "@/i18n/errors";
 
 describe("local API connection errors", () => {
+  it("keeps known server errors translatable after they have been received", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            code: "VALIDATION_FAILED",
+            message: "名称应包含 1 至 120 个字符",
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const error = await api("/api/projects").catch((reason: unknown) => reason);
+    setLanguage("en");
+    expect(errorText(error)).toBe("Names must contain 1–120 characters");
+    expect(error).toMatchObject({ status: 422, code: "VALIDATION_FAILED" });
+  });
   it("localizes a known server message through its semantic key", async () => {
     setLanguage("en");
     vi.stubGlobal(

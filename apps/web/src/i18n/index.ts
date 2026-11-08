@@ -90,6 +90,10 @@ export function useLanguagePreference() {
 export function t(key: MessageKey, values?: Values, locale = getLocale()) {
   return translate(messages, locale, key, values);
 }
+export function getTranslator(locale?: Locale) {
+  return (key: MessageKey, values?: Values) =>
+    translate(messages, locale ?? getLocale(), key, values);
+}
 export function formatDate(
   value: string | number | Date,
   options?: Intl.DateTimeFormatOptions,

@@ -59,11 +59,15 @@ import {
   type AssetGroupItem,
   type AssetItem,
 } from "./library-api";
-import { useToast } from "@/Components/common/ToastProvider";
+import { useToast } from "@/components/common/ToastProvider";
 import { cn } from "@/lib/utils";
-import { Input } from "@/ui/input";
-import { Button } from "@/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -71,8 +75,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog.tsx";
-import { Skeleton } from "@/ui/skeleton";
+} from "@/components/ui/dialog.tsx";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AssetFolderTree } from "./AssetFolderTree";
 import folderIcon from "./folder.svg";
 import "viewerjs/dist/viewer.css";
@@ -290,7 +294,7 @@ export function AssetBrowser({
   selectionOnly = false,
   insertLabel,
 }: AssetBrowserProps) {
-  const { t, at } = useAssetTranslations();
+  const { locale, t, at } = useAssetTranslations();
   const loadErrorText = useRef(at);
   useEffect(() => {
     // Language changes should not reload the asset list or reset pagination.
@@ -1949,7 +1953,7 @@ export function AssetBrowser({
               className="asset-row-date text-xs text-muted-foreground"
               dateTime={asset.created_at}
             >
-              {new Date(asset.created_at).toLocaleDateString()}
+              {new Date(asset.created_at).toLocaleDateString(locale)}
             </time>
           )}
         </Button>

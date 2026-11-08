@@ -19,7 +19,7 @@
     "preview:site": "vp run @huayu/site#preview",
     "check:release": "node scripts/check-release.ts",
     "package:source": "node scripts/package-source.ts",
-    "test:release": "node --test scripts/release.test.ts",
+    "test:release": "node --test scripts/release.test.ts scripts/dev-api-config.test.ts",
     "licenses:generate": "node scripts/generate-notices.ts",
     "licenses:check": "node scripts/generate-notices.ts --check",
     "start": "sh scripts/cargo.sh run --release --package huayu-server",

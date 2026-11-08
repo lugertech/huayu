@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import {
   audioRecognizeAPI,
   documentUploadAPI,
@@ -8,7 +8,7 @@ import {
 import { validateFile } from "@/api/mentex";
 import type { NodeData } from "./execute";
 import { nodeIsBusy } from "./execute";
-import type { Editor } from "@/canvas/editor";
+import type { Editor } from "@/features/canvas/editor";
 
 /** The target may have been locked, removed, or started while its file was processing. */
 export function applyComponentUpload(
@@ -18,11 +18,11 @@ export function applyComponentUpload(
 ) {
   const shape = editor.getShape(id);
   if (!shape || editor.pageOf(id) !== editor.getCurrentPageId())
-    throw new Error(t("workflow.thisWorkIsNoLongerOnTheCanvas"));
+    throw new LocalizedError({ key: "workflow.thisWorkIsNoLongerOnTheCanvas" });
   if (shape.isLocked || shape.props.isLocked)
-    throw new Error(t("workflow.unlockThisWorkBeforeEditing"));
+    throw new LocalizedError({ key: "workflow.unlockThisWorkBeforeEditing" });
   if (nodeIsBusy(editor, id))
-    throw new Error(t("workflow.thisWorkIsBeingGenerated"));
+    throw new LocalizedError({ key: "workflow.thisWorkIsBeingGenerated" });
   editor.updateShape({ id, type: shape.type, props });
 }
 
@@ -49,13 +49,13 @@ export async function uploadComponentFile(
     };
   }
   if (type === "ai-image" && !file.type.startsWith("image/"))
-    throw new Error(t("canvas.chooseAnImageFile"));
+    throw new LocalizedError({ key: "canvas.chooseAnImageFile" });
   if (
     type === "speech" &&
     !file.type.startsWith("audio/") &&
     !file.type.startsWith("video/")
   )
-    throw new Error(t("canvas.chooseAnAudioFile"));
+    throw new LocalizedError({ key: "canvas.chooseAnAudioFile" });
   const value = await uploadFileAPI(file);
   const transcript =
     type === "speech"

@@ -1,7 +1,8 @@
+import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
 import { t } from "@/i18n";
 import { chat, parseModelJSON } from "../ai/provider";
-import { messagesForInputs, type AIAPIInput, uploadFileAPI } from "./backend";
+import { messagesForInputs, type AIAPIInput } from "./backend";
 
 export type ChartType = "mindmap" | "flowchart";
 export interface MindmapChartData {
@@ -49,7 +50,9 @@ export async function generateChart(params: {
           Array.isArray(data.edges)
         )
   )
-    throw new Error(t("api.theModelReturnedAnInvalidChartFormat"));
+    throw new LocalizedError({
+      key: "api.theModelReturnedAnInvalidChartFormat",
+    });
   return data;
 }
 export function validateFile(
@@ -62,5 +65,3 @@ export function validateFile(
     return { valid: false, error: t("api.unsupportedFileFormat") };
   return { valid: true };
 }
-export const uploadFileToMentex = ({ file }: { file: File; path?: string }) =>
-  uploadFileAPI(file);

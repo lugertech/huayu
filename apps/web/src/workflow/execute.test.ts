@@ -4,8 +4,8 @@ import {
   createCanvasStore,
   getSnapshot,
   loadSnapshot,
-} from "@/canvas/editor";
-import { connectShapes } from "@/utils/connectionParser";
+} from "@/features/canvas/editor";
+import { connectShapes } from "@/features/canvas/connection-parser";
 import { setLanguage } from "@/i18n";
 const mocks = vi.hoisted(() => ({
   instruction: vi.fn(),
@@ -26,8 +26,8 @@ vi.mock("@/api/backend", () => ({
   extractAPIData: (response: any) => response,
 }));
 vi.mock("@/api/mentex", () => ({ generateChart: mocks.chart }));
-vi.mock("@/utils/agentSSE", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/utils/agentSSE")>()),
+vi.mock("@/features/canvas/agent-sse", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/canvas/agent-sse")>()),
   callAgentSSE: mocks.agent,
 }));
 import {
@@ -82,6 +82,25 @@ beforeEach(() => {
   mocks.agent.mockResolvedValue([]);
 });
 describe("workflow execution parity", () => {
+  it("retranslates a failed node for the canvas language and later language switches", async () => {
+    const editor = board();
+    node(editor, "shape:empty", "instruction");
+    await expect(runWorkflow(editor, "shape:empty")).rejects.toThrow(
+      "请输入指令或连接素材",
+    );
+    expect(nodeExecution(editor, "shape:empty", "en").message).toBe(
+      "Write instructions or connect materials",
+    );
+    setLanguage("en");
+    expect(nodeExecution(editor, "shape:empty").message).toBe(
+      "Write instructions or connect materials",
+    );
+    editor.updateShape({ id: "shape:empty", props: { text: "继续执行" } });
+    await runWorkflow(editor, "shape:empty");
+    expect(nodeExecution(editor, "shape:empty", "en").message).toBe(
+      "Completed",
+    );
+  });
   it.each(["ai-image", "speech", "file"])(
     "stops an empty %s before triggering downstream generation",
     async (type) => {

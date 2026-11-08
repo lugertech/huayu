@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore } from "@/canvas/editor";
-import { sceneFromEditor } from "@/canvas/excalidraw/scene";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { sceneFromEditor } from "@/features/canvas/excalidraw/scene";
 import {
   assetMasonryColumns,
   folderRows,
@@ -9,12 +9,12 @@ import {
   applyLibraryImage,
   type LibraryAsset,
 } from "./assets";
-import { collectDownloadableFiles } from "@/utils/fileCollector";
+import { collectDownloadableFiles } from "@/features/canvas/file-collector";
 import { resultSource } from "@/workflow/results";
 import {
   connectShapes,
   getPreviousConnectedShapes,
-} from "@/utils/connectionParser";
+} from "@/features/canvas/connection-parser";
 
 const asset: LibraryAsset = {
   id: "local-image",

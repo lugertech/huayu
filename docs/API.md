@@ -50,6 +50,8 @@
 
 文档补丁示例：
 
+补丁可携带 `sequence`，表示 `client_id` 所属浏览器编辑会话内递增的修改序号。实时预览与持久化通知保留相同序号，用于避免较早的保存结果覆盖较新的预览；未涉及该预览的记录仍正常合并。该字段可省略，不写入项目文档。新编辑会话使用新的 `client_id`，同一编辑会话的 WebSocket 重连沿用原标识。
+
 ```json
 {
   "upsert": [],
@@ -62,7 +64,7 @@
 
 更新项目时，省略 `cover` 保留原封面，传入 `"cover": null` 清除封面。单独更新封面不改变文档修订号或编辑时间。
 
-文档解析上传限于 10 MB。只有成功提取文本后才保存附件；解析失败或上传超限时不保留文件或附件记录。
+普通附件的文件内容上限为 512 MiB，上传请求额外预留 64 KiB 容纳 multipart 边界和字段头，不占用文件内容额度。文档解析上传限于 10 MiB。只有成功提取文本后才保存附件；解析失败或上传超限时不保留文件或附件记录。
 
 通过协作链接打开时，项目读取、文档补丁及 WebSocket 请求携带 `?share={share_token}`。关闭协作后，该链接返回 `403 COLLABORATION_CLOSED`，已连接的协作页面停止同步；重新开启会生成新链接。分享令牌更新后，使用旧令牌的 WebSocket 连接同样停止同步。协作者不能访问项目列表、其他项目、模板管理、全局素材库、录屏或分享管理接口；超出范围返回 `403 SHARED_SCOPE_FORBIDDEN`。
 
@@ -78,8 +80,10 @@ WebSocket `/api/projects/{id}/events` 同时承载持久化通知和实时会话
 - 服务端 `member_removed`：`{"type":"member_removed","member_id":"成员标识"}`。移出目标停止协作，其他成员从名单和光标中移除对应成员的全部连接。
 - 服务端 `room_full`：`{"type":"room_full","max_collaborators":15}`，随后关闭连接。
 - 客户端 `scene_update`：`{"type":"scene_update","patch":{"upsert":[],"remove":[],"client_id":"编辑会话标识"}}`。服务端转发为 `scene_update`，附带发送连接的 `client_id` 和为空的 `target`。消息只用于预览，不写数据库，不增加项目修订号。
-- 客户端 `scene_init`：包含 `target`（新协作者的连接标识）与 `patch`，将当前画布及未保存的删除通知发给新加入者；服务端以带 `target` 的 `scene_update` 仅转发给目标连接。
+- 客户端 `scene_init`：包含 `target`（新协作者的连接标识）与 `patch`，只补发本地尚未保存或等待保存确认的记录及删除通知；已保存内容由服务端初始 `snapshot` 提供，不经客户端重复发送。服务端以带 `target` 的 `scene_update` 仅转发给目标连接。
 - 客户端 `presence`：`{"type":"presence","presence":{"pointer":{"x":0,"y":0,"tool":"pointer"},"button":"up","selectedElementIds":{}}}`。坐标使用画布坐标；`tool` 为 `pointer` 或 `laser`，`button` 为 `up` 或 `down`，`pointer: null` 隐藏光标。服务端转发为带 `peer` 的 `presence`。
+
+单个文档补丁的序列化内容上限为 32 MiB；WebSocket 消息和帧另预留 1 KiB 容纳消息类型与目标连接等封装字段。
 
 前端以约 33 毫秒的节流间隔广播变化；持久化仍通过 `PATCH /document` 独立完成。鼠标、选区和在线状态不写入恢复日志或导出文件；远端预览不会触发本地自动保存，接收到的画布变化以远端来源合并，不进入本人的撤销历史。原生元素预览使用 Excalidraw 的 `restoreElements`、`reconcileElements` 与 `CaptureUpdateAction.NEVER`，鼠标和选区通过 `updateScene({ collaborators })` 呈现。参考 [官方协作实现](https://github.com/excalidraw/excalidraw/blob/master/excalidraw-app/collab/Collab.tsx)。
 

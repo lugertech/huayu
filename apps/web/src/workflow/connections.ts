@@ -1,7 +1,10 @@
 import { t, type Locale } from "@/i18n";
-import type { CanvasShape, Editor, VecLike } from "@/canvas/editor";
+import type { CanvasShape, Editor, VecLike } from "@/features/canvas/editor";
 import { COMPONENT_CONFIGS } from "@/config/components";
-import { connectedShapes, connectShapes } from "@/utils/connectionParser";
+import {
+  connectedShapes,
+  connectShapes,
+} from "@/features/canvas/connection-parser";
 
 export const CONNECT_EVENT = "huayu:connect";
 export type ConnectionSide = "left" | "right";

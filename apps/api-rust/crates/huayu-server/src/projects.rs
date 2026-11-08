@@ -136,6 +136,9 @@ pub(crate) enum MemberRole {
 }
 
 const MAX_COLLABORATORS: usize = 15;
+const MAX_DOCUMENT_PATCH_BYTES: usize = 32 * 1024 * 1024;
+// The live message adds a type and optional target UUID around the document patch.
+const MAX_CLIENT_MESSAGE_BYTES: usize = MAX_DOCUMENT_PATCH_BYTES + 1024;
 
 pub(crate) struct Room {
     sender: broadcast::Sender<RoomEvent>,
@@ -301,7 +304,7 @@ pub(crate) async fn patch_document(
     if serde_json::to_vec(&patch)
         .map_err(ApiError::internal)?
         .len()
-        > 32 * 1024 * 1024
+        > MAX_DOCUMENT_PATCH_BYTES
     {
         return Err(ApiError::invalid("画布数据过大，请减少嵌入内容后重试"));
     }
@@ -429,8 +432,8 @@ pub(crate) async fn events(
     let receiver = room_sender(&state, &id).await.subscribe();
     drop(guard);
     Ok(upgrade
-        .max_message_size(32 * 1024 * 1024)
-        .max_frame_size(32 * 1024 * 1024)
+        .max_message_size(MAX_CLIENT_MESSAGE_BYTES)
+        .max_frame_size(MAX_CLIENT_MESSAGE_BYTES)
         .on_upgrade(move |socket| stream_events(socket, state, id, project, receiver, access)))
 }
 

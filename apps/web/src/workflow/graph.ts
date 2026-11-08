@@ -1,4 +1,4 @@
-import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 export interface GraphEdge {
   from: string;
   to: string;
@@ -46,6 +46,6 @@ export function planWorkflow(
     level = next;
   }
   if (processed !== reachable.size)
-    throw new Error(t("workflow.theWorkflowContainsACycle"));
+    throw new LocalizedError({ key: "workflow.theWorkflowContainsACycle" });
   return levels;
 }

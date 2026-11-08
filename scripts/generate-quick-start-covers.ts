@@ -1,8 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { Editor, createCanvasStore } from "../apps/web/src/canvas/editor";
-import { applyRecipe } from "../apps/web/src/canvas/recipes";
-import { exportSVG } from "../apps/web/src/canvas/engine/export";
+import {
+  Editor,
+  createCanvasStore,
+} from "../apps/web/src/features/canvas/editor";
+import { applyRecipe } from "../apps/web/src/features/canvas/recipes";
+import { exportSVG } from "../apps/web/src/features/canvas/engine/export";
 import { setLanguage } from "../apps/web/src/i18n";
 
 const output = resolve(

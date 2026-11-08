@@ -1,8 +1,10 @@
+import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
 import { t } from "@/i18n";
 import type OpenAI from "openai";
 import { APIError } from "openai/core/error";
 import {
   CAPABILITY_LABELS,
+  CAPABILITY_MESSAGE_KEYS,
   connectionFor,
   modelEndpoint,
   requireConnection,
@@ -71,42 +73,46 @@ async function modelRequest<T>(
   } catch (error) {
     signal?.throwIfAborted();
     if (error instanceof ModelConnectionError) throw error;
-    const values = { capability: CAPABILITY_LABELS[capability] };
-    let message: string;
+    const values = { capability: { key: CAPABILITY_MESSAGE_KEYS[capability] } };
+    let message: ErrorTranslation;
     if (
       timeout.signal.aborted ||
       error instanceof OpenAI.APIConnectionTimeoutError
     )
-      message = t("models.connection.timeout", values);
+      message = { key: "models.connection.timeout", values: values };
     else if (error instanceof OpenAI.APIError) {
       if (error.status === 401)
-        message = t("models.connection.unauthorized", values);
+        message = { key: "models.connection.unauthorized", values: values };
       else if (error.status === 403)
-        message = t("models.connection.forbidden", values);
+        message = { key: "models.connection.forbidden", values: values };
       else if (error.status === 404)
-        message = t("models.connection.notFound", values);
+        message = { key: "models.connection.notFound", values: values };
       else if (error.status === 429)
-        message = t(
-          error.code === "insufficient_quota"
-            ? "models.connection.quota"
-            : "models.connection.rateLimit",
-          values,
-        );
+        message = {
+          key:
+            error.code === "insufficient_quota"
+              ? "models.connection.quota"
+              : "models.connection.rateLimit",
+          values: values,
+        };
       else if (error.status === 408 || error.status === 504)
-        message = t("models.connection.timeout", values);
+        message = { key: "models.connection.timeout", values: values };
       else if (error.status && error.status >= 500)
-        message = t("models.connection.unavailable", values);
+        message = { key: "models.connection.unavailable", values: values };
       else
-        message = t("models.connection.rejected", {
-          ...values,
-          status: error.status || "",
-        });
+        message = {
+          key: "models.connection.rejected",
+          values: {
+            ...values,
+            status: error.status || "",
+          },
+        };
     } else if (
       error instanceof OpenAI.APIConnectionError ||
       error instanceof TypeError
     )
-      message = t("models.connection.network", values);
-    else message = t("models.connection.invalidResponse", values);
+      message = { key: "models.connection.network", values: values };
+    else message = { key: "models.connection.invalidResponse", values: values };
     throw new ModelConnectionError(capability, message);
   } finally {
     clearTimeout(timer);
@@ -120,7 +126,9 @@ export async function readChatStream(
   signal?: AbortSignal,
 ): Promise<string> {
   if (!response.body)
-    throw new Error(t("models.theModelServiceReturnedNoContent"));
+    throw new LocalizedError({
+      key: "models.theModelServiceReturnedNoContent",
+    });
   const { Stream } = await import("openai/streaming");
   const controller = new AbortController();
   const stream =
@@ -139,7 +147,9 @@ export async function readChatStream(
   }
   signal?.throwIfAborted();
   if (!result.trim())
-    throw new Error(t("models.theModelServiceReturnedEmptyContent"));
+    throw new LocalizedError({
+      key: "models.theModelServiceReturnedEmptyContent",
+    });
   return result;
 }
 
@@ -183,10 +193,9 @@ export async function chat(
             ? content.map((part) => part.text || "").join("")
             : "";
       if (!text.trim())
-        throw new ModelConnectionError(
-          capability,
-          t("models.theModelServiceReturnedEmptyContent"),
-        );
+        throw new ModelConnectionError(capability, {
+          key: "models.theModelServiceReturnedEmptyContent",
+        });
       options.onDelta?.(text);
       return text;
     },
@@ -201,7 +210,7 @@ export function parseModelJSON<T = Record<string, unknown>>(text: string): T {
   try {
     return JSON.parse(value);
   } catch {
-    throw new Error(t("models.theModelReturnedAnInvalidFormat"));
+    throw new LocalizedError({ key: "models.theModelReturnedAnInvalidFormat" });
   }
 }
 
@@ -261,26 +270,23 @@ export async function generateImage(
       if (value?.url) {
         const url = new URL(value.url);
         if (!["http:", "https:"].includes(url.protocol))
-          throw new ModelConnectionError(
-            "image",
-            t("models.theModelReturnedAnInvalidImageUrl"),
-          );
+          throw new ModelConnectionError("image", {
+            key: "models.theModelReturnedAnInvalidImageUrl",
+          });
         const image = await fetch(url, {
           signal: requestSignal,
           credentials: "omit",
           referrerPolicy: "no-referrer",
         });
         if (!image.ok)
-          throw new ModelConnectionError(
-            "image",
-            t("models.cannotLoadTheGeneratedImage"),
-          );
+          throw new ModelConnectionError("image", {
+            key: "models.cannotLoadTheGeneratedImage",
+          });
         return image.blob();
       }
-      throw new ModelConnectionError(
-        "image",
-        t("models.theModelReturnedNoImage"),
-      );
+      throw new ModelConnectionError("image", {
+        key: "models.theModelReturnedNoImage",
+      });
     },
     300_000,
   );
@@ -306,12 +312,12 @@ export async function synthesizeSpeech(
         { signal: requestSignal },
       );
       if ((response.headers.get("content-type") || "").includes("json"))
-        throw new ModelConnectionError(
-          "speech",
-          t("models.connection.invalidResponse", {
-            capability: CAPABILITY_LABELS.speech,
-          }),
-        );
+        throw new ModelConnectionError("speech", {
+          key: "models.connection.invalidResponse",
+          values: {
+            capability: { key: CAPABILITY_MESSAGE_KEYS.speech },
+          },
+        });
       return response.blob();
     },
   );
@@ -348,10 +354,9 @@ export async function transcribeDetailed(
         { signal: requestSignal },
       );
       if (typeof data?.text !== "string")
-        throw new ModelConnectionError(
-          "transcription",
-          t("models.theModelReturnedNoTranscript"),
-        );
+        throw new ModelConnectionError("transcription", {
+          key: "models.theModelReturnedNoTranscript",
+        });
       const segments =
         "segments" in data && Array.isArray(data.segments)
           ? data.segments
@@ -467,10 +472,9 @@ export async function testConnection(
         throw error;
       }
       if (!Array.isArray(data.data))
-        throw new ModelConnectionError(
-          capability,
-          t("models.theServiceReturnedNoModelList"),
-        );
+        throw new ModelConnectionError(capability, {
+          key: "models.theServiceReturnedNoModelList",
+        });
       if (!data.data.some((model) => model.id === connection.model.trim()))
         return {
           status: "warning",

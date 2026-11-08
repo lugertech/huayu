@@ -3,14 +3,14 @@ import { StrictMode, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./lib/theme";
-import { TooltipProvider } from "./ui/tooltip-provider";
-import { ToastProvider } from "./Components/common/ToastProvider";
-import { ErrorBoundary } from "./Components/common/ErrorBoundary";
-import { RecorderProvider } from "./recording/Recorder";
+import { TooltipProvider } from "./components/ui/tooltip-provider";
+import { ToastProvider } from "./components/common/ToastProvider";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { RecorderProvider } from "./features/recording/RecorderProvider";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { RecordingsPage } from "./pages/RecordingsPage";
-import { WorkspaceLayout } from "./Components/WorkspaceLayout";
-import { WorkspaceAccess } from "./Components/WorkspaceAccess";
+import { WorkspaceLayout } from "./components/WorkspaceLayout";
+import { WorkspaceAccess } from "./components/WorkspaceAccess";
 const DrawingPage = lazy(() =>
   import("./pages/DrawingPage").then((module) => ({
     default: module.DrawingPage,

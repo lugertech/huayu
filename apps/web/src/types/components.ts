@@ -1,4 +1,4 @@
-import type { BaseShape } from "@/canvas/engine/model";
+import type { BaseShape } from "@/features/canvas/engine/model";
 
 export interface BaseAIComponentProps {
   type?: "text" | "image" | "speech" | "website" | "file";
@@ -158,25 +158,3 @@ export type ComponentType = AIComponentShape["type"];
 export type ComponentPropsByType = {
   [Shape in AIComponentShape as Shape["type"]]: Shape["props"];
 };
-
-export interface ComponentExecutionResult {
-  success: boolean;
-  data: ComponentResultData;
-  error?: string;
-}
-
-export interface ComponentResultData {
-  result: string;
-  name?: string;
-  description?: string;
-
-  src?: string;
-  htmlContent?: string;
-  fileName?: string;
-  fileExtension?: string;
-  fileSize?: number;
-
-  isUploaded?: boolean;
-
-  rawResponse?: unknown;
-}

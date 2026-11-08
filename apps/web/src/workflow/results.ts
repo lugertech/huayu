@@ -1,6 +1,7 @@
+import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
-import type { CanvasShape, Editor } from "@/canvas/editor";
-import { createConnectedComponent } from "@/utils/connectionParser";
+import type { CanvasShape, Editor } from "@/features/canvas/editor";
+import { createConnectedComponent } from "@/features/canvas/connection-parser";
 import { nodeIsBusy } from "./execute";
 
 export type ResultKind = "text" | "image" | "website";
@@ -54,11 +55,11 @@ export function resultSource(editor: Editor, shape: CanvasShape): string {
 function editable(editor: Editor, id: string) {
   const shape = editor.getShape(id);
   if (!shape || editor.pageOf(id) !== editor.getCurrentPageId())
-    throw new Error(t("workflow.thisWorkIsNoLongerOnTheCanvas"));
+    throw new LocalizedError({ key: "workflow.thisWorkIsNoLongerOnTheCanvas" });
   if (shape.isLocked || shape.props.isLocked)
-    throw new Error(t("workflow.unlockThisWorkBeforeEditing"));
+    throw new LocalizedError({ key: "workflow.unlockThisWorkBeforeEditing" });
   if (nodeIsBusy(editor, id))
-    throw new Error(t("workflow.thisWorkIsBeingGenerated"));
+    throw new LocalizedError({ key: "workflow.thisWorkIsBeingGenerated" });
   return shape;
 }
 
@@ -71,9 +72,11 @@ export function saveResultEdit(
 ) {
   const shape = editable(editor, id);
   if (resultText(shape) !== base)
-    throw new Error(t("workflow.thisWorkWasUpdatedElsewhere"));
+    throw new LocalizedError({ key: "workflow.thisWorkWasUpdatedElsewhere" });
   if (resultKind(shape) === "image" || !resultKind(shape))
-    throw new Error(t("workflow.textCannotBeEditedDirectlyForThisTypeOfWork"));
+    throw new LocalizedError({
+      key: "workflow.textCannotBeEditedDirectlyForThisTypeOfWork",
+    });
   if (base === content) return;
   editor.run(() =>
     editor.updateShape({
@@ -145,11 +148,13 @@ export function createImageRevision(
 ) {
   const source = editor.getShape(sourceId);
   if (!source || editor.pageOf(sourceId) !== editor.getCurrentPageId())
-    throw new Error(t("workflow.theOriginalImageIsNoLongerOnTheCanvas"));
+    throw new LocalizedError({
+      key: "workflow.theOriginalImageIsNoLongerOnTheCanvas",
+    });
   let id: string | null = null;
   editor.run(() => {
     id = createConnectedComponent(editor, [sourceId], "ai-image", "");
-    if (!id) throw new Error(t("workflow.cannotSaveANewImage"));
+    if (!id) throw new LocalizedError({ key: "workflow.cannotSaveANewImage" });
     editor.updateShape({
       id,
       meta: {

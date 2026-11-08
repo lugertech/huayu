@@ -1,4 +1,5 @@
-import { t, type MessageKey } from "@/i18n";
+import type { MessageKey } from "@/i18n";
+import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
 import { zhCN } from "@/i18n/messages";
 import { canvasRequestHeaders } from "@/lib/canvas-access";
 
@@ -7,11 +8,11 @@ import { canvasRequestHeaders } from "@/lib/canvas-access";
 const apiMessageKeys = new Map<string, MessageKey>(
   (Object.keys(zhCN) as MessageKey[]).map((key) => [zhCN[key], key]),
 );
-function localizeApiError(message: unknown) {
+function localizeApiError(message: unknown): string | ErrorTranslation {
   if (typeof message !== "string" || !message)
-    return t("common.operationFailedRetry");
+    return { key: "common.operationFailedRetry" };
   const key = apiMessageKeys.get(message);
-  return key ? t(key) : message;
+  return key ? { key } : message;
 }
 export interface CanvasDocument {
   store: Record<string, unknown>;
@@ -65,9 +66,9 @@ export type ProjectChange =
   | { type: "updated"; project: Project }
   | { type: "deleted"; id: string };
 
-export class APIError extends Error {
+export class APIError extends LocalizedError {
   constructor(
-    message: string,
+    message: string | ErrorTranslation,
     public status: number,
     public code: string,
   ) {
@@ -80,7 +81,8 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  if (!path.startsWith("/api/")) throw new Error(t("api.invalidRequestUrl"));
+  if (!path.startsWith("/api/"))
+    throw new LocalizedError({ key: "api.invalidRequestUrl" });
   const headers = new Headers(options.headers);
   for (const [key, value] of Object.entries(canvasRequestHeaders()))
     headers.set(key, value);
@@ -100,16 +102,20 @@ export async function api<T>(
       (error instanceof DOMException && error.name === "AbortError")
     )
       throw error;
-    throw new APIError(t("api.connectionInterrupted"), 0, "NETWORK_ERROR");
+    throw new APIError(
+      { key: "api.connectionInterrupted" },
+      0,
+      "NETWORK_ERROR",
+    );
   }
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      message: t("api.requestFailed", { arg0: response.status }),
-    }));
+    const error = await response.json().catch(() => null);
     throw new APIError(
-      localizeApiError(error.message),
+      error
+        ? localizeApiError(error.message)
+        : { key: "api.requestFailed", values: { arg0: response.status } },
       response.status,
-      error.code || "REQUEST_FAILED",
+      error?.code || "REQUEST_FAILED",
     );
   }
   const result =

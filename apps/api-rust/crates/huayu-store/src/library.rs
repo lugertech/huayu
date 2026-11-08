@@ -199,8 +199,6 @@ impl Store {
             height: Set(height),
             folder_id: Set(details.folder_id),
             trashed: Set(false),
-            source_project_id: Set(None),
-            source_project_name: Set(None),
         }
         .insert(&self.db)
         .await?;

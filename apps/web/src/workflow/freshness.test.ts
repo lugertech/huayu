@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore } from "@/canvas/editor";
-import { connectShapes } from "@/utils/connectionParser";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { connectShapes } from "@/features/canvas/connection-parser";
 import { generationFingerprint, resultIsStale } from "./freshness";
 
 function board() {

@@ -8,8 +8,72 @@ import {
 } from "vite-plus/test";
 
 describe("browser model settings", () => {
-  beforeEach(() => vi.resetModules());
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubGlobal("__HUAYU_DEV_API_ORIGIN__", "");
+  });
   afterEach(() => vi.unstubAllGlobals());
+
+  it("defaults new image connections to a supported model", async () => {
+    const { defaultSettings } = await import("./settings");
+    expect(defaultSettings().connections.image).toMatchObject({
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-image-1.5",
+    });
+  });
+
+  it("preserves an explicitly saved legacy image model for compatible services", async () => {
+    const { parseSettings } = await import("./settings");
+    const connection = {
+      baseUrl: "https://compatible.example/v1",
+      model: "gpt-image-1",
+    };
+    const settings = parseSettings(
+      JSON.stringify({ version: 1, connections: { image: connection } }),
+    );
+    expect(settings.connections.image).toMatchObject(connection);
+  });
+
+  it.each([5858, 5173, 9000])(
+    "accepts an external model service on port %i even with an API path",
+    async (port) => {
+      vi.stubGlobal("window", {
+        location: { origin: "http://127.0.0.1:5173" },
+        addEventListener: vi.fn(),
+      });
+      const { modelEndpoint, defaultSettings } = await import("./settings");
+      const connection = defaultSettings().connections.text;
+      connection.baseUrl = `http://model.example:${port}/api/v1`;
+      expect(modelEndpoint(connection, "chat/completions")).toBe(
+        `http://model.example:${port}/api/v1/chat/completions`,
+      );
+    },
+  );
+
+  it("rejects this application's API at a custom frontend or backend origin", async () => {
+    vi.stubGlobal("window", {
+      location: { origin: "http://127.0.0.1:7100" },
+      addEventListener: vi.fn(),
+    });
+    vi.stubGlobal("__HUAYU_DEV_API_ORIGIN__", "http://127.0.0.1:9000");
+    const { modelEndpoint, defaultSettings } = await import("./settings");
+    const { LocalizedError } = await import("@/i18n/errors");
+    const connection = defaultSettings().connections.text;
+    for (const origin of ["http://127.0.0.1:7100", "http://127.0.0.1:9000"]) {
+      connection.baseUrl = `${origin}/api`;
+      expect(() => modelEndpoint(connection, "chat/completions")).toThrow(
+        LocalizedError,
+      );
+    }
+    connection.baseUrl = "http://127.0.0.1:9000/v1";
+    expect(modelEndpoint(connection, "chat/completions")).toBe(
+      "http://127.0.0.1:9000/v1/chat/completions",
+    );
+    connection.baseUrl = "http://127.0.0.1:7100/apix";
+    expect(modelEndpoint(connection, "chat/completions")).toBe(
+      "http://127.0.0.1:7100/apix/chat/completions",
+    );
+  });
 
   it("still opens settings when browser storage cannot be read", async () => {
     vi.stubGlobal("localStorage", {

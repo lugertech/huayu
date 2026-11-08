@@ -1,4 +1,5 @@
 import { t, useLocale, getLocale } from "@/i18n";
+import { translatedErrorMessage } from "@/i18n/errors";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   Link,
@@ -32,17 +33,17 @@ import {
   X,
   Settings2,
 } from "lucide-react";
-import { ShellSidebarTrigger } from "@/Components/Shell";
-import { Markdown } from "@/Components/common/Markdown";
-import { useToast } from "@/Components/common/ToastProvider";
+import { ShellSidebarTrigger } from "@/components/Shell";
+import { Markdown } from "@/components/common/Markdown";
+import { useToast } from "@/components/common/ToastProvider";
 import { api, downloadBlob, type Recording, type Project } from "@/api/client";
 import {
   recordingCanvas,
   excerptForChapter,
   excerptsForSelection,
   type RecordingExcerpt,
-} from "@/recording/canvas";
-import { downloadRecording } from "@/recording/files";
+} from "@/features/recording/canvas";
+import { downloadRecording } from "@/features/recording/files";
 import {
   analyzeRecording,
   cancelAnalysis,
@@ -54,43 +55,46 @@ import {
   analysisMarkdown,
   transcriptExport,
   type Transcript,
-} from "@/recording/analysis";
-import { formatDuration } from "@/recording/Recorder";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/textarea";
-import { NativeSelect, NativeSelectOption } from "@/ui/native-select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/ui/tabs";
+} from "@/features/recording/analysis";
+import { formatDuration } from "@/features/recording/duration";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogTitle,
-} from "@/ui/dialog";
-import { Progress } from "@/ui/progress";
-import { Checkbox } from "@/ui/checkbox";
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { openModelSettings } from "@/lib/settings-event";
 import {
   CAPABILITY_LABELS,
   connectionIssue,
   useModelSettings,
 } from "@/ai/settings";
-import { recordingCapabilities } from "@/recording/analysis";
+import { recordingCapabilities } from "@/features/recording/analysis";
 import {
   activeSegment,
   sentenceNavigation,
   loadPlayback,
   playbackKey,
   PLAYBACK_RATES,
-} from "@/recording/playback";
+} from "@/features/recording/playback";
 
 export function RecordingAnalysisPage() {
   useLocale();
@@ -636,7 +640,9 @@ function AnalysisWorkspace({ id }: { id: string }) {
                 {task.busy && <Loader2 className="size-3.5 animate-spin" />}
                 {task.progress ||
                   task.error ||
-                  checkpoint?.error ||
+                  (checkpoint?.errorTranslation
+                    ? translatedErrorMessage(checkpoint.errorTranslation)
+                    : checkpoint?.error) ||
                   t("recordings.analysis.analysisIncomplete")}
               </div>
               {!task.busy && (task.error || checkpoint) && (

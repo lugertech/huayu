@@ -1,6 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { App } from "./App";
-import { Docs } from "./Docs";
+import { DocsPage } from "./pages/DocsPage";
 import { documentFor, hasSiteRoute, routes } from "./content";
 import { localeForPath, withoutLocale } from "./i18n";
 import { messages } from "./messages";
@@ -18,7 +18,9 @@ export function render(path: string) {
       <App
         path={path}
         documentation={
-          docs && !notFound ? <Docs path={withoutLocale(path)} /> : undefined
+          docs && !notFound ? (
+            <DocsPage path={withoutLocale(path)} />
+          ) : undefined
         }
       />,
     ),

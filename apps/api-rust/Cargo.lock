@@ -1182,6 +1182,7 @@ dependencies = [
  "axum",
  "calamine",
  "chrono",
+ "encoding_rs",
  "futures-util",
  "huayu-core",
  "huayu-store",

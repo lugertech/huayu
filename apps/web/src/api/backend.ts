@@ -1,3 +1,4 @@
+import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
 import { t } from "@/i18n";
 import { requireConnection } from "@/ai/settings";
@@ -56,13 +57,6 @@ export interface AudioRecognizeResponse {
   data: AIAPIValue;
   error: Record<string, unknown>;
 }
-export interface AIAPIRequest {
-  inputs: AIAPIInput[];
-  size?: string;
-}
-export interface AudioRecognizeRequest {
-  audio_url: string;
-}
 
 function success(value: AIAPIValue | AIAPIValue[]): AIAPIResponse {
   return {
@@ -80,7 +74,7 @@ export async function blobForSource(
 ): Promise<Blob> {
   const url = new URL(src, window.location.origin);
   if (!["http:", "https:", "data:", "blob:"].includes(url.protocol))
-    throw new Error(t("api.invalidResourceUrl"));
+    throw new LocalizedError({ key: "api.invalidResourceUrl" });
   const response = await fetch(url, {
     credentials: url.origin === window.location.origin ? "same-origin" : "omit",
     headers:
@@ -90,7 +84,8 @@ export async function blobForSource(
     referrerPolicy: "no-referrer",
     signal,
   });
-  if (!response.ok) throw new Error(t("api.cannotReadInputResource"));
+  if (!response.ok)
+    throw new LocalizedError({ key: "api.cannotReadInputResource" });
   return response.blob();
 }
 
@@ -98,7 +93,8 @@ export function blobAsDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error(t("api.cannotReadImage")));
+    reader.onerror = () =>
+      reject(new LocalizedError({ key: "api.cannotReadImage" }));
     reader.readAsDataURL(blob);
   });
 }
@@ -150,7 +146,9 @@ function generatedValue(value: unknown, type = "text"): AIAPIValue {
     typeof value !== "object" ||
     typeof (value as AIAPIValue).text !== "string"
   )
-    throw new Error(t("api.theModelResponseIsMissingTheContentField"));
+    throw new LocalizedError({
+      key: "api.theModelResponseIsMissingTheContentField",
+    });
   const item = value as AIAPIValue;
   return {
     type,
@@ -212,7 +210,9 @@ export async function imageAPI(
   )
     prompt = t("models.image.referenceInstructions");
   if (!prompt.trim())
-    throw new Error(t("api.describeAnImageOrConnectAReferenceImage"));
+    throw new LocalizedError({
+      key: "api.describeAnImageOrConnectAReferenceImage",
+    });
   requireConnection("image");
   const references = await Promise.all(
     inputs
@@ -274,7 +274,8 @@ export async function audioGenerateAPI(
     .map((input) => input.text || input.description || "")
     .filter(Boolean)
     .join("\n");
-  if (!text.trim()) throw new Error(t("api.enterTheTextToReadAloud"));
+  if (!text.trim())
+    throw new LocalizedError({ key: "api.enterTheTextToReadAloud" });
   const asset = await uploadAsset(
     await synthesizeSpeech(text, signal),
     "speech.mp3",
@@ -378,7 +379,7 @@ export async function documentGenerateAPI(
     .slice(0, 160);
   const extension = fileName.split(".").pop()?.toLowerCase() || "txt";
   if (!(FILE_EXTENSIONS as readonly string[]).includes(extension))
-    throw new Error(t("api.theModelChoseAnUnsupportedFormat"));
+    throw new LocalizedError({ key: "api.theModelChoseAnUnsupportedFormat" });
   const asset = await uploadAsset(
     await createDocumentBlob(text, extension),
     fileName,
@@ -411,35 +412,6 @@ export async function uploadFileAPI(
     },
   };
 }
-
-export const buildTextInput = (
-  text: string,
-  name?: string,
-  description?: string,
-): AIAPIInput => ({ type: "text", text, name, description });
-export const buildImageInput = (
-  src: string,
-  name?: string,
-  description?: string,
-): AIAPIInput => ({ type: "image", src, name, description });
-export const buildSpeechInput = (
-  src: string,
-  name?: string,
-  description?: string,
-): AIAPIInput => ({ type: "speech", src, name, description });
-export const buildWebsiteInput = (
-  text: string,
-  name?: string,
-  description?: string,
-): AIAPIInput => ({ type: "website", text, name, description });
-export const buildFileInput = (
-  src: string,
-  text?: string,
-  name?: string,
-  description?: string,
-): AIAPIInput => ({ type: "file", src, text, name, description });
-export const combineInputs = (...inputs: AIAPIInput[]) =>
-  inputs.filter((input) => input.text || input.src);
 export const isAPISuccess = (response: { status: string; code: number }) =>
   response.status === "success" && response.code === 200;
 export function extractAPIData(response: AIAPIResponse): AIAPIValue {
@@ -448,11 +420,7 @@ export function extractAPIData(response: AIAPIResponse): AIAPIValue {
   const value = Array.isArray(response.data.value)
     ? response.data.value[0]
     : response.data.value;
-  if (!value) throw new Error(t("api.noGeneratedContentWasReturned"));
+  if (!value)
+    throw new LocalizedError({ key: "api.noGeneratedContentWasReturned" });
   return value;
-}
-export function handleAPIError(error: unknown, name: string): never {
-  throw error instanceof Error
-    ? error
-    : new Error(t("api.failed", { arg0: name }));
 }

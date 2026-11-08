@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore } from "@/canvas/editor";
-import { applyNativeScene, sceneFromEditor } from "@/canvas/excalidraw/scene";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import {
+  applyNativeScene,
+  sceneFromEditor,
+} from "@/features/canvas/excalidraw/scene";
 import {
   connectedShapes,
   createConnectedComponent,
-} from "@/utils/connectionParser";
+} from "@/features/canvas/connection-parser";
 import {
   connectionPort,
   connectionProblem,

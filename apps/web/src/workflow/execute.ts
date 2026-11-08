@@ -1,3 +1,8 @@
+import {
+  LocalizedError,
+  translatedErrorMessage,
+  type ErrorTranslation,
+} from "@/i18n/errors";
 import { t, type Locale, type MessageKey } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "@/ai/errors";
@@ -7,13 +12,13 @@ import {
   plainText,
   type ShapeId,
   type CanvasShape,
-} from "@/canvas/editor";
+} from "@/features/canvas/editor";
 import { COMPONENT_CONFIGS } from "../config/components";
 import {
   connectedShapes,
   createConnectedTextShape,
   getPreviousConnectedShapes,
-} from "../utils/connectionParser";
+} from "../features/canvas/connection-parser";
 import { drawingShapes } from "./context";
 import { planWorkflow, type GraphEdge } from "./graph";
 import {
@@ -36,7 +41,7 @@ import {
   callAgentSSE,
   buildAgentRequest,
   AgentEventExecutor,
-} from "../utils/agentSSE";
+} from "../features/canvas/agent-sse";
 
 export interface NodeData {
   w: number;
@@ -78,6 +83,7 @@ export interface NodeExecution {
 const idleExecution: NodeExecution = { status: "idle", message: "" };
 interface ExecutionState extends NodeExecution {
   messageKey?: MessageKey;
+  errorTranslation?: ErrorTranslation;
 }
 const states = new WeakMap<Editor, Map<string, ExecutionState>>();
 const listeners = new Set<() => void>();
@@ -109,10 +115,14 @@ export function nodeExecution(
 ): NodeExecution {
   const state = states.get(editor)?.get(id);
   if (!state) return idleExecution;
-  const { messageKey, ...execution } = state;
+  const { messageKey, errorTranslation, ...execution } = state;
   return {
     ...execution,
-    message: messageKey ? t(messageKey, undefined, locale) : state.message,
+    message: errorTranslation
+      ? translatedErrorMessage(errorTranslation, locale)
+      : messageKey
+        ? t(messageKey, undefined, locale)
+        : state.message,
   };
 }
 export function useNodeExecution(editor: Editor, id: string, locale: Locale) {
@@ -159,6 +169,8 @@ function updateExecution(
   const current = states.get(editor) || new Map<string, ExecutionState>();
   states.set(editor, current);
   const next = { ...idleExecution, ...current.get(id), ...value };
+  if (value.messageKey || value.message !== undefined)
+    next.errorTranslation = value.errorTranslation;
   if (value.messageKey) next.message = "";
   else if (value.message !== undefined) delete next.messageKey;
   current.set(id, next);
@@ -360,7 +372,7 @@ export async function inputsForNode(
 async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   signal.throwIfAborted();
   const shape = editor.getShape(id);
-  if (!shape) throw new Error(t("workflow.thisStepWasDeleted"));
+  if (!shape) throw new LocalizedError({ key: "workflow.thisStepWasDeleted" });
   const props = shape.props as NodeData;
   if (
     props.isLocked ||
@@ -408,7 +420,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
     updates = { text, result: text };
   } else if (shape.type === "instruction") {
     if (!prompt && !inputs.length)
-      throw new Error(t("workflow.writeInstructionsOrConnectMaterials"));
+      throw new LocalizedError({
+        key: "workflow.writeInstructionsOrConnectMaterials",
+      });
     const value = extractAPIData(
       await instructionAPI(
         prompt || t("workflow.prompts.organizeMaterials"),
@@ -425,7 +439,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   } else if (shape.type === "ai-image") {
     if (!prompt && !inputs.length) {
       if (props.src) return;
-      throw new Error(t("workflow.connectOrUploadInput"));
+      throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
     const size = props.imageSize || "1:1";
@@ -452,7 +466,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   } else if (shape.type === "speech") {
     if (!inputs.length) {
       if (props.src) return;
-      throw new Error(t("workflow.connectOrUploadInput"));
+      throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
     const value = extractAPIData(await audioGenerateAPI(inputs, signal));
@@ -464,7 +478,8 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       isUploaded: false,
     };
   } else if (shape.type === "website") {
-    if (!inputs.length) throw new Error(t("workflow.connectWebsiteInput"));
+    if (!inputs.length)
+      throw new LocalizedError({ key: "workflow.connectWebsiteInput" });
     const value = extractAPIData(await websiteAPI(inputs, signal));
     updates = {
       htmlContent: value.text,
@@ -475,7 +490,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   } else if (shape.type === "file") {
     if (!inputs.length) {
       if (props.src) return;
-      throw new Error(t("workflow.connectOrUploadInput"));
+      throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
     const value = extractAPIData(await documentGenerateAPI(inputs, signal));
@@ -496,7 +511,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
           .join("\n")
       : prompt;
     if (!text)
-      throw new Error(t("workflow.describeAChartOrConnectPrecedingSteps"));
+      throw new LocalizedError({
+        key: "workflow.describeAChartOrConnectPrecedingSteps",
+      });
     const chart = await generateChart({
       type: props.chartType === "flowchart" ? "flowchart" : "mindmap",
       inputs: [{ type: "text", text }],
@@ -511,7 +528,8 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   } else if (shape.type === "ai-draw") {
     const bounds = editor.getShapePageBounds(shape)!;
     const query = props.query || "";
-    if (!query.trim()) throw new Error(t("workflow.enterDrawingInstructions"));
+    if (!query.trim())
+      throw new LocalizedError({ key: "workflow.enterDrawingInstructions" });
     const shapes = drawingShapes(editor, shape);
     const ids = shapes.map((shape) => shape.id);
     const { blob } = ids.length
@@ -607,7 +625,9 @@ export async function runProjectWorkflow(editor: Editor): Promise<void> {
     )
     .map((shape) => shape.id);
   if (!roots.length)
-    throw new Error(t("workflow.addACreativeStepBeforeRunningTheWorkflow"));
+    throw new LocalizedError({
+      key: "workflow.addACreativeStepBeforeRunningTheWorkflow",
+    });
   await runPlan(editor, roots);
 }
 
@@ -644,7 +664,9 @@ async function runPlan(editor: Editor, roots: string[]) {
   executions.set(editor, running);
   const ids = levels.flat();
   if (ids.some((id) => running.has(id)))
-    throw new Error(t("workflow.aStepInThisWorkflowIsAlreadyRunning"));
+    throw new LocalizedError({
+      key: "workflow.aStepInThisWorkflowIsAlreadyRunning",
+    });
   if (!running.size) states.set(editor, new Map());
   ids.forEach((id) => running.set(id, run));
   for (const id of ids)
@@ -688,6 +710,10 @@ async function runPlan(editor: Editor, roots: string[]) {
                   ? error.capability
                   : undefined,
               messageKey: aborted ? "workflow.status.cancelled" : undefined,
+              errorTranslation:
+                !aborted && error instanceof LocalizedError
+                  ? error.translation
+                  : undefined,
               message: aborted
                 ? ""
                 : error instanceof Error

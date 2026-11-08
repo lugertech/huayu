@@ -54,11 +54,13 @@ The project library at `/api/library` includes only files, generated web pages, 
 {"upsert":[],"remove":[],"client_id":"random-edit-session-id"}
 ```
 
+Patches may include `sequence`, a monotonically increasing edit number within the browser session identified by `client_id`. Live previews and durable notifications retain the same sequence so an earlier save cannot replace a newer preview; unrelated records still merge normally. This optional field is not stored in the project document. A new editing session uses a new `client_id`; WebSocket reconnects within that session retain it.
+
 `upsert` contains complete records, not partial properties. The application model supports legacy canvas records and schemas. Omit `schema` to retain it. If an ID appears more than once in `upsert`, the last record wins. If it appears in both `remove` and `upsert`, the upserted record is retained. Changes are determined from the final document; unchanged records or schemas do not increment revision. Invalid or oversized patches leave the existing document unchanged. Session records are rejected.
 
 When updating a project, omit `cover` to preserve it or send `"cover": null` to clear it. Updating only the cover preserves the document revision and edit time.
 
-Document parsing accepts uploads up to 10 MB. Attachments are saved only after text extraction succeeds. Failed parsing or oversized uploads retain neither the file nor an attachment record.
+Ordinary attachments accept up to 512 MiB of file content. Their upload requests reserve an additional 64 KiB for multipart boundaries and field headers without consuming the file allowance. Document parsing accepts uploads up to 10 MiB. Attachments are saved only after text extraction succeeds. Failed parsing or oversized uploads retain neither the file nor an attachment record.
 
 Collaboration reads, patches and WebSockets include `?share={share_token}`. Closing collaboration returns `403 COLLABORATION_CLOSED` for the old link and stops its connected pages. Reopening generates a new link. Updating the share token also stops WebSocket connections using the old token. Collaborators cannot access project lists, other projects, template management, the global asset library, recordings or share management. Out-of-scope requests return `403 SHARED_SCOPE_FORBIDDEN`.
 
@@ -74,8 +76,10 @@ WebSocket `/api/projects/{id}/events` carries both durable notifications and liv
 - Server `member_removed`: `{"type":"member_removed","member_id":"member-id"}`. The target stops collaboration; others remove all of that member's connections from their list and cursors.
 - Server `room_full`: `{"type":"room_full","max_collaborators":15}`, followed by connection closure.
 - Client `scene_update`: `{"type":"scene_update","patch":{"upsert":[],"remove":[],"client_id":"edit-session-id"}}`. The server relays a `scene_update` with the source connection's `client_id` and a null `target`. This is a preview only: it neither writes the database nor increments the project revision.
-- Client `scene_init`: contains a `target` connection ID and a `patch`, including current records and pending deletions. It is relayed only to that connection as a targeted `scene_update`, so a new participant can see work in progress.
+- Client `scene_init`: contains a `target` connection ID and a `patch` with only local records and deletions that are unsaved or awaiting save acknowledgement. Saved content comes from the initial server `snapshot` and is not retransmitted by the client. The message is relayed only to the target connection as a targeted `scene_update`.
 - Client `presence`: `{"type":"presence","presence":{"pointer":{"x":0,"y":0,"tool":"pointer"},"button":"up","selectedElementIds":{}}}`. Coordinates are in scene space; `tool` is `pointer` or `laser`, `button` is `up` or `down`, and a null pointer hides the cursor. The server relays a `presence` event containing the `peer`.
+
+Serialized document patches have a 32 MiB limit. WebSocket messages and frames reserve an additional 1 KiB for envelope fields such as message type and target connection.
 
 Live changes are throttled to approximately 33 ms. Durable saves still use `PATCH /document` independently. Cursors, selections and presence are excluded from the recovery journal and exports. Remote previews do not trigger local autosave, and remote changes do not enter local undo history. Native element previews use Excalidraw's `restoreElements`, `reconcileElements` and `CaptureUpdateAction.NEVER`; cursors and selections use `updateScene({ collaborators })`. See the [official collaboration implementation](https://github.com/excalidraw/excalidraw/blob/master/excalidraw-app/collab/Collab.tsx).
 

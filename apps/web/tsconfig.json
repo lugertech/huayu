@@ -18,6 +18,7 @@
     "src",
     "build",
     "vite.config.ts",
+    "vite.config.test.ts",
     "../../scripts/generate-quick-start-covers.ts"
   ]
 }

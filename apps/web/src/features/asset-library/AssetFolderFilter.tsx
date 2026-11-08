@@ -6,12 +6,12 @@ import {
   Filter,
   FolderOpen,
 } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { AssetGroupItem } from "./library-api";
 import { useAssetTranslations } from "./messages";

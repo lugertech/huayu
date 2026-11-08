@@ -4,7 +4,7 @@ import {
   plainText,
   type CanvasShape,
   type Editor,
-} from "@/canvas/editor";
+} from "@/features/canvas/editor";
 import {
   COMPONENT_CONFIGS,
   componentConfig,
