@@ -161,7 +161,7 @@ export function ExampleCanvas({
       })}
       {!compact && (
         <span className="example-canvas-watermark">
-          Huayu / {t("home.examples.authored")}
+          {t("app.name")} / {t("home.examples.authored")}
         </span>
       )}
     </div>

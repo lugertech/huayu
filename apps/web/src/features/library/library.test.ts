@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   filterLibraryItems,
   groupLibraryItems,
+  libraryItemDetail,
   libraryItemKey,
   libraryItemUrl,
+  listLibraryItems,
   type LibraryItem,
 } from "./library";
+
+afterEach(() => vi.unstubAllGlobals());
 
 const file: LibraryItem = {
   project_id: "one",
@@ -31,6 +35,27 @@ const image: LibraryItem = {
   excerpt: "",
 };
 describe("project library catalogue", () => {
+  it("excludes website attachments from the catalogue and item details", async () => {
+    const website = {
+      ...file,
+      name: "活动页面",
+      kind: "website",
+      extension: "html",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json([file, website, image]))
+        .mockResolvedValueOnce(Response.json(website)),
+    );
+    await expect(
+      listLibraryItems(new AbortController().signal),
+    ).resolves.toEqual([file, image]);
+    await expect(libraryItemDetail(file)).rejects.toMatchObject({
+      translation: { key: "library.removed" },
+    });
+  });
   it("keeps identical shape IDs in different projects separate", () => {
     expect(libraryItemKey(file)).not.toBe(libraryItemKey(image));
     expect(

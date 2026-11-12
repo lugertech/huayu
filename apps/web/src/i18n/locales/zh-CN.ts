@@ -39,8 +39,8 @@ export const zhCN = {
   "library.showMore": "显示更多 {count} 项",
   "library.showLess": "收起",
   "library.total": "共 {count} 项附件",
-  "library.empty": "还没有项目附件",
-  "library.emptyHint": "项目中的附件会显示在这里。",
+  "library.empty": "暂无资料",
+  "library.emptyHint": "项目中的图片、文件和音频会显示在这里。",
   "library.noMatches": "没有找到相关附件",
   "library.adjustFilters": "试试其他关键词，或调整筛选条件。",
   "library.clearFilters": "清除筛选",
@@ -55,7 +55,6 @@ export const zhCN = {
   "library.downloadToView": "下载文件后查看完整内容。",
   "library.kind.all": "全部",
   "library.kind.image": "图片",
-  "library.kind.website": "网页",
   "library.kind.document": "文件",
   "library.kind.audio": "音频",
   "projects.templates.completeExample": "完整作品示例",
@@ -206,7 +205,6 @@ export const zhCN = {
   "api.unsupportedFileFormat": "不支持该文件格式",
   "api.webSearchSourcesPreserveCitationsWhenUsingThem":
     "\n联网搜索资料（引用时保留来源）：\n{arg0}",
-  "app.brand": "Huayu 画语",
   "app.description":
     "画语是开源的 AI 创作画布。在本地整理素材、连接模型，创作文字、图片和网页。",
   "app.homeLabel": "画语首页",

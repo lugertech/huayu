@@ -141,13 +141,6 @@ svg {
   width: 32px;
   height: 32px;
 }
-.logo-en {
-  margin-left: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 450;
-  letter-spacing: 0.06em;
-}
 .desktop-nav {
   display: flex;
   align-items: center;
@@ -920,14 +913,6 @@ svg {
   .code-block pre {
     padding-inline: 14px;
     font-size: 12px;
-  }
-}
-@media (max-width: 380px) {
-  .header-inner > .site-logo .logo-en {
-    display: none;
-  }
-  .logo-en {
-    margin-left: 5px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -2,8 +2,9 @@ import { api, downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/backend";
 import { createDocumentBlob } from "@/ai/documents";
 import { t } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 
-export const LIBRARY_KINDS = ["image", "website", "document", "audio"] as const;
+export const LIBRARY_KINDS = ["image", "document", "audio"] as const;
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 export interface LibraryItem {
   project_id: string;
@@ -18,6 +19,17 @@ export interface LibraryItem {
   excerpt: string;
   content?: string;
 }
+type ProjectAttachment =
+  | LibraryItem
+  | (Omit<LibraryItem, "kind"> & { kind: "website" });
+
+export async function listLibraryItems(signal: AbortSignal) {
+  const attachments = await api<ProjectAttachment[]>("/api/library", {
+    signal,
+  });
+  return attachments.filter((item) => item.kind !== "website");
+}
+
 export function libraryItemKey(item: LibraryItem) {
   return `${item.project_id}/${item.shape_id}`;
 }
@@ -32,11 +44,18 @@ export function libraryItemName(item: LibraryItem) {
     t(`library.kind.${item.kind}`)
   );
 }
-export function libraryItemDetail(item: LibraryItem, signal?: AbortSignal) {
-  return api<LibraryItem>(
+export async function libraryItemDetail(
+  item: LibraryItem,
+  signal?: AbortSignal,
+) {
+  const detail = await api<ProjectAttachment>(
     `/api/projects/${encodeURIComponent(item.project_id)}/attachments/${encodeURIComponent(item.shape_id)}`,
     { signal },
   );
+  if (detail.kind === "website") {
+    throw new LocalizedError({ key: "library.removed" });
+  }
+  return detail;
 }
 export function libraryItemUrl(item: LibraryItem) {
   const source = item.url || "";

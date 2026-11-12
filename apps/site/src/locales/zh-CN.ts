@@ -149,7 +149,7 @@ export const zhCN = {
     "这个页面可能已经移动。回到首页，或到文档中找到你需要的内容。",
   "errors.notFound.home": "回到首页",
   "errors.notFound.docs": "打开文档",
-  "errors.notFound.metaTitle": "页面未找到 · Huayu 画语",
+  "errors.notFound.metaTitle": "页面未找到 · 画语",
 
   "docs.titles.license": "MIT License",
   "app.homeLabel": "画语首页",

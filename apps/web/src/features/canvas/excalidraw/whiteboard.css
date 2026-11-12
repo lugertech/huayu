@@ -1365,8 +1365,17 @@
 .huayu-board .excalidraw .UserList-Wrapper {
   display: none;
 }
-.huayu-board .scroll-back-to-content {
-  display: none;
+.huayu-board .excalidraw .scroll-back-to-content {
+  bottom: calc(var(--board-bottom-clearance) + 20px);
+}
+/* The mobile footer can be much narrower than the board. */
+.huayu-board .excalidraw--mobile .scroll-back-to-content {
+  position: fixed;
+  right: 50cqw;
+  left: auto;
+  width: max-content;
+  max-width: calc(100cqw - 2 * var(--board-bottom-side-inset));
+  transform: translateX(50%);
 }
 .huayu-board .excalidraw__embeddable-hint {
   display: none;

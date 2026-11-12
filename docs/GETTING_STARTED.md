@@ -4,7 +4,7 @@
 
 ## 安装与启动
 
-先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`，并准备 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本，以及 Rust 1.95。项目使用 Vite+ 1.5.0，`vp install` 会使用锁定的 pnpm 12.11.2。Windows 建议使用 Git Bash 执行仓库中的命令。录屏长音轨处理建议安装 FFmpeg 与 ffprobe，并确认它们位于 PATH 中。
+先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`，并准备 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本，以及 Rust 1.95。项目使用 Vite+ 1.5.1，`vp install` 会使用锁定的 pnpm 12.11.2。Windows 建议使用 Git Bash 执行仓库中的命令。录屏长音轨处理建议安装 FFmpeg 与 ffprobe，并确认它们位于 PATH 中。
 
 先确认 `vp --version`、`node --version`、`rustc --version` 与 `cargo --version` 可用。需要安装 Rust 时使用 [Rust 官方安装说明](https://www.rust-lang.org/tools/install)。已有工具链放在独立目录时，可按根目录 README 在 `.env` 中设置 `HUAYU_RUST_TOOLCHAIN_DIR`；该目录包含 `.cargo/` 和 `.rustup/`，无需把本机路径写进源码。
 

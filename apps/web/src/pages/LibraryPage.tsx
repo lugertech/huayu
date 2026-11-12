@@ -10,24 +10,24 @@ import {
   ExternalLink,
   FileText,
   FolderOpen,
-  Globe,
   Image,
   LayoutGrid,
-  Library,
+  LibraryBig,
   List,
   ListFilter,
   Loader2,
   MoreHorizontal,
   RefreshCw,
   Search,
-  X,
 } from "lucide-react";
-import { api, PROJECTS_CHANGED_EVENT, type ProjectChange } from "@/api/client";
+import { PROJECTS_CHANGED_EVENT, type ProjectChange } from "@/api/client";
 import { useTranslations } from "@/i18n";
-import { ShellSidebarTrigger } from "@/components/Shell";
+import {
+  CollectionLayout,
+  CollectionSearch,
+} from "@/components/CollectionLayout";
 import { useToast } from "@/components/common/ToastProvider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -50,6 +50,7 @@ import {
   libraryItemKey,
   libraryItemName,
   libraryItemUrl,
+  listLibraryItems,
   type LibraryItem,
   type LibraryKind,
 } from "@/features/library/library";
@@ -57,7 +58,6 @@ import "@/features/library/library.css";
 
 const icons = {
   image: Image,
-  website: Globe,
   document: FileText,
   audio: AudioLines,
 };
@@ -86,8 +86,9 @@ export function LibraryPage() {
   useEffect(() => {
     const controller = new AbortController();
     setRefreshing(true);
-    api<LibraryItem[]>("/api/library", { signal: controller.signal })
+    listLibraryItems(controller.signal)
       .then((items) => {
+        if (controller.signal.aborted) return;
         setItems(items);
         setProject((id) =>
           id && !items.some((item) => item.project_id === id) ? "" : id,
@@ -251,138 +252,128 @@ export function LibraryPage() {
     );
   }
   return (
-    <main className="library-page">
-      <div className="library-page-inner">
-        <header className="library-header">
-          <div className="flex items-center gap-3">
-            <ShellSidebarTrigger />
-            <h1>{t("library.title")}</h1>
-          </div>
-          <div className="library-search">
-            <Search className="size-4 text-muted-foreground" />
-            <Input
+    <>
+      <CollectionLayout
+        title={t("library.title")}
+        tools={
+          <>
+            <CollectionSearch
+              label={t("library.search")}
+              clearLabel={t("library.clearSearch")}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("library.search")}
-              aria-label={t("library.search")}
+              onChange={setSearch}
             />
-            {search && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label={t("library.clearSearch")}
-                onClick={() => setSearch("")}
+            <div className="library-tools">
+              <NativeSelect
+                aria-label={t("library.filterProject")}
+                value={project}
+                onChange={(event) => setProject(event.target.value)}
+                className="library-project-select"
               >
-                <X />
-              </Button>
-            )}
-          </div>
-        </header>
-        <div className="library-toolbar">
-          <div
-            className="library-filters"
-            role="group"
-            aria-label={t("library.filterType")}
-          >
-            {(["all", ...LIBRARY_KINDS] as const).map((value) => (
-              <Button
-                key={value}
-                variant="ghost"
-                aria-pressed={kind === value}
-                onClick={() => setKind(value)}
-              >
-                {t(`library.kind.${value}`)}
-              </Button>
-            ))}
-          </div>
-          <div className="library-tools">
-            <NativeSelect
-              aria-label={t("library.filterProject")}
-              value={project}
-              onChange={(event) => setProject(event.target.value)}
-              className="library-project-select"
-            >
-              <NativeSelectOption value="">
-                {t("library.allProjects")}
-              </NativeSelectOption>
-              {projects.map((item) => (
-                <NativeSelectOption value={item.id} key={item.id}>
-                  {item.name}
+                <NativeSelectOption value="">
+                  {t("library.allProjects")}
                 </NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("library.refresh")}
-              title={t("library.refresh")}
-              disabled={refreshing}
-              onClick={refresh}
-            >
-              <RefreshCw className={refreshing ? "animate-spin" : undefined} />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
+                {projects.map((item) => (
+                  <NativeSelectOption value={item.id} key={item.id}>
+                    {item.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("library.refresh")}
+                title={t("library.refresh")}
+                disabled={refreshing}
+                onClick={refresh}
+              >
+                <RefreshCw
+                  className={refreshing ? "animate-spin" : undefined}
+                />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("library.viewOptions")}
+                      title={t("library.viewOptions")}
+                    >
+                      <ListFilter />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuCheckboxItem
+                    checked={grouped}
+                    onCheckedChange={(value) => {
+                      setGrouped(value);
+                      localStorage.setItem(
+                        "huayu:library-grouped",
+                        String(value),
+                      );
+                    }}
+                  >
+                    {t("library.groupByProject")}
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  {(["newest", "oldest", "name"] as const).map((value) => (
+                    <DropdownMenuItem
+                      key={value}
+                      onClick={() => setSort(value)}
+                    >
+                      {sort === value ? (
+                        <Check />
+                      ) : (
+                        <ArrowDownUp className="opacity-40" />
+                      )}
+                      {t(`library.sort.${value}`)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div
+                className="library-view-toggle"
+                role="group"
+                aria-label={t("library.viewMode")}
+              >
+                {(["grid", "list"] as const).map((value) => (
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={t("library.viewOptions")}
-                    title={t("library.viewOptions")}
+                    key={value}
+                    aria-pressed={view === value}
+                    aria-label={t(`library.view.${value}`)}
+                    title={t(`library.view.${value}`)}
+                    onClick={() => {
+                      setView(value);
+                      localStorage.setItem("huayu:library-view", value);
+                    }}
                   >
-                    <ListFilter />
+                    {value === "grid" ? <LayoutGrid /> : <List />}
                   </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuCheckboxItem
-                  checked={grouped}
-                  onCheckedChange={(value) => {
-                    setGrouped(value);
-                    localStorage.setItem(
-                      "huayu:library-grouped",
-                      String(value),
-                    );
-                  }}
-                >
-                  {t("library.groupByProject")}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                {(["newest", "oldest", "name"] as const).map((value) => (
-                  <DropdownMenuItem key={value} onClick={() => setSort(value)}>
-                    {sort === value ? (
-                      <Check />
-                    ) : (
-                      <ArrowDownUp className="opacity-40" />
-                    )}
-                    {t(`library.sort.${value}`)}
-                  </DropdownMenuItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div
-              className="library-view-toggle"
-              role="group"
-              aria-label={t("library.viewMode")}
-            >
-              {(["grid", "list"] as const).map((value) => (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  key={value}
-                  aria-pressed={view === value}
-                  aria-label={t(`library.view.${value}`)}
-                  title={t(`library.view.${value}`)}
-                  onClick={() => {
-                    setView(value);
-                    localStorage.setItem("huayu:library-view", value);
-                  }}
-                >
-                  {value === "grid" ? <LayoutGrid /> : <List />}
-                </Button>
-              ))}
+              </div>
             </div>
-          </div>
+          </>
+        }
+      >
+        <div
+          className="library-filters"
+          role="group"
+          aria-label={t("library.filterType")}
+        >
+          {(["all", ...LIBRARY_KINDS] as const).map((value) => (
+            <Button
+              key={value}
+              variant="ghost"
+              aria-pressed={kind === value}
+              onClick={() => setKind(value)}
+            >
+              {t(`library.kind.${value}`)}
+            </Button>
+          ))}
         </div>
         {error && loaded && (
           <div className="library-error" role="alert">
@@ -480,7 +471,7 @@ export function LibraryPage() {
           ) : (
             !error && (
               <div className="library-empty">
-                <Library className="size-9 text-muted-foreground" />
+                <LibraryBig className="size-9 text-muted-foreground" />
                 <h2>
                   {t(
                     search || kind !== "all" || project
@@ -520,7 +511,7 @@ export function LibraryPage() {
             )
           )}
         </LoadingRegion>
-      </div>
+      </CollectionLayout>
       {preview && (
         <LibraryPreview
           key={libraryItemKey(preview)}
@@ -529,6 +520,6 @@ export function LibraryPage() {
           onMissing={refresh}
         />
       )}
-    </main>
+    </>
   );
 }

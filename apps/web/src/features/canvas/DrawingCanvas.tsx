@@ -428,7 +428,7 @@ function DrawingCanvasContent({
     </div>
   );
   return (
-    <CanvasPageLayout shared={shareToken !== null}>
+    <CanvasPageLayout shared={shareToken !== null} projectName={project.name}>
       <CanvasSurface
         boardLanguage={boardLanguage}
         menuItems={

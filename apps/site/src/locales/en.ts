@@ -8,11 +8,11 @@ export const en = {
   "home.examples.connected": "Connected, all the way to the work",
   "home.examples.introduction":
     "Every example comes with specific material, a complete line of thought and work you can open. Find a task that interests you, then follow the connections.",
-  "home.examples.use": "Use it in Huayu",
+  "home.examples.use": "Use it in huayu",
   "home.examples.noKey":
     "Explore and edit without a key. Connect a model when you want to generate again.",
   "home.examples.editSource":
-    "This is a starting material. Replace it in Huayu to make the whole workflow your own.",
+    "This is a starting material. Replace it in huayu to make the whole workflow your own.",
   "home.examples.materials": "Connected source material",
   "home.examples.prompt": "Creative instruction",
   "home.examples.result": "Content & work",
@@ -95,7 +95,7 @@ export const en = {
   "home.faq.newTitle": "A few things before you begin.",
   "home.faq.collaboration.question": "Can we work on a canvas together?",
   "home.faq.collaboration.answer":
-    "Yes. Enable sharing on a canvas and send the link to someone who can reach the same Huayu service. Edits to different cards sync live; the last save wins for the same card. See multiplayer collaboration in the documentation for setup.",
+    "Yes. Enable sharing on a canvas and send the link to someone who can reach the same huayu service. Edits to different cards sync live; the last save wins for the same card. See multiplayer collaboration in the documentation for setup.",
   "home.closing.newTitle": "Your next creation starts here.",
   "navigation.templates": "Templates",
 
@@ -164,15 +164,15 @@ export const en = {
     "This page may have moved. Head home or find what you need in the documentation.",
   "errors.notFound.home": "Back to home",
   "errors.notFound.docs": "Open the docs",
-  "errors.notFound.metaTitle": "Page not found · Huayu",
+  "errors.notFound.metaTitle": "Page not found · huayu",
 
   "docs.titles.license": "MIT License",
-  "app.homeLabel": "Huayu home",
-  "app.name": "Huayu",
+  "app.homeLabel": "huayu home",
+  "app.name": "huayu",
   "docs.groups.development": "Development and licensing",
   "docs.groups.gettingStarted": "Get started",
   "docs.groups.maintenance": "Using and maintaining",
-  "docs.pageTitle": "{arg0} · Huayu Docs",
+  "docs.pageTitle": "{arg0} · huayu Docs",
   "docs.search.label": "Search docs",
   "docs.search.placeholder": "Search docs…",
   "docs.titles.api": "Local API",
@@ -223,7 +223,7 @@ export const en = {
     "Example of turning a recording excerpt into creative material",
   "home.exploreRecordingsAndAnalysis": "Explore recordings and analysis",
   "home.faq.account.answer":
-    "No. Huayu has no accounts, memberships or points. AI uses the model services you configure; their pricing and limits apply.",
+    "No. huayu has no accounts, memberships or points. AI uses the model services you configure; their pricing and limits apply.",
   "home.faq.account.question": "Do I need an account or subscription?",
   "home.faq.export.answer":
     "Export the complete canvas with all materials and attachments, export PNG or SVG, or download individual Markdown, image and HTML works.",
@@ -249,7 +249,7 @@ export const en = {
   "home.hero.titleFirstLine": "Every idea",
   "home.hero.titleSecondLine": "has a next chapter.",
   "home.howToCreate": "How to create",
-  "home.huayuCreativeWorkspace": "Huayu · Creative workspace",
+  "home.huayuCreativeWorkspace": "huayu · Creative workspace",
   "home.keepEveryDirection": "Keep every direction.",
   "home.letMaterialsMeet": "Let materials meet.",
   "home.meta.description": "Every idea has a next chapter.",
@@ -280,7 +280,7 @@ export const en = {
     "Zoom into the details. Crop and rotate. Keep the original, and keep exploring.",
   "home.showcase.image.title": "Images",
   "home.showcase.imageAlt":
-    "Huayu {arg0} workspace: view, edit and create again",
+    "huayu {arg0} workspace: view, edit and create again",
   "home.showcase.note": "Actual product screens with example materials.",
   "home.showcase.text.caption":
     "Read comfortably. Edit directly. Bring your changes into the next creation.",
@@ -289,7 +289,7 @@ export const en = {
     "Use your work as a real web page. Edit the code and see changes immediately.",
   "home.showcase.web.title": "Web pages",
   "home.skipToContent": "Skip to content",
-  "home.startUsingHuayu": "Start using Huayu",
+  "home.startUsingHuayu": "Start using huayu",
   "home.startWithALittleInspiration": "Start with a little inspiration.",
   "home.switchToDarkMode": "Switch to dark mode",
   "home.switchToLightMode": "Switch to light mode",

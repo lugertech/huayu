@@ -16,7 +16,7 @@
 
 ## 本地启动
 
-先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`。项目使用 Vite+ 1.5.0，需要 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本；同时需要 Rust 1.95 或更高版本。`vp install` 会使用项目锁定的 pnpm 12.11.2 安装依赖。建议在 PATH 中安装 FFmpeg 与 ffprobe，以分段读取长录屏音轨；未安装时可回退到浏览器音频解码。FFmpeg 是外部可选工具，不随本仓库分发。
+先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`。项目使用 Vite+ 1.5.1，需要 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本；同时需要 Rust 1.95 或更高版本。`vp install` 会使用项目锁定的 pnpm 12.11.2 安装依赖。建议在 PATH 中安装 FFmpeg 与 ffprobe，以分段读取长录屏音轨；未安装时可回退到浏览器音频解码。FFmpeg 是外部可选工具，不随本仓库分发。
 
 ```sh
 vp install --frozen-lockfile

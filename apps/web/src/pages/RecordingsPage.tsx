@@ -18,15 +18,16 @@ import {
 import {
   Loader2,
   MoreHorizontal,
-  Search,
   Upload,
   Video,
   Play,
   Check,
   FileText,
-  X,
 } from "lucide-react";
-import { ShellSidebarTrigger } from "@/components/Shell";
+import {
+  CollectionLayout,
+  CollectionSearch,
+} from "@/components/CollectionLayout";
 import { useToast } from "@/components/common/ToastProvider";
 import { api, uploadAsset, type Recording } from "@/api/client";
 import { RecorderButton } from "@/features/recording/RecorderButton";
@@ -205,44 +206,23 @@ export function RecordingsPage() {
   );
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
-        <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShellSidebarTrigger />
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {t("recordings.myRecordings")}
-              </h1>
+      <CollectionLayout
+        title={t("recordings.myRecordings")}
+        tools={
+          <>
+            <CollectionSearch
+              label={t("recordings.search.label")}
+              placeholder={t("recordings.search.placeholder")}
+              clearLabel={t("recordings.clearSearch")}
+              value={search}
+              onChange={setSearch}
+            />
+            <div className="flex shrink-0 items-center gap-2">
+              {pageActions}
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("recordings.reviewRecordingsExtractTextAndOrganizeKeyPoints")}
-            </p>
-          </div>
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            {pageActions}
-            <div className="relative min-w-0 flex-1 sm:w-56">
-              <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pr-8 pl-9"
-                aria-label={t("recordings.search.label")}
-                placeholder={t("recordings.search.placeholder")}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              {search && (
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="absolute top-1/2 right-1 -translate-y-1/2"
-                  aria-label={t("recordings.clearSearch")}
-                  onClick={() => setSearch("")}
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+          </>
+        }
+      >
         <LoadingRegion
           id="huayu:recording-list"
           loading={loading && !hasLoaded}
@@ -386,7 +366,7 @@ export function RecordingsPage() {
             </div>
           )}
         </LoadingRegion>
-      </main>
+      </CollectionLayout>
       <Dialog
         open={!!renaming}
         onOpenChange={(open) => {

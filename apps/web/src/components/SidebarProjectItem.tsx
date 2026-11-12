@@ -57,10 +57,9 @@ export function SidebarProjectItem({
     const content = titleContent.current!;
     const row = titleRow.current!;
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-    let hovered = row.matches(":hover") && matchMedia("(hover: hover)").matches;
+    let canPlay = row.matches(":hover") && matchMedia("(hover: hover)").matches;
     let distance = 0;
     let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-    let replayTimer: ReturnType<typeof setTimeout> | undefined;
     let movement: Animation | undefined;
     let fade: Animation | undefined;
     const position = () => {
@@ -70,7 +69,6 @@ export function SidebarProjectItem({
         : Math.max(0, -new DOMMatrixReadOnly(transform).m41);
     };
     const stopAnimations = () => {
-      clearTimeout(replayTimer);
       if (movement) movement.onfinish = null;
       movement?.cancel();
       fade?.cancel();
@@ -113,20 +111,14 @@ export function SidebarProjectItem({
       );
       movement.startTime = fade.startTime = document.timeline.currentTime;
       movement.onfinish = () => {
-        settle(target);
-        if (!hovered) return;
-        replayTimer = setTimeout(() => {
-          if (!hovered || reducedMotion.matches || distance <= 1) return;
-          settle(0);
-          move(distance, 500);
-        }, 700);
+        canPlay = false;
+        settle(0);
       };
     };
     const schedule = () => {
-      clearTimeout(replayTimer);
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (hovered) move(distance, position() < 0.1 ? 500 : 0);
+        if (canPlay) move(distance, position() < 0.1 ? 500 : 0);
       }, 100);
     };
     const measure = () => {
@@ -138,26 +130,26 @@ export function SidebarProjectItem({
       if (Math.abs(next - distance) <= 0.1) return;
       distance = next;
       viewport.style.setProperty("--sidebar-title-distance", `${distance}px`);
-      if (hovered) schedule();
+      if (canPlay) schedule();
     };
     const enter = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
-      hovered = true;
+      canPlay = true;
       measure();
       schedule();
     };
     const leave = () => {
-      hovered = false;
+      canPlay = false;
       clearTimeout(resizeTimer);
       settle(0);
     };
     const motionChanged = () => {
       clearTimeout(resizeTimer);
       if (reducedMotion.matches) settle(0);
-      else if (hovered) schedule();
+      else if (canPlay) schedule();
     };
     measure();
-    if (hovered) schedule();
+    if (canPlay) schedule();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
     observer.observe(content);

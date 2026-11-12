@@ -4,7 +4,7 @@ Huayu brings materials, generated work and your next edits onto one canvas. Star
 
 ## Install and run
 
-Install `vp` using the [Vite+ guide](https://viteplus.dev/guide/). Use Node.js 22.x starting at 22.18, 24.x starting at 24.11, or 26 and later, plus Rust 1.95. The project uses Vite+ 1.5.0; `vp install` uses the pinned pnpm 12.11.2. On Windows, run the repository commands in Git Bash. Install FFmpeg and ffprobe on PATH for efficient processing of long recordings.
+Install `vp` using the [Vite+ guide](https://viteplus.dev/guide/). Use Node.js 22.x starting at 22.18, 24.x starting at 24.11, or 26 and later, plus Rust 1.95. The project uses Vite+ 1.5.1. `vp install` uses the pinned pnpm 12.11.2. On Windows, run the repository commands in Git Bash. Install FFmpeg and ffprobe on PATH for efficient processing of long recordings.
 
 Check `vp --version`, `node --version`, `rustc --version` and `cargo --version`. See the [official Rust installer](https://www.rust-lang.org/tools/install) if needed. An existing toolchain in a separate directory can be configured with `HUAYU_RUST_TOOLCHAIN_DIR` in a local `.env`; that directory contains `.cargo/` and `.rustup/`. Do not commit machine-specific paths.
 

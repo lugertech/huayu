@@ -26,7 +26,7 @@ for (const route of [...routes, "/404/", "/en/404/"]) {
     `<meta property="og:description" content="${escape(description)}">`,
     `<meta property="og:locale" content="${locale === "en" ? "en_US" : "zh_CN"}">`,
     `<meta property="og:image" content="${escape(`${publicSiteURL || base.replace(/\/$/, "")}/${locale === "en" ? "images/en" : "images"}/results-image.jpg`)}">`,
-    `<meta property="og:image:alt" content="${locale === "en" ? "Huayu canvas with an image work open for editing" : "画语画布中的图片作品编辑窗口"}">`,
+    `<meta property="og:image:alt" content="${locale === "en" ? "huayu canvas with an image work open for editing" : "画语画布中的图片作品编辑窗口"}">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     ...(url && !notFound
       ? [

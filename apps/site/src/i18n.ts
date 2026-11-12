@@ -22,6 +22,9 @@ export function withoutLocale(path: string) {
 export function localizedPath(path = "", locale: Locale = "zh-CN") {
   return sitePath(`${locale === "en" ? "en/" : ""}${path.replace(/^\//, "")}`);
 }
+export function homeTitle(locale: Locale) {
+  return `${translate(messages, locale, "app.name")} · ${translate(messages, locale, "home.hero.eyebrow")}`;
+}
 export function useSiteI18n() {
   const locale = useContext(LocaleContext);
   const t = useCallback(

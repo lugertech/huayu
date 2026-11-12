@@ -18,6 +18,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getResetZoomViewport } from "./zoom-reset";
 
 type NativeZoom = {
   host: HTMLElement;
@@ -107,20 +108,23 @@ export function ZoomMenu({
     )
       return;
     const state = api.getAppState();
-    const resetButton = reset ? controls?.reset : undefined;
+    const menuOpen =
+      state.openMenu === "canvas" ||
+      (state.openMenu === "shape" &&
+        stage.current?.dataset.stylesPanelMode !== "compact");
     if (
+      state.isLoading ||
       state.openDialog ||
-      state.openMenu ||
+      menuOpen ||
       state.openPopup ||
       state.contextMenu ||
-      state.editingTextElement ||
-      (reset && !resetButton?.isConnected)
+      state.editingTextElement
     )
       return;
     event.preventDefault();
     event.stopPropagation();
     if (event.repeat) return;
-    if (resetButton) resetButton.click();
+    if (reset) resetZoom();
     else fitContent(selectionOnly);
   });
   useLayoutEffect(() => {
@@ -214,6 +218,17 @@ export function ZoomMenu({
     };
   }, [api, stage]);
 
+  function resetZoom() {
+    const viewport = getResetZoomViewport(
+      api.getSceneElements(),
+      api.getAppState(),
+    );
+    api.updateScene({
+      appState: { ...viewport, userToFollow: null },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }
+
   function fitContent(selectionOnly: boolean) {
     const element = stage.current;
     if (!element) return;
@@ -264,10 +279,7 @@ export function ZoomMenu({
           </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          aria-keyshortcuts="Shift+0"
-          onClick={() => controls.reset.click()}
-        >
+        <DropdownMenuItem aria-keyshortcuts="Shift+0" onClick={resetZoom}>
           {t("canvas.zoom.reset")}
           <DropdownMenuShortcut aria-hidden="true">
             <span>{shortcutShift}</span>

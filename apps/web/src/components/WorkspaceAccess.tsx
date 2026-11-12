@@ -5,6 +5,7 @@ import { t, useLocale } from "@/i18n";
 import { errorText } from "@/i18n/errors";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
+import { DocumentTitle } from "./DocumentTitle";
 
 export function WorkspaceAccess({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation();
@@ -38,6 +39,7 @@ function OwnerWorkspace({ children }: { children: ReactNode }) {
   if (access.status === "owner") return children;
   return (
     <main className="flex h-full flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <DocumentTitle />
       {access.status === "checking" ? (
         <Loader2
           className="size-6 animate-spin text-muted-foreground"

@@ -14,7 +14,7 @@ import {
   Plus,
   VideoCamera,
 } from "@phosphor-icons/react";
-import { useSiteI18n } from "../i18n";
+import { homeTitle, useSiteI18n } from "../i18n";
 import { sitePath } from "../config";
 import { Header, Footer } from "../components/SiteChrome";
 import { RecordingDemo } from "../features/recording/RecordingDemo";
@@ -51,6 +51,9 @@ const views = [
 ] as const;
 export function HomePage() {
   const { t, path: link, locale } = useSiteI18n();
+  useEffect(() => {
+    document.title = homeTitle(locale);
+  }, [locale]);
   const [canvasView, setCanvasView] = useState(0);
   const [exploring, setExploring] = useState<ExampleSummary | null>(null);
   const exampleTrigger = useRef<HTMLElement | null>(null);

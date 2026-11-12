@@ -10,9 +10,8 @@ import {
   SquarePen,
   Video,
   X,
-  PanelsTopLeft,
   Search,
-  Library,
+  LibraryBig,
 } from "lucide-react";
 import { api, type Project } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ import { useToast } from "./common/ToastProvider";
 const NAVIGATION = [
   ["/projects", "navigation.projects", FolderOpen],
   ["/recordings", "navigation.recordings", Video],
-  ["/library", "library.title", Library],
+  ["/library", "library.title", LibraryBig],
 ] as const;
 const DeferredSidebarTooltip = lazy(() =>
   import("./SidebarTooltip").then((module) => ({
@@ -60,6 +59,15 @@ export function AppSidebar({
   const { showToast } = useToast();
   const isMac = navigator.platform.includes("Mac");
   const [creating, setCreating] = useState(false);
+  const brandMark = (
+    <img
+      className="sidebar-brand-mark"
+      src={`${import.meta.env.BASE_URL}icon.svg`}
+      alt=""
+      width={32}
+      height={32}
+    />
+  );
 
   async function createProject() {
     setCreating(true);
@@ -90,13 +98,9 @@ export function AppSidebar({
             className="sidebar-mobile-brand"
             onClick={onNavigate}
           >
-            <span className="sidebar-brand-button">
-              <span className="sidebar-brand-mark">
-                <PanelsTopLeft className="size-4" />
-              </span>
-            </span>
+            <span className="sidebar-brand-button">{brandMark}</span>
             <span className="sidebar-label sidebar-brand-label">
-              {t("app.brand")}
+              {t("app.name")}
             </span>
           </Link>
         ) : (
@@ -113,9 +117,7 @@ export function AppSidebar({
             aria-controls="app-sidebar"
             onClick={onClose}
           >
-            <span className="sidebar-brand-mark">
-              <PanelsTopLeft className="size-4" />
-            </span>
+            {brandMark}
             <PanelLeft className="sidebar-brand-toggle size-[19px]" />
           </Button>
         )}
@@ -127,7 +129,7 @@ export function AppSidebar({
             onClick={onNavigate}
             className="sidebar-label sidebar-brand-label"
           >
-            {t("app.brand")}
+            {t("app.name")}
           </Link>
         )}
         <SidebarTooltip
@@ -234,6 +236,8 @@ export function AppSidebar({
           collapsed={collapsed}
           onNavigate={onNavigate}
           assetsOpen={false}
+          onCreateProject={createProject}
+          creating={creating}
         />
       </div>
       <div className="sidebar-footer">

@@ -1,7 +1,15 @@
 import { t, useLocale } from "@/i18n";
-import { lazy, Suspense, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { History } from "lucide-react";
+import { ChevronDown, History, Loader2, SquarePen } from "lucide-react";
 import { api, PROJECTS_CHANGED_EVENT, type Project } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -24,10 +32,14 @@ export function SidebarProjects({
   collapsed,
   onNavigate,
   assetsOpen,
+  onCreateProject,
+  creating,
 }: {
   collapsed: boolean;
   onNavigate?: () => void;
   assetsOpen: boolean;
+  onCreateProject: () => void;
+  creating: boolean;
 }) {
   useLocale();
   const { pathname } = useLocation();
@@ -37,6 +49,30 @@ export function SidebarProjects({
   const [loading, setLoading] = useState(() => recentProjects === undefined);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
+  const [projectsOpen, setProjectsOpen] = useState(true);
+  const listId = useId();
+  const listRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const list = listRef.current!;
+    const updateScrollEdges = () => {
+      const { scrollTop, scrollHeight, clientHeight } = list;
+      list.toggleAttribute("data-scroll-above", scrollTop > 1);
+      list.toggleAttribute(
+        "data-scroll-below",
+        scrollHeight - clientHeight - scrollTop > 1,
+      );
+    };
+    const observer = new ResizeObserver(updateScrollEdges);
+    observer.observe(list);
+    observer.observe(list.firstElementChild!);
+    list.addEventListener("scroll", updateScrollEdges, { passive: true });
+    updateScrollEdges();
+    return () => {
+      observer.disconnect();
+      list.removeEventListener("scroll", updateScrollEdges);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,37 +107,64 @@ export function SidebarProjects({
   const recentTrigger = (
     <Button
       variant="ghost"
-      className="sidebar-item sidebar-recent-trigger"
+      className="sidebar-item"
       aria-label={t("navigation.projects")}
-      data-active={collapsed && pathname.startsWith("/drawing/") && !assetsOpen}
+      data-active={pathname.startsWith("/drawing/") && !assetsOpen}
     >
-      {collapsed && (
-        <span className="sidebar-icon">
-          <History className="size-[19px]" />
-        </span>
-      )}
-      <span className="sidebar-label text-xs font-medium">
-        {t("navigation.projects")}
+      <span className="sidebar-icon">
+        <History />
       </span>
     </Button>
   );
 
   return (
     <div className="sidebar-recent">
-      <Suspense fallback={recentTrigger}>
-        <SidebarRecentMenu
-          collapsed={collapsed}
-          projects={projects}
-          loading={loading}
-          error={error && !projects.length}
-          onReload={() => setReload((value) => value + 1)}
-        >
-          {recentTrigger}
-        </SidebarRecentMenu>
-      </Suspense>
+      {collapsed ? (
+        <Suspense fallback={recentTrigger}>
+          <SidebarRecentMenu
+            projects={projects}
+            loading={loading}
+            error={error && !projects.length}
+            onReload={() => setReload((value) => value + 1)}
+          >
+            {recentTrigger}
+          </SidebarRecentMenu>
+        </Suspense>
+      ) : (
+        <div className="sidebar-recent-header">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="sidebar-recent-toggle"
+            aria-controls={listId}
+            aria-expanded={projectsOpen}
+            onClick={() => setProjectsOpen((open) => !open)}
+          >
+            <span className="text-[13px] font-medium text-[#737373] dark:text-[#8c8c8c]">
+              {t("navigation.projects")}
+            </span>
+            <ChevronDown aria-hidden="true" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sidebar-recent-create"
+            aria-label={t("projects.create")}
+            title={t("projects.create")}
+            aria-busy={creating}
+            disabled={creating}
+            onClick={onCreateProject}
+          >
+            {creating ? <Loader2 className="animate-spin" /> : <SquarePen />}
+          </Button>
+        </div>
+      )}
       <nav
+        id={listId}
+        ref={listRef}
         aria-label={t("navigation.projects")}
         className="sidebar-recent-list"
+        hidden={!projectsOpen}
         inert={collapsed}
       >
         <LoadingRegion

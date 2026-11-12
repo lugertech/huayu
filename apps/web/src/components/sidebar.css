@@ -20,7 +20,7 @@
 }
 .sidebar-header {
   display: flex;
-  height: 56px;
+  height: var(--workspace-header-height);
   flex-shrink: 0;
   align-items: center;
   padding: 0 10px;
@@ -40,20 +40,15 @@
   padding: 0;
   translate: none;
 }
-.sidebar-brand-mark {
-  display: flex;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  background: var(--foreground);
-  color: var(--background);
-  transition: opacity 120ms;
+.sidebar-brand-button[aria-expanded="true"]:not(:hover) {
+  background-color: transparent;
 }
-.sidebar-brand-mark > svg {
-  stroke-width: 1.6;
+.sidebar-brand-mark {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  transition: opacity 120ms;
 }
 .sidebar-brand-toggle {
   position: absolute;
@@ -213,30 +208,105 @@
   flex-direction: column;
   gap: 2px;
 }
-.sidebar-content[data-collapsed="false"] .sidebar-recent-trigger,
+.sidebar-recent-header {
+  display: flex;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 10px;
+  padding-inline: 4px;
+}
+.sidebar-recent-toggle,
+.sidebar-recent-create {
+  background: transparent;
+  color: var(--sidebar-foreground);
+}
+.sidebar-recent-toggle {
+  gap: 4px;
+  padding-inline: 8px;
+}
+.sidebar-recent-toggle:hover,
+.sidebar-recent-create:hover {
+  color: var(--sidebar-accent-foreground);
+}
+.sidebar-recent-toggle > svg {
+  transition:
+    rotate 120ms,
+    opacity 150ms;
+}
+.sidebar-recent-toggle[aria-expanded="false"] > svg {
+  rotate: -90deg;
+}
+.sidebar-recent-create > svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
 .sidebar-recent-list .sidebar-item {
   padding: 0 12px;
 }
 .sidebar-recent .sidebar-label {
   margin-left: 0;
 }
-.sidebar-recent-trigger .sidebar-label {
-  color: var(--sidebar-section-foreground);
-  font-weight: 500;
-}
 .sidebar-recent-list {
-  display: flex;
+  --sidebar-scroll-fade: 14px;
+  --sidebar-scrollbar-thumb: transparent;
   min-height: 0;
   flex: 1;
-  flex-direction: column;
-  gap: 2px;
+  margin-inline-end: -8px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  scrollbar-gutter: stable;
   transition:
     opacity 140ms,
     visibility 140ms;
+}
+@media not (forced-colors: active) {
+  @supports selector(::-webkit-scrollbar) {
+    .sidebar-recent-list {
+      padding-inline-end: 2px;
+    }
+    .sidebar-recent-list::-webkit-scrollbar {
+      width: 6px;
+      background: transparent;
+    }
+    .sidebar-recent-list::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: var(--sidebar-scrollbar-thumb);
+    }
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    .sidebar-recent-list {
+      scrollbar-color: var(--sidebar-scrollbar-thumb) transparent;
+      scrollbar-width: thin;
+    }
+  }
+}
+.sidebar-recent-list::before,
+.sidebar-recent-list::after {
+  content: "";
+  position: sticky;
+  z-index: 1;
+  display: block;
+  height: var(--sidebar-scroll-fade);
+  opacity: 0;
+  pointer-events: none;
+}
+.sidebar-recent-list::before {
+  top: 0;
+  margin-block-end: calc(-1 * var(--sidebar-scroll-fade));
+  background: linear-gradient(to bottom, var(--sidebar), transparent);
+}
+.sidebar-recent-list::after {
+  bottom: 0;
+  margin-block-start: calc(-1 * var(--sidebar-scroll-fade));
+  background: linear-gradient(to top, var(--sidebar), transparent);
+}
+.sidebar-recent-list[data-scroll-above]::before,
+.sidebar-recent-list[data-scroll-below]::after {
+  opacity: 1;
 }
 @property --sidebar-title-offset {
   syntax: "<length>";
@@ -351,6 +421,19 @@
   pointer-events: auto;
 }
 @media (hover: hover) {
+  .sidebar-recent-header:hover {
+    background: color-mix(in srgb, var(--sidebar-accent) 65%, var(--sidebar));
+  }
+  .sidebar-recent-header:not(:hover, :has(> :focus-visible))
+    :is(
+      .sidebar-recent-toggle[aria-expanded="true"] > svg,
+      .sidebar-recent-create
+    ) {
+    opacity: 0;
+  }
+  .sidebar-recent-list:hover {
+    --sidebar-scrollbar-thumb: color-mix(in srgb, #808080 55%, var(--sidebar));
+  }
   .sidebar-project-row:hover {
     background: var(--sidebar-accent);
   }

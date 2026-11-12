@@ -6,7 +6,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { LocaleContext } from "@/i18n";
+import { LocaleContext, t } from "@/i18n";
+import { DocumentTitle } from "@/components/DocumentTitle";
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
 import type { Capability } from "@/ai/settings";
 
@@ -18,18 +19,29 @@ const SettingsDialog = lazy(() =>
 
 export function CanvasPageLayout({
   shared,
+  projectName,
   children,
 }: {
   shared: boolean;
+  projectName?: string;
   children: ReactNode;
 }) {
   const locale = useContext(LocaleContext);
-  if (!shared) return children;
+  const untitled =
+    projectName === t("projects.untitled", undefined, "zh-CN") ||
+    projectName === t("projects.untitled", undefined, "en");
+  const content = (
+    <>
+      <DocumentTitle pageName={untitled ? undefined : projectName} />
+      {children}
+    </>
+  );
+  if (!shared) return content;
   // Keep shared-canvas settings in the app locale.
   return (
     <LocaleContext value={undefined}>
       <SharedCanvasLayout>
-        <LocaleContext value={locale}>{children}</LocaleContext>
+        <LocaleContext value={locale}>{content}</LocaleContext>
       </SharedCanvasLayout>
     </LocaleContext>
   );

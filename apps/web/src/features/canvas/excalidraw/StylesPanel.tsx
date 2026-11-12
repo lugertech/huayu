@@ -101,19 +101,23 @@ export function StylesPanel({
       );
       if (edit) edit.dataset.boardStyleToggle = "true";
       // This stable release enters mobile UI at 730px. Keep its native action
-      // section mounted between 600–729px, then present it as a side rail.
+      // section mounted for the side rail while there is content in view.
+      // The native return button only renders when the menu is closed.
       if (
         compact &&
         native.classList.contains("excalidraw--mobile") &&
         !state.viewModeEnabled &&
         !state.openDialog &&
         !state.openSidebar &&
-        state.openMenu === null
+        !state.openPopup &&
+        state.openMenu !== "canvas"
       ) {
-        api.updateScene({
-          appState: { openMenu: "shape" },
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
+        const openMenu = state.scrolledOutside ? null : "shape";
+        if (state.openMenu !== openMenu)
+          api.updateScene({
+            appState: { openMenu },
+            captureUpdate: CaptureUpdateAction.NEVER,
+          });
       }
       const nextHost = compact
         ? native.querySelector<HTMLElement>(".App-menu__left, .App-mobile-menu")

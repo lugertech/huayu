@@ -80,11 +80,11 @@ To continue, change source material and run the steps you need. Text and pages u
 
 ## Project library
 
-Open **Library** (`/library`) from the sidebar to browse files, generated web pages, images and speech audio included in each project's **Project attachments**. Ordinary text, instruction results, charts and external links are excluded.
+Open **Library** (`/library`) from the sidebar to browse images, files and speech audio in each project's **Project attachments**.
 
 - **Find items:** search names, project names or text excerpts, and filter by type or project.
 - **Change the view:** switch between list and grid. Use **View options** to group by project or change the sort order. Expand groups with **Show more**.
-- **Preview and download:** click an attachment to preview it, or download it from its **…** menu. Document content, images and generated web pages have inline previews, speech audio can be played, and other files offer a download.
+- Click an attachment to **preview** document content or images, or to play speech audio. Use the **…** menu to **download** the attachment.
 - **Return to the source:** choose **View in project** to locate the original canvas component. Edit or remove the content in that project.
 
 Attachments are ungrouped by default. Enable **Group by project** in **View options** to group them; the selected setting is remembered.

@@ -3,33 +3,20 @@ import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react";
 import { useSiteI18n } from "../i18n";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { AppearanceSwitcher, useAppearance } from "./AppearanceSwitcher";
-import { repositoryURL } from "../config";
+import { repositoryURL, sitePath } from "../config";
 
 export function Logo() {
-  const { path: link, locale } = useSiteI18n();
+  const { path: link, t } = useSiteI18n();
   return (
     <a className="site-logo" href={link()}>
-      <svg className="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
-        <rect width="40" height="40" rx="12" fill="currentColor" />
-        <g
-          fill="none"
-          stroke="var(--bg)"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="10" y="10" width="20" height="20" rx="2" />
-          <path d="M10 17h20M17 17v13" />
-        </g>
-      </svg>
-      <span>
-        Huayu
-        {locale === "zh-CN" && (
-          <span className="logo-en" lang="zh-CN">
-            画语
-          </span>
-        )}
-      </span>
+      <img
+        className="logo-mark"
+        src={sitePath("icon.svg")}
+        alt=""
+        width={32}
+        height={32}
+      />
+      <span>{t("app.name")}</span>
     </a>
   );
 }

@@ -45,7 +45,6 @@ export function getLocale(): Locale {
 function changed() {
   if (typeof document !== "undefined") {
     document.documentElement.lang = getLocale();
-    document.title = getLocale() === "en" ? "Huayu" : "Huayu 画语";
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute("content", t("app.description"));

@@ -46,8 +46,9 @@ export const en = {
   "library.showMore": "Show {count} more",
   "library.showLess": "Show less",
   "library.total": "{count} attachments",
-  "library.empty": "No project attachments yet",
-  "library.emptyHint": "Attachments from your projects will appear here.",
+  "library.empty": "No library items yet",
+  "library.emptyHint":
+    "Images, documents, and audio from your projects will appear here.",
   "library.noMatches": "No matching attachments",
   "library.adjustFilters": "Try another search or adjust the filters.",
   "library.clearFilters": "Clear filters",
@@ -62,7 +63,6 @@ export const en = {
   "library.downloadToView": "Download this file to view its contents.",
   "library.kind.all": "All",
   "library.kind.image": "Images",
-  "library.kind.website": "Web pages",
   "library.kind.document": "Documents",
   "library.kind.audio": "Audio",
   "projects.templates.completeExample": "Complete example",
@@ -158,7 +158,7 @@ export const en = {
   "api.errors.documentsToParseCannotExceed10Mb":
     "Documents to parse can’t exceed 10 MB",
   "api.errors.filesCannotExceed512Mb": "Files can’t exceed 512 MB",
-  "api.errors.huayuStarted": "Huayu started",
+  "api.errors.huayuStarted": "huayu started",
   "api.errors.invalidAudioSegmentRange":
     "Invalid audio segment range. Read up to five minutes at a time.",
   "api.errors.invalidDocxDocumentBody": "Invalid DOCX document body",
@@ -239,11 +239,10 @@ export const en = {
   "api.unsupportedFileFormat": "Unsupported file format",
   "api.webSearchSourcesPreserveCitationsWhenUsingThem":
     "\nWeb search sources (preserve citations when using them):\n{arg0}",
-  "app.brand": "Huayu",
   "app.description":
-    "Huayu is an open-source AI canvas. Organize materials locally, connect your models, and create text, images, and websites.",
-  "app.homeLabel": "Huayu home",
-  "app.name": "Huayu",
+    "huayu is an open-source AI canvas. Organize materials locally, connect your models, and create text, images, and websites.",
+  "app.homeLabel": "huayu home",
+  "app.name": "huayu",
   "canvas.aConnectedShapeNoLongerExists": "A connected shape no longer exists",
   "canvas.addADescriptionOptional": "Add a description (optional)",
   "canvas.addStep": "Add a step",
@@ -1128,7 +1127,7 @@ export const en = {
   "search.title": "Quick search",
   "search.triggerLabel": "Search",
   "settings.appearance.dark": "Dark",
-  "settings.appearance.description": "Choose how Huayu looks.",
+  "settings.appearance.description": "Choose how huayu looks.",
   "settings.appearance.label": "Appearance",
   "settings.appearance.light": "Light",
   "settings.appearance.system": "System",

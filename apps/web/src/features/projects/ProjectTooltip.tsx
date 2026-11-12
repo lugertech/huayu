@@ -5,17 +5,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function ProjectViewTooltip({
-  children,
-  label,
-}: {
+export type ProjectTooltipProps = {
   children: ReactElement;
   label: string;
-}) {
+  side?: "top" | "bottom";
+};
+
+export function ProjectTooltip({ children, label, side }: ProjectTooltipProps) {
   return (
     <Tooltip>
       <TooltipTrigger render={children} />
-      <TooltipContent side="bottom">{label}</TooltipContent>
+      <TooltipContent side={side}>{label}</TooltipContent>
     </Tooltip>
   );
 }

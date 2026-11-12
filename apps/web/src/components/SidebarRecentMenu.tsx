@@ -20,14 +20,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function SidebarRecentMenu({
-  collapsed,
   projects,
   loading,
   error,
   onReload,
   children,
 }: {
-  collapsed: boolean;
   projects: Project[];
   loading: boolean;
   error: boolean;
@@ -38,14 +36,14 @@ export function SidebarRecentMenu({
   const { pathname } = useLocation();
   return (
     <DropdownMenu>
-      <Tooltip disabled={!collapsed}>
+      <Tooltip>
         <TooltipTrigger render={<DropdownMenuTrigger render={children} />} />
         <TooltipContent side="right" sideOffset={10}>
           {t("navigation.projects")}
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent
-        side={collapsed ? "right" : "bottom"}
+        side="right"
         align="start"
         sideOffset={10}
         className="w-64 max-w-[calc(100vw-80px)]"

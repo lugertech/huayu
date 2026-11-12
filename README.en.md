@@ -8,7 +8,7 @@ Huayu combines an Excalidraw canvas with connected AI steps and recording analys
 
 ## Start locally
 
-Install `vp` using the [Vite+ guide](https://viteplus.dev/guide/). The project uses Vite+ 1.5.0 and requires Node.js 22.x starting at 22.18, 24.x starting at 24.11, or 26 and later, plus Rust 1.95. `vp install` uses the pinned pnpm 12.11.2. On Windows, use Git Bash. FFmpeg and ffprobe on PATH are recommended for long recordings.
+Install `vp` using the [Vite+ guide](https://viteplus.dev/guide/). The project uses Vite+ 1.5.1 and requires Node.js 22.x starting at 22.18, 24.x starting at 24.11, or 26 and later, plus Rust 1.95. `vp install` uses the pinned pnpm 12.11.2. On Windows, use Git Bash. FFmpeg and ffprobe on PATH are recommended for long recordings.
 
 ```sh
 vp install --frozen-lockfile

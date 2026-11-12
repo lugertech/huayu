@@ -1,6 +1,6 @@
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
-import { errorText } from "@/i18n/errors";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { projectCopyName } from "@/features/projects/project-name";
 import {
   lazy,
@@ -48,6 +48,13 @@ import {
 } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Card, CardContent } from "@/components/ui/card";
 import { searchScore } from "@/lib/search";
@@ -66,11 +73,12 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import type { ProjectCardMenuProps } from "../features/projects/ProjectCardMenu";
+import type { ProjectTooltipProps } from "../features/projects/ProjectTooltip";
 import "./projects.css";
 
-const ProjectViewTooltip = lazy(() =>
-  import("../features/projects/ProjectViewTooltip").then((module) => ({
-    default: module.ProjectViewTooltip,
+const DeferredProjectTooltip = lazy(() =>
+  import("../features/projects/ProjectTooltip").then((module) => ({
+    default: module.ProjectTooltip,
   })),
 );
 const DeferredProjectCardMenu = lazy(() =>
@@ -78,6 +86,15 @@ const DeferredProjectCardMenu = lazy(() =>
     default: module.ProjectCardMenu,
   })),
 );
+
+function ProjectTooltip(props: ProjectTooltipProps) {
+  return (
+    <Suspense fallback={props.children}>
+      <DeferredProjectTooltip {...props} />
+    </Suspense>
+  );
+}
+
 function ProjectCardMenu(props: ProjectCardMenuProps) {
   return (
     <Suspense fallback={props.children}>
@@ -138,6 +155,9 @@ export function ProjectsPage() {
   const enteredCards = useRef(new Set<string>());
   const listEntranceAllowed = useRef(true);
   const input = useRef<HTMLInputElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const nameDialogTriggerId = useRef("");
+  const searchInput = useRef<HTMLInputElement>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [rawTemplates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,9 +181,12 @@ export function ProjectsPage() {
   const [view, setView] = useState<"grid" | "list">(() =>
     localStorage.getItem("huayu:projects-view") === "list" ? "list" : "grid",
   );
-  const [renaming, setRenaming] = useState<Project | null>(null);
-  const [renamingBusy, setRenamingBusy] = useState(false);
-  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [nameDialog, setNameDialog] = useState<{
+    type: "duplicate" | "rename";
+    project: Pick<Project, "id" | "name"> | null;
+  }>({ type: "rename", project: null });
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameError, setNameError] = useState<Error | null>(null);
   const [name, setName] = useState("");
   const [deleting, setDeleting] = useState<{
     type: "project" | "template";
@@ -172,6 +195,7 @@ export function ProjectsPage() {
   } | null>(null);
   const refreshRequest = useRef<AbortController | null>(null);
   const busy = pending !== null;
+  const isCopy = nameDialog.type === "duplicate";
   const initialLoading = loading && !hasLoaded;
   const preservePanelSpace = useCallback((keepScroll = true) => {
     const page = pageRef.current!;
@@ -388,63 +412,71 @@ export function ProjectsPage() {
       setPending(null);
     }
   }
-  async function duplicate(project: Project) {
-    if (duplicating) return;
-    setDuplicating(project.id);
-    try {
-      const original = await api<Project>(`/api/projects/${project.id}`);
-      let document = original.document;
-      if (!document && original.recipe) {
-        const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
-          await Promise.all([
-            import("@/features/canvas/editor"),
-            import("@/features/canvas/recipes"),
-          ]);
-        const store = createCanvasStore();
-        applyRecipe(new Editor(store), original.recipe);
-        document = getSnapshot(store).document;
-      }
-      const copy = await api<Project>("/api/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: projectCopyName(project.name),
-          document,
-        }),
-      });
-      setProjects((current) => [copy, ...current]);
-      showToast({
-        title: t("projects.projectCopied"),
-        action: {
-          label: t("projects.openCopy"),
-          onClick: () => navigate(`/drawing/${copy.id}`),
-        },
-      });
-    } catch (error) {
-      failed(error);
-    } finally {
-      setDuplicating(null);
-    }
+  function openNameDialog(type: "duplicate" | "rename", project: Project) {
+    nameDialogTriggerId.current = `project-${type}-${project.id}`;
+    setNameDialog({ type, project: { id: project.id, name: project.name } });
+    setName(
+      type === "duplicate" ? projectCopyName(project.name) : project.name,
+    );
+    setNameError(null);
   }
-  async function rename() {
-    if (!renaming || !name.trim() || renamingBusy) return;
-    if (name.trim() === renaming.name) {
-      setRenaming(null);
+  function closeNameDialog() {
+    setNameDialog((current) => ({ ...current, project: null }));
+  }
+  async function duplicate(projectId: string, name: string) {
+    const original = await api<Project>(`/api/projects/${projectId}`);
+    let document = original.document;
+    if (!document && original.recipe) {
+      const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
+        await Promise.all([
+          import("@/features/canvas/editor"),
+          import("@/features/canvas/recipes"),
+        ]);
+      const store = createCanvasStore();
+      applyRecipe(new Editor(store), original.recipe);
+      document = getSnapshot(store).document;
+    }
+    const copy = await api<Project>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ name, document }),
+    });
+    setProjects((current) => [copy, ...current]);
+    showToast({
+      title: t("projects.projectCopied"),
+      action: {
+        label: t("projects.openCopy"),
+        onClick: () => navigate(`/drawing/${copy.id}`),
+      },
+    });
+  }
+  async function submitName() {
+    const { type, project } = nameDialog;
+    const trimmedName = name.trim();
+    if (!project || !trimmedName || nameBusy) return;
+    if (type === "rename" && trimmedName === project.name) {
+      closeNameDialog();
       return;
     }
-    setRenamingBusy(true);
+    setNameBusy(true);
+    setNameError(null);
     try {
-      const result = await api<Project>(`/api/projects/${renaming.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ name: name.trim() }),
-      });
-      setProjects((current) =>
-        current.map((project) => (project.id === result.id ? result : project)),
-      );
-      setRenaming(null);
+      if (type === "duplicate") {
+        await duplicate(project.id, trimmedName);
+      } else {
+        await api<Project>(`/api/projects/${project.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ name: trimmedName }),
+        });
+      }
+      closeNameDialog();
     } catch (error) {
-      failed(error);
+      setNameError(
+        error instanceof Error
+          ? error
+          : new LocalizedError({ key: "common.operationFailedRetry" }),
+      );
     } finally {
-      setRenamingBusy(false);
+      setNameBusy(false);
     }
   }
   async function remove() {
@@ -647,6 +679,7 @@ export function ProjectsPage() {
                 <div className="project-search-wrap">
                   <Search className="project-search-icon" />
                   <Input
+                    ref={searchInput}
                     aria-label={t(
                       activeTab === "projects"
                         ? "projects.searchProjects.label"
@@ -706,11 +739,9 @@ export function ProjectsPage() {
                       </Button>
                     );
                     return (
-                      <Suspense key={mode} fallback={button}>
-                        <ProjectViewTooltip label={label}>
-                          {button}
-                        </ProjectViewTooltip>
-                      </Suspense>
+                      <ProjectTooltip key={mode} label={label} side="bottom">
+                        {button}
+                      </ProjectTooltip>
                     );
                   })}
                 </div>
@@ -798,9 +829,9 @@ export function ProjectsPage() {
                               role="listitem"
                             >
                               <ProjectCardMenu
-                                disabled={!!duplicating}
-                                copying={duplicating === project.id}
-                                onDuplicate={() => duplicate(project)}
+                                onDuplicate={() =>
+                                  openNameDialog("duplicate", project)
+                                }
                               >
                                 <Card className="project-list-card">
                                   <button
@@ -827,133 +858,74 @@ export function ProjectsPage() {
                                   </button>
                                   <CardContent className="project-card-content">
                                     <div className="project-card-heading">
-                                      {renaming?.id === project.id ? (
-                                        <div className="min-w-0 flex-1">
-                                          <Input
-                                            aria-label={t(
-                                              "projects.projectName",
-                                            )}
-                                            value={name}
-                                            maxLength={120}
-                                            autoFocus
-                                            disabled={renamingBusy}
-                                            className="project-card-name-input"
-                                            onChange={(event) =>
-                                              setName(event.target.value)
-                                            }
-                                            onKeyDown={(event) => {
-                                              if (
-                                                event.nativeEvent.isComposing ||
-                                                event.nativeEvent.keyCode ===
-                                                  229
-                                              )
-                                                return;
-                                              if (event.key === "Enter") {
-                                                event.preventDefault();
-                                                void rename();
-                                              } else if (
-                                                event.key === "Escape" &&
-                                                !renamingBusy
-                                              ) {
-                                                setRenaming(null);
-                                              }
-                                            }}
-                                          />
-                                          <div className="project-name-actions">
-                                            <button
-                                              type="button"
-                                              className="project-name-save"
-                                              disabled={
-                                                !name.trim() || renamingBusy
-                                              }
-                                              onClick={rename}
-                                            >
-                                              {renamingBusy && (
-                                                <Loader2 className="size-3 animate-spin" />
-                                              )}
-                                              {renamingBusy
-                                                ? t("recordings.saving")
-                                                : t("common.save")}
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="project-name-cancel"
-                                              disabled={renamingBusy}
-                                              onClick={() => setRenaming(null)}
-                                            >
-                                              {t("common.cancel")}
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <>
+                                      <button
+                                        className="project-card-title"
+                                        title={project.name}
+                                        onClick={() =>
+                                          navigate(`/drawing/${project.id}`)
+                                        }
+                                      >
+                                        {project.name}
+                                      </button>
+                                      <div className="project-card-actions">
+                                        <ProjectTooltip
+                                          label={t("projects.duplicateProject")}
+                                        >
                                           <button
-                                            className="project-card-title"
-                                            title={project.name}
+                                            id={`project-duplicate-${project.id}`}
+                                            type="button"
+                                            className="project-card-action"
+                                            aria-label={`${t("projects.duplicateProject")}: ${project.name}`}
+                                            aria-haspopup="dialog"
                                             onClick={() =>
-                                              navigate(`/drawing/${project.id}`)
+                                              openNameDialog(
+                                                "duplicate",
+                                                project,
+                                              )
                                             }
                                           >
-                                            {project.name}
+                                            <Copy aria-hidden="true" />
                                           </button>
-                                          <div className="project-card-actions">
-                                            <button
-                                              type="button"
-                                              className="project-card-action"
-                                              aria-label={`${t("projects.duplicateProject")}: ${project.name}`}
-                                              title={t(
-                                                "projects.duplicateProject",
-                                              )}
-                                              disabled={!!duplicating}
-                                              onClick={() =>
-                                                void duplicate(project)
-                                              }
-                                            >
-                                              {duplicating === project.id ? (
-                                                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
-                                              ) : (
-                                                <Copy className="size-4" />
-                                              )}
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="project-card-action project-card-action-edit"
-                                              aria-label={`${t("projects.renameProject")}: ${project.name}`}
-                                              title={t(
-                                                "projects.renameProject",
-                                              )}
-                                              disabled={renamingBusy}
-                                              onClick={() => {
-                                                setRenaming(project);
-                                                setName(project.name);
-                                              }}
-                                            >
-                                              <Pencil className="size-4" />
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="project-card-action project-card-action-delete"
-                                              aria-label={`${t("projects.deleteProject")}: ${project.name}`}
-                                              title={t(
-                                                "projects.deleteProject",
-                                              )}
-                                              onClick={() =>
-                                                setDeleting({
-                                                  type: "project",
-                                                  id: project.id,
-                                                  name: project.name,
-                                                })
-                                              }
-                                            >
-                                              <Trash2 className="size-4" />
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
+                                        </ProjectTooltip>
+                                        <ProjectTooltip
+                                          label={t("projects.renameProject")}
+                                        >
+                                          <button
+                                            id={`project-rename-${project.id}`}
+                                            type="button"
+                                            className="project-card-action project-card-action-edit"
+                                            aria-label={`${t("projects.renameProject")}: ${project.name}`}
+                                            aria-haspopup="dialog"
+                                            onClick={() =>
+                                              openNameDialog("rename", project)
+                                            }
+                                          >
+                                            <Pencil aria-hidden="true" />
+                                          </button>
+                                        </ProjectTooltip>
+                                        <ProjectTooltip
+                                          label={t("projects.deleteProject")}
+                                        >
+                                          <button
+                                            type="button"
+                                            className="project-card-action project-card-action-delete"
+                                            aria-label={`${t("projects.deleteProject")}: ${project.name}`}
+                                            onClick={() =>
+                                              setDeleting({
+                                                type: "project",
+                                                id: project.id,
+                                                name: project.name,
+                                              })
+                                            }
+                                          >
+                                            <Trash2 aria-hidden="true" />
+                                          </button>
+                                        </ProjectTooltip>
+                                      </div>
                                     </div>
                                     <div className="project-card-meta">
                                       <p
-                                        className="project-card-meta-text"
+                                        className="project-card-meta-text project-card-updated-at"
                                         title={new Date(
                                           project.updated_at,
                                         ).toLocaleString(getLocale())}
@@ -1128,25 +1100,29 @@ export function ProjectsPage() {
                                   </button>
                                   {!template.id.startsWith("builtin-") && (
                                     <div className="project-card-actions">
-                                      <button
-                                        type="button"
-                                        className="project-card-action project-card-action-delete"
-                                        aria-label={t(
-                                          "projects.deleteExample",
-                                          {
-                                            arg0: template.name,
-                                          },
-                                        )}
-                                        onClick={() =>
-                                          setDeleting({
-                                            type: "template",
-                                            id: template.id,
-                                            name: template.name,
-                                          })
-                                        }
+                                      <ProjectTooltip
+                                        label={t("common.delete")}
                                       >
-                                        <Trash2 />
-                                      </button>
+                                        <button
+                                          type="button"
+                                          className="project-card-action project-card-action-delete"
+                                          aria-label={t(
+                                            "projects.deleteExample",
+                                            {
+                                              arg0: template.name,
+                                            },
+                                          )}
+                                          onClick={() =>
+                                            setDeleting({
+                                              type: "template",
+                                              id: template.id,
+                                              name: template.name,
+                                            })
+                                          }
+                                        >
+                                          <Trash2 aria-hidden="true" />
+                                        </button>
+                                      </ProjectTooltip>
                                     </div>
                                   )}
                                 </div>
@@ -1205,6 +1181,81 @@ export function ProjectsPage() {
           </ProjectTabs.Root>
         </div>
       </main>
+      <Dialog
+        open={nameDialog.project !== null}
+        onOpenChange={(open) => {
+          if (!open && !nameBusy) closeNameDialog();
+        }}
+      >
+        <DialogContent
+          initialFocus={nameInput}
+          finalFocus={() =>
+            document.getElementById(nameDialogTriggerId.current) ??
+            searchInput.current
+          }
+          showCloseButton={!nameBusy}
+          aria-describedby={undefined}
+        >
+          <DialogTitle>
+            {t(isCopy ? "projects.duplicateProject" : "projects.renameProject")}
+          </DialogTitle>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitName();
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="project-name-dialog-input">
+                {t("projects.projectName")}
+              </Label>
+              <Input
+                ref={nameInput}
+                id="project-name-dialog-input"
+                value={name}
+                readOnly={nameBusy}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setNameError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    (event.nativeEvent.isComposing ||
+                      event.nativeEvent.keyCode === 229)
+                  )
+                    event.preventDefault();
+                }}
+              />
+            </div>
+            {nameError && (
+              <p role="alert" className="text-sm text-destructive">
+                {errorText(nameError, locale)}
+              </p>
+            )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={nameBusy}
+                onClick={closeNameDialog}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={!name.trim() || nameBusy}>
+                {nameBusy && (
+                  <Loader2 className="animate-spin motion-reduce:animate-none" />
+                )}
+                {isCopy
+                  ? t(nameBusy ? "projects.copying" : "common.copy")
+                  : t(nameBusy ? "recordings.saving" : "common.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <AlertDialog
         open={!!deleting}
         onOpenChange={(open) => {

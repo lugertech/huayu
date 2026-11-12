@@ -290,10 +290,10 @@ describe("translation coverage and static documentation", () => {
     const chinese = render("/not-a-page/");
     const english = render("/en/docs/not-a-guide/");
     expect(chinese.notFound).toBe(true);
-    expect(chinese.title).toBe("页面未找到 · Huayu 画语");
+    expect(chinese.title).toBe("页面未找到 · 画语");
     expect(chinese.html).toContain('href="/docs/getting-started/"');
     expect(english.notFound).toBe(true);
-    expect(english.title).toBe("Page not found · Huayu");
+    expect(english.title).toBe("Page not found · huayu");
     expect(english.html).toContain('href="/en/"');
     expect(english.html).toContain('href="/en/docs/getting-started/"');
     expect(english.html).not.toContain("<h1>Getting started</h1>");
@@ -342,7 +342,7 @@ describe("translation coverage and static documentation", () => {
       expect(doc.title).not.toMatch(/[\p{Script=Han}]/u);
       const page = render(`/en/docs/${doc.slug}/`);
       expect(page.locale).toBe("en");
-      expect(page.title).toContain("Huayu Docs");
+      expect(page.title).toContain("huayu Docs");
       expect(page.html).toContain('href="/en/docs/getting-started/"');
       for (const destination of documentsFor("en")) {
         expect(page.html, `Navigation to ${destination.slug}`).toContain(

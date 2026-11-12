@@ -12,7 +12,7 @@ export function NotFoundPage() {
     <>
       <Header />
       <main id="main-content" className="not-found container">
-        <span>404 / Huayu</span>
+        <span>404 / {t("app.name")}</span>
         <h1>{t("errors.notFound.title")}</h1>
         <p>{t("errors.notFound.description")}</p>
         <div className="hero-actions">
