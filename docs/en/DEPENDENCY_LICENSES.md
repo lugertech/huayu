@@ -1,6 +1,6 @@
 # Frontend production dependency licenses
 
-Versions come from the locked production dependency trees of the application and official site. Licenses come from installed package metadata. Rust crates and development tools are excluded. Third-party software, fonts and assets retain their terms; see [Third-party notices](./THIRD_PARTY_NOTICES.md).
+Versions come from the locked production dependency tree of the application. Licenses come from installed package metadata. Rust crates and development tools are excluded. Third-party software, fonts and assets retain their terms; see [Third-party notices](./THIRD_PARTY_NOTICES.md).
 
 | Package | Version | License |
 | --- | --- | --- |
@@ -33,7 +33,6 @@ Versions come from the locked production dependency trees of the application and
 | @pdf-lib/fontkit | 1.1.1 | MIT |
 | @pdf-lib/standard-fonts | 1.0.0 | MIT |
 | @pdf-lib/upng | 1.0.1 | MIT |
-| @phosphor-icons/react | 2.1.10 | MIT |
 | @radix-ui/primitive | 1.2.0 | MIT |
 | @radix-ui/react-arrow | 1.1.17 | MIT |
 | @radix-ui/react-collection | 1.2.0 | MIT |

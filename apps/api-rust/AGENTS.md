@@ -1,9 +1,9 @@
-# Rust API 约定
+# Rust API Conventions
 
-- 遵守根目录 AGENTS.md 和本目录 CODE_STYLE.md。
-- Rust 编写参考 [BeautifulRust](https://github.com/morganlinton/BeautifulRust) 的 `rust-best-practices`；代码审查和语言迁移分别参考 `rust-review`、`rust-port`。外部建议与项目约定冲突时，以项目约定为准。
-- core 不执行 I/O；store 不依赖 HTTP；模型连接和密钥不进入服务端类型或持久化。
-- 二进制只负责启动，使用 Axum handler、extractor 和类型化请求、响应。
-- 数据结构由版本迁移管理，实体与迁移保持一致。
-- 修改 Rust 后执行格式化及相关编译检查；持久化和接口行为通过独立临时数据库验证。
-- 运行目录为仓库根目录。不得用原仓库或 timetable 的数据库运行测试。
+- Follow the root [AGENTS.md](../../AGENTS.md) and this directory's [CODE_STYLE.md](./CODE_STYLE.md).
+- Consult [BeautifulRust](https://github.com/morganlinton/BeautifulRust): `rust-best-practices` for writing Rust, `rust-review` for reviewing code, and `rust-port` for porting code. Follow this repository's conventions if external advice conflicts with them.
+- `core` does not perform I/O, and `store` does not depend on HTTP. Keep model connections and keys out of server types and persistent storage.
+- Binaries only handle startup. Use Axum handlers and extractors with typed requests and responses.
+- Manage data structures with versioned migrations and keep entities in sync with those migrations.
+- After changing Rust code, run formatting and the relevant compilation checks. Verify persistence and API behavior with separate temporary databases.
+- Run commands from the repository root. Do not run tests against databases from the original repository or timetable.

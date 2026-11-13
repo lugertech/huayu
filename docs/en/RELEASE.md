@@ -12,7 +12,6 @@ Initial release preparation was checked on 2026-10-24. The goal is an installabl
 | Clean installation | Passed on this Mac | Frozen install, full builds, isolated startup, drawing, undo/redo, transfer and restart persistence |
 | Target platforms | Local macOS checked; remote CI pending | Actual Linux/macOS/Windows CI completion; do not claim unverified platforms |
 | Repository and reporting | Pending | Real public repository, feedback destination and private vulnerability reporting |
-| Official site | Local review ready; deployment pending | Real repository/domain configuration, deployment, links, docs, images and refresh checks |
 
 Do not treat a generic license declaration as resolved source authorization. See [Choose a License on missing permission](https://choosealicense.com/no-permission/).
 
@@ -29,7 +28,6 @@ vp run test
 sh scripts/cargo.sh fmt --all -- --check
 sh scripts/cargo.sh clippy --workspace --all-targets --locked -- -D warnings
 vp run build:web
-vp run build:site
 vp pm audit --prod --audit-level high
 vp run package:source
 ```

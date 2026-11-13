@@ -28,10 +28,6 @@ import {
 import { applyRecipe } from "@/features/canvas/recipes";
 import { generationFingerprint } from "@/workflow/freshness";
 import { analysisMarkdown } from "@/features/recording/report";
-import { render } from "../../../site/src/render";
-import { documentsFor, documentLink, routes } from "../../../site/src/content";
-import { en as siteEn, zhCN as siteZhCN } from "../../../site/src/messages";
-import { documentSlugs, hasSiteRoute } from "../../../site/src/routes";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -279,82 +275,31 @@ describe("translation coverage and static documentation", () => {
     }
     expect(frozen).toEqual([]);
   });
-  it("keeps the lightweight route list aligned with the static documentation", () => {
-    expect(documentsFor("zh-CN").map((doc) => doc.slug)).toEqual(documentSlugs);
-    for (const route of routes) expect(hasSiteRoute(route)).toBe(true);
-    expect(hasSiteRoute("/en/docs/models")).toBe(true);
-    expect(hasSiteRoute("/docs/does-not-exist/")).toBe(false);
-    expect(hasSiteRoute("/docs-other/")).toBe(false);
-  });
-  it("renders useful, localized error pages for unknown home and docs paths", () => {
-    const chinese = render("/not-a-page/");
-    const english = render("/en/docs/not-a-guide/");
-    expect(chinese.notFound).toBe(true);
-    expect(chinese.title).toBe("页面未找到 · 画语");
-    expect(chinese.html).toContain('href="/docs/getting-started/"');
-    expect(english.notFound).toBe(true);
-    expect(english.title).toBe("Page not found · huayu");
-    expect(english.html).toContain('href="/en/"');
-    expect(english.html).toContain('href="/en/docs/getting-started/"');
-    expect(english.html).not.toContain("<h1>Getting started</h1>");
-  });
   it("uses semantic keys with both translations at every literal call site", () => {
-    for (const [dir, chinese, english] of [
-      [resolve(import.meta.dirname, ".."), zhCN, en],
-      [resolve(import.meta.dirname, "../../../site/src"), siteZhCN, siteEn],
-    ] as const)
-      for (const file of files(dir).filter(
-        (file) =>
-          /\.tsx?$/.test(file) &&
-          !file.includes(".test.") &&
-          !file.endsWith("messages.ts"),
-      ))
-        for (const key of literalKeys(file)) {
-          expect(key, file).toMatch(
-            /^[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+$/,
-          );
-          expect(chinese[key], `${file}: ${key} (zh-CN)`).toBeTruthy();
-          expect(english[key], `${file}: ${key} (en)`).toBeTruthy();
-        }
+    for (const file of files(resolve(import.meta.dirname, "..")).filter(
+      (file) =>
+        /\.tsx?$/.test(file) &&
+        !file.includes(".test.") &&
+        !file.endsWith("messages.ts"),
+    ))
+      for (const key of literalKeys(file)) {
+        expect(key, file).toMatch(/^[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+$/);
+        expect(zhCN[key], `${file}: ${key} (zh-CN)`).toBeTruthy();
+        expect(en[key], `${file}: ${key} (en)`).toBeTruthy();
+      }
   });
   it("keeps interpolation parameters equivalent in both language catalogs", () => {
     const placeholders = (text: string) =>
       [
         ...new Set([...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1])),
       ].sort();
-    for (const [chinese, english] of [
-      [zhCN, en],
-      [siteZhCN, siteEn],
-    ]) {
-      expect(Object.keys(english).sort()).toEqual(Object.keys(chinese).sort());
-      for (const key of Object.keys(chinese))
-        expect(key).toMatch(/^[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+$/);
-      for (const [key, message] of Object.entries(english))
-        for (const text of typeof message === "string"
-          ? [message]
-          : [message.one, message.other])
-          expect(placeholders(text), key).toEqual(placeholders(chinese[key]));
-    }
-  });
-  it("prerenders every English guide with English titles and keeps docs links in English", () => {
-    expect(documentsFor("en")).toHaveLength(documentsFor("zh-CN").length);
-    for (const doc of documentsFor("en")) {
-      expect(doc.title).not.toMatch(/[\p{Script=Han}]/u);
-      const page = render(`/en/docs/${doc.slug}/`);
-      expect(page.locale).toBe("en");
-      expect(page.title).toContain("huayu Docs");
-      expect(page.html).toContain('href="/en/docs/getting-started/"');
-      for (const destination of documentsFor("en")) {
-        expect(page.html, `Navigation to ${destination.slug}`).toContain(
-          `href="/en/docs/${destination.slug}/"`,
-        );
-      }
-    }
-    expect(routes).toHaveLength(46);
-    expect(documentLink("./MODEL_SETUP.md", "en")).toBe("/en/docs/models/");
-    expect(documentLink("./MODEL_SETUP.md", "zh-CN")).toBe("/docs/models/");
-    expect(documentLink("../../licenses/MPL-2.0.txt", "en")).toBe(
-      "/licenses/MPL-2.0.txt",
-    );
+    expect(Object.keys(en).sort()).toEqual(Object.keys(zhCN).sort());
+    for (const key of Object.keys(zhCN))
+      expect(key).toMatch(/^[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+$/);
+    for (const [key, message] of Object.entries(en))
+      for (const text of typeof message === "string"
+        ? [message]
+        : [message.one, message.other])
+        expect(placeholders(text), key).toEqual(placeholders(zhCN[key]));
   });
 });

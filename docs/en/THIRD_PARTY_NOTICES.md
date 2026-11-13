@@ -4,7 +4,7 @@ The repository’s MIT license covers only application content it may license. I
 
 ## Source projects
 
-AI cards and chart editors derive from MenteX; prompts and business behavior reference the MenteX modules in tpk-admin. Application records, adapters, card integration and exports were implemented in this project. Fixed commits and authorization limits are in [Open-source licensing](./LICENSING.md). Original brand PNG, ICO and site assets are excluded from distribution; the current SVG icon is original and screenshots use local test materials.
+AI cards and chart editors derive from MenteX; prompts and business behavior reference the MenteX modules in tpk-admin. Application records, adapters, card integration and exports were implemented in this project. Fixed commits and authorization limits are in [Open-source licensing](./LICENSING.md). Original brand PNG, ICO and site assets are excluded from distribution; the current SVG icon is original.
 
 MenteX metadata names `flowerdance` and MIT. tpk-admin’s MIT Composer declaration still describes the Laravel skeleton. Neither checked commit had an independent license file; the latter does not independently establish redistribution rights for custom business code and prompts. Preserve rightsholders’ interests and [source notices](../../licenses/SOURCE-NOTICES.txt).
 

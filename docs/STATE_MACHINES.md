@@ -1,6 +1,6 @@
 # 状态生命周期清单
 
-本清单记录本轮排查的 56 组状态及处理结果，覆盖主应用、官网、Rust 服务端和开发进程。范围包含相互约束的标志、异步请求、资源所有权及持久化检查点。
+本清单记录本轮排查的 54 组状态及处理结果，覆盖主应用、Rust 服务端和开发进程。范围包含相互约束的标志、异步请求、资源所有权及持久化检查点。
 
 “已调整”表示本轮修改了状态表达或转换边界；“保留”表示已有枚举、派生值、单一开关或资源所有权能表达当前行为，核对后保留。保留项不代表完成了所有运行时场景的穷举验证。
 
@@ -76,7 +76,7 @@
 | 44 | [检查器与焦点](../apps/web/src/features/canvas/excalidraw/NodeInspector.tsx) | 保留 | 可空目标 ID 已表达打开和关闭；模型设置交接使用 Shell 的互斥覆盖层。 |
 | 45 | [原生工具、样式和缩放](../apps/web/src/features/canvas/excalidraw/ToolbarTools.tsx)、[样式面板](../apps/web/src/features/canvas/excalidraw/StylesPanel.tsx)、[缩放菜单](../apps/web/src/features/canvas/excalidraw/ZoomMenu.tsx) | 保留 | 工具选择、弹层开关、DOM 焦点是独立维度，由原生编辑器状态及菜单组件负责。 |
 
-## 应用外壳、列表与官网
+## 应用外壳与列表
 
 | 编号 | 流程与源码 | 处理 | 状态与约束 |
 | --- | --- | --- | --- |
@@ -88,9 +88,7 @@
 | 51 | [延迟加载](../apps/web/src/components/ui/loading-region.tsx)、[错误边界](../apps/web/src/components/common/ErrorBoundary.tsx) | 保留 | 显示延迟由清理过的定时器管理；React 错误边界已有正常与失败分支。 |
 | 52 | [主题](../apps/web/src/lib/theme.tsx)、[语言](../apps/web/src/i18n/index.ts)、[设置](../apps/web/src/components/SettingsDialog.tsx) | 保留 | 用户偏好与解析后的有效值是不同维度，保留现有枚举和派生逻辑。 |
 | 53 | [侧栏动画](../apps/web/src/components/SidebarProjectHighlight.tsx) | 保留 | 动画句柄、当前目标和卸载清理承担生命周期；展开与移动端可见性仍为独立开关。 |
-| 54 | [官网导航](../apps/site/src/components/SiteChrome.tsx)、[示例预览](../apps/site/src/features/examples/CanvasPreview.tsx) | 保留 | 菜单和示例由现有选择值或单一开关表示，保留焦点、事件与卸载清理。 |
-| 55 | [官网复制反馈](../apps/site/src/pages/DocsPage.tsx) | 已调整 | `idle / copying / copied / failed`；复制期间禁止重复操作，结果文案从当前语言派生。其他示例选择和滚动显现保留。 |
-| 56 | [数据库迁移](../apps/api-rust/crates/huayu-store/src/lib.rs)、[开发进程](../scripts/dev.ts) | 保留 | 迁移版本与数据库事务、子进程句柄与单向停止标志已表达生命周期；本轮不新增迁移。 |
+| 54 | [数据库迁移](../apps/api-rust/crates/huayu-store/src/lib.rs)、[开发进程](../scripts/dev.ts) | 保留 | 迁移版本与数据库事务、子进程句柄与单向停止标志已表达生命周期；本轮不新增迁移。 |
 
 ## 回归验证重点
 

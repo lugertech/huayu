@@ -38,7 +38,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["scripts/**/*.ts", "apps/site/*.ts", "vite.config.ts"],
+        files: ["scripts/**/*.ts", "vite.config.ts"],
         rules: {
           "constructor-super": "error",
           "for-direction": "error",
@@ -108,7 +108,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["apps/{web,site}/**/*.{ts,tsx}"],
+        files: ["apps/web/**/*.{ts,tsx}"],
         rules: {
           "constructor-super": "error",
           "for-direction": "error",
@@ -186,7 +186,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["apps/{web,site}/src/**/*.{ts,tsx}"],
+        files: ["apps/web/src/**/*.{ts,tsx}"],
         rules: {
           "react/rules-of-hooks": "error",
           "react/exhaustive-deps": "error",

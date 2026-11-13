@@ -1,6 +1,6 @@
 # 前端运行依赖许可清单
 
-版本来自当前锁文件的应用和介绍页生产依赖树，许可来自安装包元数据。此清单不包含 Rust crate 和开发工具。第三方软件、字体和素材继续保留原许可；双重许可按其适用分支处理，见 [第三方许可说明](../THIRD_PARTY_NOTICES.md)。
+版本来自当前锁文件的应用生产依赖树，许可来自安装包元数据。此清单不包含 Rust crate 和开发工具。第三方软件、字体和素材继续保留原许可；双重许可按其适用分支处理，见 [第三方许可说明](../THIRD_PARTY_NOTICES.md)。
 
 | 软件包 | 版本 | 许可 |
 | --- | --- | --- |
@@ -33,7 +33,6 @@
 | @pdf-lib/fontkit | 1.1.1 | MIT |
 | @pdf-lib/standard-fonts | 1.0.0 | MIT |
 | @pdf-lib/upng | 1.0.1 | MIT |
-| @phosphor-icons/react | 2.1.10 | MIT |
 | @radix-ui/primitive | 1.2.0 | MIT |
 | @radix-ui/react-arrow | 1.1.17 | MIT |
 | @radix-ui/react-collection | 1.2.0 | MIT |

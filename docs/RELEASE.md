@@ -11,8 +11,7 @@
 | 系统录屏 | 待真实授权验收 | 至少在首发目标浏览器执行实际屏幕选择、麦克风、系统声音、暂停、继续、保存和回看；注明系统差异 |
 | 全新安装 | 本机通过 | 干净源码安装、前后端完整构建、独立启动、新建绘图、撤销重做、导出导入与服务重启恢复均已检查；范围为当前 macOS 环境 |
 | 目标平台 | 本机 macOS 已检查；其他待 CI | GitHub 的 Linux、macOS、Windows 检查实际通过；未验证的平台不写成已支持 |
-| 仓库与报告入口 | 待建立 | 设置公开仓库、真实反馈入口与私密漏洞报告；同步官网与 SECURITY，不使用占位地址 |
-| 官网发布 | 本地可审阅，待部署 | 配置正式仓库和域名，部署静态文件，检查首页、文档、图片和刷新 |
+| 仓库与报告入口 | 待建立 | 设置公开仓库、真实反馈入口与私密漏洞报告；同步文档与 SECURITY，不使用占位地址 |
 
 没有授权依据时，不应直接把来源内容标为已经完成 MIT 授权。来源仓库没有明确授予的部分需要权利依据或独立实现。参考 [Choose a License 对未授权代码的说明](https://choosealicense.com/no-permission/)。
 
@@ -29,7 +28,6 @@ vp run test
 sh scripts/cargo.sh fmt --all -- --check
 sh scripts/cargo.sh clippy --workspace --all-targets --locked -- -D warnings
 vp run build:web
-vp run build:site
 vp pm audit --prod --audit-level high
 vp run package:source
 ```
@@ -40,7 +38,7 @@ vp run package:source
 
 正式发布时，先在目标提交的干净检出目录完成安全检查、发布检查和构建测试，再执行归档。打包命令不触发检查，也不自动发布。
 
-CI 配置会在三个桌面平台执行编译、测试、Rust 格式与 lint、前端及官网构建，并单独检查生产依赖高危通告。工作流尚未在远端运行时，应明确记为“已配置，待运行”。
+CI 配置会在三个桌面平台执行编译、测试、Rust 格式与 lint、前端构建，并单独检查生产依赖高危通告。工作流尚未在远端运行时，应明确记为“已配置，待运行”。
 
 初始发布检查通过前端 120 项、Rust 集成 7 项和发布工具 6 项测试；当时生产依赖审计为零条已知通告。Excalidraw 的 Radix Tabs 和 Popover 已分别升级至兼容 React 19 的 1.2.1 和 1.3.1，`pnpm peers check` 不再报告版本范围问题。原生标签、弹层及键盘回归结果见[本地验证记录](./VERIFICATION.md)。后续更新仍需保留目标平台 CI 与真实浏览器回归；此结果不等于完整安全审计或所有模型兼容性证明。
 

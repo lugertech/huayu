@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: voidzero-dev/setup-vp@v1.22.0
         with:
-          version: 1.5.1
+          version: 1.6.0
           node-version: "24.22.1"
           cache: true
           run-install: false
@@ -42,7 +42,6 @@ jobs:
       - name: Rust lint
         run: vp run lint:rust
       - run: vp run build:web
-      - run: vp run build:site
       - run: vp run package:source
 
   dependencies:
@@ -52,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: voidzero-dev/setup-vp@v1.22.0
         with:
-          version: 1.5.1
+          version: 1.6.0
           node-version: "24.22.1"
           cache: true
           run-install: false

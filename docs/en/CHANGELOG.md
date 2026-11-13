@@ -15,7 +15,7 @@ The first local open-source preview, for personal creation and learning.
 - Screen recording and media import, segmented transcription, analysis, timestamp navigation and excerpts to canvas.
 - Local SQLite and attachments, browser-only model settings, recovery, import/export and light/dark appearance.
 - English and Simplified Chinese interfaces, browser-language detection, remembered choices, localized prompts and bilingual site documentation.
-- User guides, static official site, source-archive checks and cross-platform CI configuration.
+- User guides, source-archive checks and cross-platform CI configuration.
 - Redesigned site with a split hero, muted green accents, real template workflows, refreshed bilingual desktop/mobile product screenshots, and consistent documentation, navigation and appearance styles.
 
 Before public release, complete the authorization, real-model, system-recording and target-platform gates in the [Release checklist](./RELEASE.md). This describes the current candidate, not completion of those gates.

@@ -4,9 +4,9 @@
 
 ## 安装与启动
 
-先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`，并准备 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本，以及 Rust 1.95。项目使用 Vite+ 1.5.1，`vp install` 会使用锁定的 pnpm 12.11.2。Windows 建议使用 Git Bash 执行仓库中的命令。录屏长音轨处理建议安装 FFmpeg 与 ffprobe，并确认它们位于 PATH 中。
+先按 [Vite+ 安装指南](https://viteplus.dev/guide/) 安装 `vp`，并准备 Node.js 22.18 或更高的 22.x 版本、24.11 或更高的 24.x 版本，或 Node.js 26 及以上版本，以及 Rust 1.95。项目使用 Vite+ 1.6.0，`vp install` 会使用锁定的 pnpm 12.11.2。Windows 建议使用 Git Bash 执行仓库中的命令。录屏长音轨处理建议安装 FFmpeg 与 ffprobe，并确认它们位于 PATH 中。
 
-先确认 `vp --version`、`node --version`、`rustc --version` 与 `cargo --version` 可用。需要安装 Rust 时使用 [Rust 官方安装说明](https://www.rust-lang.org/tools/install)。已有工具链放在独立目录时，可按根目录 README 在 `.env` 中设置 `HUAYU_RUST_TOOLCHAIN_DIR`；该目录包含 `.cargo/` 和 `.rustup/`，无需把本机路径写进源码。
+先确认 `vp --version`、`node --version`、`rustc --version` 与 `cargo --version` 可用。需要安装 Rust 时使用 [Rust 官方安装说明](https://www.rust-lang.org/tools/install)。已有工具链放在独立目录时，在仓库根目录的 `.env` 中将 `HUAYU_RUST_TOOLCHAIN_DIR` 指向包含 `.cargo/` 和 `.rustup/` 的目录。
 
 取得项目源码并进入根目录后执行：
 
@@ -30,11 +30,11 @@ vp run start
 
 ## 界面语言
 
-应用与官网支持简体中文和 English。首次访问按浏览器首选语言匹配，不支持的语言回退英文。在「设置 → 通用 → 语言」中手动选择后，偏好保存在当前浏览器；「跟随浏览器」恢复自动检测。官网页首也提供语言入口，英文文档可直接访问。不同来源与端口的偏好独立保存。已有项目名称、提示词、转写及作品内容不会被自动翻译。
+应用支持简体中文和 English。首次访问按浏览器首选语言匹配，不支持的语言回退英文。在「设置 → 通用 → 语言」中手动选择后，偏好保存在当前浏览器；「跟随浏览器」恢复自动检测。已有项目名称、提示词、转写及作品内容不会被自动翻译。
 
 ## 完成第一次创作
 
-1. 在项目页选择写作示例，或者新建空白项目并添加文字素材。
+1. 在项目页顶部选择「灵感写作」，或者点击「创建新项目」打开空白画布并添加文字素材。
 2. 在「设置 → 模型连接」中配置文本生成服务。服务地址填写 API 根地址，例如 `http://localhost:11434/v1`；模型名称需要与服务实际提供的名称一致。
 3. 回到画布，添加创作指令组件，写下要求，并将文字素材连到指令组件。
 4. 点击指令组件右上角的运行按钮。生成结果会显示在相连的文本组件中。

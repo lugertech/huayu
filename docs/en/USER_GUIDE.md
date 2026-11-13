@@ -6,7 +6,7 @@ Draw, write text, upload images and files. Click a component on the left to add 
 
 The component palette sits at the canvas's left edge and shows icons by default. Hover to reveal names, then move away to collapse it. Keyboard focus also reveals names. Drag a component to see the full card follow your pointer, then release to place it. Press Esc or drag back to the palette to cancel. Each placement can be undone in one step.
 
-The canvas fills the content area's height. The top-left back arrow returns directly to the project list, with a tooltip explaining the action. The canvas name sits beside it. Edits save automatically in the background, without a persistent save label. Connection or saving problems appear at the bottom right with a retry action. The top right provides online members, invitations, recording, export and the whiteboard menu. Hover over icons for their labels. Narrow windows place these controls on separate rows.
+The top-left back arrow returns to the project list. The canvas name sits beside it. Edits save automatically. Connection or saving problems appear at the bottom right with a retry action. At the top right, you can invite collaborators, start recording, or open the canvas menu. Hover over icons to see their labels.
 
 Click Run on any node to execute that node and its downstream steps in connection order. Nodes show progress while running. Click a node's Stop button to stop that run.
 
@@ -18,11 +18,11 @@ Everything lives on one infinite canvas. When opening a legacy multi-page projec
 
 Ctrl + wheel zooms the canvas even while hovering over a card. Ordinary wheel scrolling still scrolls long text inside cards.
 
-Connect materials to the component you want to run, and write requests in an instruction component. Image upload/download and ratio, web search, audio and file actions, page tools and chart type controls stay inside their components in the original MenteX positions. Text components have no extra action bar. Recording excerpts become editable text with source links.
+Connect materials to the component you want to run, and write requests in an instruction component. Find image, audio, file, web page, and chart actions inside their respective cards. Recording excerpts become editable text with source links.
 
-### Whiteboard menu and keyboard shortcuts
+### Canvas menu and keyboard shortcuts
 
-- **Whiteboard menu**, at the end of the top-right icon group, provides import, export, search, commands, help, appearance and canvas background settings.
+- **Canvas menu**, at the top right, contains export, Save as example, canvas language, help, and background settings. To import a project, use **Import project** on the Projects page.
 - Select a shape or drawing tool to adjust strokes, fills and line styles on the canvas's right side. Wide canvases show the full panel; narrow desktops and tablets show a compact icon rail. Click an icon to open its settings, then click the canvas or press Esc to close them. Long panels scroll. On phones, the bottom style button opens settings; component and drawing tools return when settings close.
 - Click the zoom percentage at the bottom left to open the zoom menu, restore 100%, fit all content or focus the selection.
 - Select a shape or click a card header, then press **Delete / Backspace** to remove it. The **⌫** key on Mac keyboards is Backspace.
@@ -32,15 +32,15 @@ Connect materials to the component you want to run, and write requests in an ins
 - **Copy as PNG / SVG** in the context menu includes actual card content. Use **Alt / Option + Shift + C** to copy as PNG. Locking a card through the context menu also locks its content and controls; use the context menu to unlock it.
 - Press **Enter** with a card selected, or double-click its header, to open its content. Native shapes, text and images retain the whiteboard's own editing and cropping interactions.
 - With the canvas focused, use **Cmd / Ctrl + A** to select all, **Cmd / Ctrl + G** to group, **Cmd / Ctrl + Shift + G** to ungroup, arrow keys to move elements and **Cmd / Ctrl + K** to edit an element link. The sidebar search icon still opens project search.
-- Open **Whiteboard menu → Help**, or the bottom-right help button, for the full shortcut list.
+- Open **Canvas menu → Help** for the full shortcut list.
 
-## Template library
+## Example projects
 
-The project home keeps the original four quick starts and adds 20 scenario templates, for 24 built-in templates. Search or filter the library, then create an independent project. Replace the sample material before running the steps you need.
+On the Projects page, open **Example projects** to browse by category or search. Click **View** to create your own editable project. The quick-start cards at the top also open common examples.
 
 Opening, editing and saving a template project do not need a model key. Text templates require text generation; image and narration workflows also need their respective connections. Run text branches separately if needed, then run the whole workflow once its connections are ready. Six complete examples include authored text, illustrations and pages to explore and edit. These are not measured outputs from a particular model.
 
-| New template | Main output | Connections |
+| Example | Main output | Connections |
 | --- | --- | --- |
 | Friday launch · review to action | Timestamped recap, action list and review page | Text |
 | Weekly update and next steps | Weekly update, next steps, DOCX | Text |
@@ -65,7 +65,7 @@ Opening, editing and saving a template project do not need a model key. Text tem
 
 ## Complete examples
 
-Six projects marked **Complete example** open with source material, instructions, branching connections and authored work. No key is needed to read, view illustrations, try the prototype, edit or export the project. A model connection is needed when you actively generate new work.
+Complete examples include source material, instructions, connected steps, and finished work. You can read the text, view illustrations, try the prototype, edit, or export the project. To generate new work, configure the relevant model connection.
 
 - **Pine Coffee:** 11 components and 16 connections, from positioning to two posters, a product page and release checks.
 - **Lighthouse Letters:** 12 components and 19 connections. Connected chapters and matching illustrations become a complete reading edition and introduction page.
@@ -74,9 +74,9 @@ Six projects marked **Complete example** open with source material, instructions
 - **Why cities hold heat:** 10 components and 14 connections. Distinguish notes, illustrative observations and evidence limits before creating an explainer, map, infographic and exercises.
 - **Friday launch:** 11 components and 17 connections. Timestamped transcript material branches into decisions, ownership, open questions and follow-up copy. The transcript is authored sample content without an attached real recording.
 
-Open an example on the website to zoom its workflow, select a card, and switch between **Content & work** and **Creative instruction**. The Flow page is interactive in the preview. On the local website, **Use it in Huayu** opens the app filtered to the matching template; select the template to create an independent project. A public website links to the template instructions instead.
+Open **Projects → Example projects** in huayu and choose a project to explore its materials, instructions and results, then continue editing.
 
-To continue, change source material and run the steps you need. Text and pages use text generation; reading image inputs requires vision, and creating new images requires image generation. Missing connections show the relevant setup guidance and preserve existing example work. The original four quick starts and fourteen other scenario templates remain available. Existing projects are not rewritten.
+To continue, change the source material and run the steps you need. Text and web pages use text generation. Reading image inputs requires a vision connection, and creating images requires image generation.
 
 ## Project library
 
@@ -183,7 +183,7 @@ Use the previous-version button or version list to view existing versions. Cropp
 | `.excalidraw` | Canvas and images; AI cards contain snapshots and recoverable data |
 | Markdown / HTML / image | Take an individual work into other tools |
 
-Import from the project page. Compatible Excalidraw and legacy tldraw JSON can also be read. Keep the original file; unsupported third-party extensions may not retain identical behavior.
+Use **Import project** on the Projects page to open a `.huayu.json` file or a compatible `.excalidraw` file.
 
 Project imports and complete `.huayu.json` exports share a 128 MiB limit. An oversized export reports an error before creating a download; split the content before trying again.
 

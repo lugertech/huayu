@@ -1,8 +1,0 @@
-quiet-morning.jpg
-Created for Huayu in October 2026 using AI image generation.
-An example material for the official site's canvas demonstration and product screenshots.
-No third-party stock image is included.
-
-results-*.jpg and en/results-*.jpg
-Captured locally from Huayu in November 2026 with authored example content.
-Desktop and mobile captures show the current product interface.

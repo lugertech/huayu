@@ -33,7 +33,7 @@ export async function checkRelease(root: string) {
   const packageInfo = JSON.parse(
     await readFile(resolve(root, "package.json"), "utf8"),
   );
-  for (const path of ["apps/web/package.json", "apps/site/package.json"]) {
+  for (const path of ["apps/web/package.json"]) {
     const info = JSON.parse(await readFile(resolve(root, path), "utf8"));
     if (info.version !== packageInfo.version || info.license !== "MIT")
       issues.push(`Version/license mismatch: ${path}`);

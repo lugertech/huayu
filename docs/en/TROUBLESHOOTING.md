@@ -14,7 +14,7 @@ Browser storage is per origin. `localhost`, `127.0.0.1` and different ports may 
 
 ## Language does not match the browser
 
-An explicit choice in **Settings → General → Language** overrides browser detection. Choose **Browser default** to follow the browser again. English and Simplified Chinese are supported; unmatched languages fall back to English. The official site has its own header control. Existing project names, prompts and results retain their original language.
+An explicit choice in **Settings → General → Language** overrides browser detection. Choose **Browser default** to follow the browser again. English and Simplified Chinese are supported; unmatched languages fall back to English. Existing project names, prompts and results retain their original language.
 
 ## A recording has no audio or system audio is unavailable
 

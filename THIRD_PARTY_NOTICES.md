@@ -4,7 +4,7 @@
 
 ## 原项目
 
-AI 节点、图表编辑器来自 MenteX；提示词及业务行为参考 tpk-admin 的 MenteX 模块。应用记录存储、兼容转换、AI 卡片及导出接入由本项目实现。原仓库及固定版本见 [README](./README.md#来源与许可)。原品牌 PNG、ICO 和网页素材已移出分发目录；当前图标为本项目绘制的 SVG，介绍页截图使用本地测试素材。
+AI 节点、图表编辑器来自 MenteX；提示词及业务行为参考 tpk-admin 的 MenteX 模块。应用记录存储、兼容转换、AI 卡片及导出接入由本项目实现。原仓库及固定版本见 [来源仓库与版本](./docs/LICENSING.md#两个来源仓库)。原品牌 PNG、ICO 和网页素材已移出分发目录；当前图标为本项目绘制的 SVG。
 
 MenteX 的根包声明作者为 `flowerdance`、许可为 MIT。tpk-admin 的 `composer.json` 声明 MIT，但名称和描述仍是 Laravel 骨架项目。两个固定提交均未找到独立许可正文；后者的模板声明不能单独确认自有业务代码与提示词的公开再分发授权。保留原作者和权利人的权益，原项目包元数据也不重新许可其中的第三方 SDK、品牌或素材。完整核对范围见 [开源许可](./docs/LICENSING.md)，原始元数据摘要见 [SOURCE-NOTICES.txt](./licenses/SOURCE-NOTICES.txt)。
 

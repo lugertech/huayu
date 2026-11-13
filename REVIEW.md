@@ -28,7 +28,7 @@
 | 改动范围 | 检查 |
 | --- | --- |
 | 文档、链接及辅助脚本 | `vp run check:security`、`vp run check:release`；脚本修改补跑 `vp run check:scripts` 和 `vp run test:release` |
-| 前端行为 | `vp run check`、`vp run test`，以及受影响应用的 `vp run build:web` 或 `vp run build:site` |
+| 前端行为 | `vp run check`、`vp run test`，以及 `vp run build:web` |
 | Rust 行为 | `sh scripts/cargo.sh fmt --all -- --check`、`vp run lint:rust`、`vp run check`、`vp run test` |
 | 界面交互 | 实际操作受影响流程，提供已脱敏的截图和结果；自动检查不能替代浏览器验证 |
 

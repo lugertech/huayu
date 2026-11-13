@@ -57,15 +57,3 @@ export type TemplateSummary = Omit<
   showcase?: true;
   cover: { zhCN: string; en: string };
 };
-export type ShowcasePreset = Omit<TemplatePreset, "nodes" | "showcase"> & {
-  showcase: NonNullable<TemplatePreset["showcase"]>;
-  nodes: Array<
-    Pick<
-      TemplatePreset["nodes"][number],
-      "id" | "type" | "column" | "row" | "name"
-    > & {
-      en: { name: string };
-      preview: { text: string; en: string; image?: string; enImage?: string };
-    }
-  >;
-};

@@ -4,72 +4,6 @@ import type { TemplatePreset } from "../templates/types.ts";
 const catalog: TemplatePreset[] = JSON.parse(
   await readFile(new URL("../templates/catalog.json", import.meta.url), "utf8"),
 );
-const illustrations = new Map(
-  await Promise.all(
-    [
-      ...new Set(
-        catalog.flatMap((preset) =>
-          preset.nodes.flatMap((node) => (node.artwork ? [node.artwork] : [])),
-        ),
-      ),
-    ].map(async (name) => {
-      const [zh, en] = await Promise.all(
-        ["zh-CN", "en"].map((locale) =>
-          readFile(
-            new URL(`../templates/art/${name}-${locale}.svg`, import.meta.url),
-            "utf8",
-          ),
-        ),
-      );
-      return [
-        name,
-        {
-          zh: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(zh)}`,
-          en: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(en)}`,
-        },
-      ] as const;
-    }),
-  ),
-);
-const richIndex = catalog.map((template) => ({
-  id: template.id,
-  recipe: template.recipe,
-  kind: template.kind,
-  name: template.name,
-  description: template.description,
-  tag: template.tag,
-  en: template.en,
-  ...(template.showcase ? { showcase: template.showcase } : {}),
-  nodes: template.nodes.map((node) => ({
-    id: node.id,
-    type: node.type,
-    column: node.column,
-    row: node.row,
-    name: node.name,
-    en: { name: node.en.name },
-    preview: {
-      text: (node.props.result || node.text)
-        .replace(/[#*|[\]]/g, "")
-        .slice(0, 180),
-      en: (node.en.props?.result || node.en.text)
-        .replace(/[#*|[\]]/g, "")
-        .slice(0, 180),
-      ...(node.props.src
-        ? {
-            image: node.props.src,
-            enImage: node.en.props?.src || node.props.src,
-            ...(node.artwork
-              ? {
-                  image: illustrations.get(node.artwork)!.zh,
-                  enImage: illustrations.get(node.artwork)!.en,
-                }
-              : {}),
-          }
-        : {}),
-    },
-  })),
-  edges: template.edges,
-}));
 function templatePreview(preset: TemplatePreset, locale: string) {
   if (preset.showcase)
     return locale === "en" ? preset.showcase.en.cover : preset.showcase.cover;
@@ -164,20 +98,14 @@ for (const template of catalog.filter((item) => !item.showcase)) {
     }
   }
 }
-const showcase = richIndex.filter((template) => template.showcase);
-for (const [name, data] of [
-  ["index", index],
-  ["showcase", showcase],
-]) {
-  const path = new URL(`../templates/${name}.json`, import.meta.url);
-  if (process.argv.includes("--check")) {
-    const current = JSON.parse(await readFile(path, "utf8"));
-    if (JSON.stringify(current) !== JSON.stringify(data))
-      throw new Error(
-        `Template ${name} is stale. Run node scripts/generate-template-index.ts, then format the template JSON files.`,
-      );
-  } else await writeFile(path, JSON.stringify(data, null, 2) + "\n");
-}
+const path = new URL("../templates/index.json", import.meta.url);
+if (process.argv.includes("--check")) {
+  const current = JSON.parse(await readFile(path, "utf8"));
+  if (JSON.stringify(current) !== JSON.stringify(index))
+    throw new Error(
+      "Template index is stale. Run node scripts/generate-template-index.ts, then format the template JSON files.",
+    );
+} else await writeFile(path, JSON.stringify(index, null, 2) + "\n");
 console.log(
-  `Checked ${index.length} lightweight summaries and ${showcase.length} complete example previews.`,
+  `Checked ${index.length} lightweight template summaries and generated covers.`,
 );

@@ -58,28 +58,8 @@ Stop the service before restoring. Put the database and attachments back togethe
 
 Project exports support individual project transfer. They do not replace a full-instance or recording-library backup. Browser model settings and unsaved drafts are separate.
 
-## Official site and docs
-
-The independent static site is in `apps/site`; it requires neither the application API nor a database.
-
-```sh
-vp run dev:site
-vp run build:site
-vp run preview:site
-```
-
-Development and preview use `http://127.0.0.1:5863`. Deploy `apps/site/dist/` to a static host. Home and documentation routes are prerendered HTML, including English under `/en/`; direct refresh does not need an SPA fallback. The first home-page visit detects browser language, and manual language choices are remembered. Links retain the selected language.
-
-| Build variable | Purpose |
-| --- | --- |
-| `SITE_BASE` | Absolute path prefix ending in `/`; default `/`, for example `/huayu/` |
-| `VITE_PUBLIC_REPOSITORY_URL` | Real public repository URL; unset hides the source link |
-| `VITE_PUBLIC_SITE_URL` | Official site URL for canonical links, language alternates and sitemap |
-
-Use real public URLs before publishing, then verify docs, images, metadata, language switching and mobile layouts. Never place local model URLs or private content in build variables.
-
 ## Access boundaries
 
 The service computer manages the workspace. Other devices need a valid collaboration link and can edit only its canvas. The independent collaborator interface excludes project lists, the global asset library, recordings and project/share management. Management access is determined by the connection originating from the service computer, not by an account or tenant system; direct workspace access on that computer remains privileged.
 
-The development proxy forwards the client address. Other reverse proxies must supply a trustworthy `X-Forwarded-For` instead of disguising remote requests as local traffic. Do not expose the API directly to the internet. Public deployments still need external authentication, TLS, access control and maintenance. Publishing the independent static site does not expose local projects.
+The development proxy forwards the client address. Other reverse proxies must supply a trustworthy `X-Forwarded-For` instead of disguising remote requests as local traffic. Do not expose the API directly to the internet. Public deployments still need external authentication, TLS, access control and maintenance.

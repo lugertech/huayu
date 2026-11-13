@@ -13,7 +13,7 @@ vp install --frozen-lockfile
 vp run dev
 ```
 
-The interface uses `http://127.0.0.1:5173`, the API uses port 5858, and `vp run dev:site` serves independent docs on port 5863. Use isolated data directories and test connections for recording and model work; do not use another person’s projects or real keys as fixtures.
+The interface uses `http://127.0.0.1:5173` and the API uses port 5858. Use isolated data directories and test connections for recording and model work; do not use another person’s projects or real keys as fixtures.
 
 ## Contribution requirements
 
@@ -23,7 +23,7 @@ The interface uses `http://127.0.0.1:5173`, the API uses port 5858, and `vp run 
 - Format frontend code with Oxfmt bundled in Vite+: two-space indentation, double quotes, semicolons and a target width of 80 columns. Run `vp run format` to format code and `vp run lint` to check basic code errors, unused variables, React Hooks calls and hook dependencies. Declare one variable per statement; extract complex JSX conditions and event handlers into clearly named variables or functions.
 - Add meaningful regressions for data conversion, saving, cancellation and recovery. Low-risk layout changes do not need mechanical tests.
 - Add both Chinese and English UI copy and preserve interpolation parameters. Keep machine identifiers and user content independent of translated labels. Update both language versions of affected user docs.
-- Use semantic translation keys organized by capability, such as `t("canvas.share.title")`. The application and site each keep Chinese and English copy in their own `locales/zh-CN.ts` and `locales/en.ts` files. Add each key to both catalogs and preserve matching interpolation parameters. Do not pass Chinese source text, user content or arbitrary API messages directly to `t()`.
+- Use semantic translation keys organized by capability, such as `t("canvas.share.title")`. The application keeps Chinese and English copy in its `locales/zh-CN.ts` and `locales/en.ts` files. Add each key to both catalogs and preserve matching interpolation parameters. Do not pass Chinese source text, user content or arbitrary API messages directly to `t()`.
 - Retain third-party copyrights and licenses. Submit only code, prompts, fonts and assets you may license. New contributions use MIT unless explicitly agreed otherwise.
 
 Before submitting:
@@ -34,7 +34,6 @@ vp run check:release
 vp run check
 vp run test
 vp run build:web
-vp run build:site
 sh scripts/cargo.sh fmt --all -- --check
 vp run lint:rust
 ```
