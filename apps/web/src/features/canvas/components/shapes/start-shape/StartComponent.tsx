@@ -33,7 +33,7 @@ export function StartComponent({ shape }: { shape: StartShape }) {
                 title: t("workflow.status.failed"),
                 description: errorText(error, locale),
                 variant: "destructive",
-                action: modelSettingsAction(error, locale),
+                action: modelSettingsAction(error, t),
               });
           })
         }

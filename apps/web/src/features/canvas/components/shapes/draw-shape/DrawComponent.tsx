@@ -37,7 +37,7 @@ export function DrawComponent({ shape }: { shape: DrawShape }) {
                 title: t("canvas.drawing.drawingFailed"),
                 description: errorText(error, locale),
                 variant: "destructive",
-                action: modelSettingsAction(error, locale),
+                action: modelSettingsAction(error, t),
               });
           });
         }}

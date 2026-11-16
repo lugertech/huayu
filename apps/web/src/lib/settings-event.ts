@@ -1,4 +1,4 @@
-import { t, type Locale } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 import type { Capability } from "@/ai/settings";
 import { ModelConnectionError } from "@/ai/errors";
 
@@ -8,10 +8,13 @@ export function openModelSettings(capability: Capability = "text") {
     new CustomEvent(OPEN_SETTINGS_EVENT, { detail: capability }),
   );
 }
-export function modelSettingsAction(error: unknown, locale: Locale) {
+export function modelSettingsAction<Label>(
+  error: unknown,
+  labelFor: (key: MessageKey) => Label,
+) {
   if (error instanceof ModelConnectionError)
     return {
-      label: t("models.connection.openSettings", undefined, locale),
+      label: labelFor("models.connection.openSettings"),
       onClick: () => openModelSettings(error.capability),
     };
 }

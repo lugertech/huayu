@@ -132,8 +132,9 @@ export function normalizeSession(
 export class Editor {
   private interaction = { tool: "select" };
   private bridge?: RenderBridge;
+  private currentLocale?: Locale;
+  private readonly localeListeners = new Set<() => void>();
   theme: "light" | "dark" = "light";
-  locale?: Locale;
   styles = {
     color: "black",
     fill: "none",
@@ -159,6 +160,20 @@ export class Editor {
   }
   subscribe = (listener: () => void) => this.store.subscribe(listener);
   getVersion = () => this.store.getVersion();
+  get locale() {
+    return this.currentLocale;
+  }
+  set locale(locale: Locale | undefined) {
+    if (this.currentLocale === locale) return;
+    this.currentLocale = locale;
+    this.localeListeners.forEach((listener) => listener());
+  }
+  subscribeLocale = (listener: () => void) => {
+    this.localeListeners.add(listener);
+    return () => {
+      this.localeListeners.delete(listener);
+    };
+  };
   get session(): CanvasSession {
     const current = this.store.session;
     if (!current || current.version !== 1)

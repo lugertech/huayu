@@ -5,12 +5,12 @@ import { useCallback, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface ToastOptions {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   variant?: "default" | "destructive";
   duration?: number;
   dedupeKey?: string;
-  action?: { label: string; onClick: () => void };
+  action?: { label: ReactNode; onClick: () => void };
 }
 export function ToastProvider({ children }: { children: ReactNode }) {
   useLocale();

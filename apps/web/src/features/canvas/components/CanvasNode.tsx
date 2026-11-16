@@ -1,5 +1,4 @@
 import { LocalizedError } from "@/i18n/errors";
-import { errorText } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -29,18 +28,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { ComponentToolSelect } from "./ComponentToolSelect";
 import { ComponentConnectionDots } from "./ComponentConnectionDots";
 import { ComponentHeader } from "./ComponentHeader";
+import { canvasErrorToast } from "./CanvasErrorToast";
 import { requestInspection } from "@/workflow/context";
-import { modelSettingsAction } from "@/lib/settings-event";
 import { isSharedCanvas } from "@/lib/canvas-access";
 import { IMAGE_RATIOS } from "@/workflow/results";
 import { componentPlaceholder } from "@/config/components";
 import { formatDuration } from "@/features/recording/duration";
 import { applyComponentUpload, uploadComponentFile } from "@/workflow/uploads";
 import { previewHTML } from "../../results/WebPreview";
-import {
-  useToast,
-  type ToastOptions,
-} from "../../../components/common/ToastProvider";
+import { useToast } from "@/components/common/ToastProvider";
 import {
   runWorkflow,
   useNodeBusy,
@@ -100,16 +96,8 @@ export function CanvasNode({
   function update(updates: Partial<NodeData>) {
     editor.updateShape({ id: shape.id, type: shape.type, props: updates });
   }
-  function failed(error: unknown, action?: ToastOptions["action"]) {
-    showToast({
-      title: t("common.operationFailed"),
-      description:
-        error instanceof Error
-          ? errorText(error, locale)
-          : t("common.tryAgain"),
-      variant: "destructive",
-      action: modelSettingsAction(error, locale) ?? action,
-    });
+  function failed(error: unknown, retry?: () => void) {
+    showToast(canvasErrorToast(editor, error, retry));
   }
   async function run() {
     try {
@@ -125,10 +113,7 @@ export function CanvasNode({
         });
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError"))
-        failed(error, {
-          label: t("common.retry"),
-          onClick: () => void run(),
-        });
+        failed(error, () => void run());
     }
   }
   async function upload(file: File) {
