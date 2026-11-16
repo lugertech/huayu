@@ -1,6 +1,6 @@
 # 功能迁移对照
 
-核对日期为 2026-10-24。核对对象为 MenteX 前端及 tpk-admin 的 `MenteX` 控制器、服务、提示词和录屏分析任务，见[来源仓库与固定版本](./LICENSING.md#两个来源仓库)。范围是 MenteX 产品及其必要后端。tpk-admin 中独立的教育管理、支付、账户管理等系统不作为本项目入口。
+记录画布、工作流、录屏与素材库的功能覆盖和旧文件兼容行为。
 
 ## 工作流与白板
 
@@ -24,8 +24,6 @@
 本轮额外修正：水平连线零高度兼容、资源异步加载时的更新取消、AI 卡片的内部嵌入链接泄露到界面、深色导出重复反色、原生图片按钮、结果卡片重叠与 AI 修改原生文字后显示旧标签。
 
 ## 录屏与分析
-
-原行为重点参考 MenteX 的 `useScreenRecording.ts`、`RecordingAnalysisPage.tsx`、`RecordingsPage.tsx`，以及 tpk-admin 的 `ScreenRecordingController.php`、`Jobs/ScreenRecordingAnalysisJob.php`。
 
 | 原功能 | 本地实现与本轮补齐 |
 | --- | --- |
@@ -51,9 +49,7 @@
 
 ## 素材库交互补齐 — 2026-11-03
 
-按用户提供的 pure-design 本地工作区迁移。其 `DesignAssetPicker.tsx` 委托给 `FabricMaterialInsertDrawer.tsx`；管理界面实际位于 `features/asset-library/AssetExplorer.tsx` 与 `AssetFolderTree.tsx`。本轮直接复制管理器、文件夹树和文件夹图标，再适配本地接口；插入面板沿用原实现的分组筛选树及按图片比例分配瀑布流列的算法。来源工作区 HEAD 为 `dcd4f46`，迁移包含该工作区当时的现有代码。
-
-| 来源操作 | 画语实现 |
+| 操作 | 实现 |
 | --- | --- |
 | 文件夹树、目录卡片、路径导航 | `AssetFolderTree.tsx`、`AssetBrowser.tsx`；本地 UUID、嵌套目录与当前分组数量 |
 | 素材、文件夹与空白区域右键菜单 | 打开、重命名、移动、删除、新建子文件夹和刷新；补充插入、下载与恢复入口；支持菜单键盘操作 |

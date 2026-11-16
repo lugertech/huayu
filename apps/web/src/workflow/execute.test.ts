@@ -25,7 +25,7 @@ vi.mock("@/api/backend", () => ({
   blobAsDataURL: vi.fn(async () => "data:image/png;base64,local-context"),
   extractAPIData: (response: any) => response,
 }));
-vi.mock("@/api/mentex", () => ({ generateChart: mocks.chart }));
+vi.mock("@/api/canvas-components", () => ({ generateChart: mocks.chart }));
 vi.mock("@/features/canvas/agent-sse", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/canvas/agent-sse")>()),
   callAgentSSE: mocks.agent,

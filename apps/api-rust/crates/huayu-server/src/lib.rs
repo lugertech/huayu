@@ -1,6 +1,7 @@
 //! Local Axum application. The server never receives model connection settings or API keys.
 
 mod access;
+mod documents;
 mod error;
 mod files;
 mod i18n;
@@ -44,6 +45,7 @@ pub struct Config {
     pub address: SocketAddr,
     pub data_dir: PathBuf,
     pub web_dir: PathBuf,
+    pub document_python: PathBuf,
 }
 
 impl Config {
@@ -62,6 +64,9 @@ impl Config {
             web_dir: env::var_os("HUAYU_WEB_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| PathBuf::from("apps/web/dist")),
+            document_python: env::var_os("HUAYU_DOCUMENT_PYTHON")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from(if cfg!(windows) { "python" } else { "python3" })),
         })
     }
 }
@@ -70,6 +75,7 @@ impl Config {
 pub(crate) struct AppState {
     store: Store,
     data_dir: PathBuf,
+    document_python: PathBuf,
     address: SocketAddr,
     mutations: Arc<Mutex<()>>,
     rooms: Arc<Mutex<HashMap<String, projects::Room>>>,
@@ -98,6 +104,7 @@ impl Application {
         let state = AppState {
             store,
             data_dir: config.data_dir.clone(),
+            document_python: config.document_python.clone(),
             address: config.address,
             mutations: Arc::new(Mutex::new(())),
             rooms: Arc::new(Mutex::new(HashMap::new())),

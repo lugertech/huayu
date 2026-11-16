@@ -5,7 +5,7 @@
 ```text
 apps/
   web/                  React、Vite、shadcn/ui（Base UI）、Excalidraw、React Flow
-    src/ai/             浏览器模型连接、调用和从原后端移入的提示词
+    src/ai/             浏览器模型连接、调用与提示词
     src/pages/          路由页面入口、页面级请求与状态
     src/features/       按业务组织组件、状态、纯计算与测试
       canvas/           画布界面、引擎、Excalidraw 适配、同步与导入导出
@@ -35,19 +35,18 @@ Rust API 参考 timetable `apps/api-rust` 的 workspace、薄二进制入口、�
 
 项目列表只加载 `templates/index.json` 中的元数据与本地封面地址；流程封面由目录预先生成，完整素材、指令与作品随画布模块按需加载。原创 SVG 保存在 `templates/art/`，同包的 PNG 用于画布图片与模型参考输入。修改目录后运行 `node scripts/generate-template-index.ts` 更新模板索引与流程封面，再运行格式化；Web 构建会检查生成物是否一致。
 
-MenteX 的 AI 节点、连接点及图表编辑器保留并适配主题。原 tldraw 依赖由 MIT 许可的 Excalidraw 替换。保留应用记录模型兼容旧项目，双向转换原生图形、箭头绑定、分组、页面和图片；原生扩展字段、压感和路径保存在记录中。React 组件覆盖在原生几何上，几何选择、拖动、缩放、绑定和历史操作由 Excalidraw 管理，不生成内部嵌入链接。执行流程统一到 `workflow`，避免事件递归导致循环调用或重复运行。tpk-admin 的 MenteX 业务迁移到 Rust；提示词和模型编排移动到前端。
+Excalidraw 管理画布几何、选择、拖动、缩放、绑定和历史操作。React 负责 AI 卡片及其连线端口，React Flow 负责图表编辑。场景适配层双向转换原生图形、箭头绑定、分组、页面和图片，保留兼容旧项目所需的记录格式及原生扩展字段、压感和路径数据。`workflow` 统一规划和执行工作流。提示词和模型编排在浏览器中运行，Rust 负责本地接口与持久化。
 
 | 原模块 | 新实现 |
 | --- | --- |
-| NestJS 项目代理、Laravel 项目存储 | Rust 项目接口与 SQLite |
+| 项目代理与存储 | Rust 项目接口与 SQLite |
 | tldraw 云房间/原鉴权同步 | 本地记录补丁与 Axum WebSocket |
-| Laravel 模板、标签与复制 | 本地模板库与 24 个内置模板 |
-| 指令、图片、音频、网页、图表、文件生成 | 浏览器 OpenAI 兼容客户端及原业务提示词 |
+| 模板、标签与复制 | 本地模板库与 24 个内置模板 |
+| 指令、图片、音频、网页、图表、文件生成 | 浏览器 OpenAI 兼容客户端及提示词 |
 | 云文件上传、OSS/COS 附件 | UUID 命名的本地附件文件 |
-| 云文档解析 | Rust 本地文本、PDF、DOCX、工作簿解析 |
+| 文档解析 | Rust 读取 UTF-8 文本。PDF、DOCX、XLS、XLSX 和 ODS 由本地 Python 进程转换为 Markdown |
 | 云录屏与服务端分析队列 | 浏览器录制、本地 FFmpeg 分段解码、浏览器模型请求及可继续的本地检查点 |
 | 登录、用户、会员、积分、充值、支付 | 移除 |
-| tpk-admin 中与 MenteX 无关的教育管理模块 | 不引入新项目 |
 
 原云数据库中的项目、模板和录屏不在源码仓库中，因此不会自动出现在新实例。可通过兼容的项目 JSON 导入已有画布；不访问或迁移原生产数据库。
 

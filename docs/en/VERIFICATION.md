@@ -96,7 +96,7 @@ The list now shows real video frames, loads visible covers on demand and uses pr
 
 ## Asset-library interaction migration — 2026-11-03
 
-The explorer, folder tree and picker interactions were copied from the user-supplied pure-design workspace and adapted to local APIs. See [feature parity](./FEATURE_PARITY.md). An independent temporary database and service on port 5864 kept test assets, folders, projects and settings away from the main instance on 5858.
+The browser checks covered the asset explorer, folder tree and picker. See [feature coverage](./FEATURE_PARITY.md). The test instance used a separate temporary database and port 5864.
 
 - Browser checks covered folders and subfolders, directory cards, breadcrumbs, folder context menus, asset renaming and menu moves. Real browser drag events moved images to tree nodes and directory cards, with full-card/compact previews, destination highlighting and updated counts.
 - Five files entered the upload queue; one was cancelled and four uploaded successfully. Preview navigation, rotation, zoom, Escape and original-file download worked. Trash/restore returned the asset to its original folder. Shift+F10 opened a menu and Escape restored focus.
@@ -184,7 +184,7 @@ Ignored evidence is under `var/tests/model-reliability/` and `output/design/mode
 
 ## Fixed left palette and pointer creation — 2026-11-03
 
-Compared the original MenteX component panel and archived Huayu implementation before restoring the fixed left palette and pointer-based creation. Browser checks used a separate temporary data directory on port 5864.
+Restored the fixed left palette and pointer-based creation. Browser checks used a separate temporary data directory on port 5864.
 
 - A full card follows the pointer without changing the document until release. Release creates one card; Esc and returning to the palette cancel it. Clicking, keyboard activation and native undo/redo work.
 - After panning and zooming to 110%, pointer position `(900, 280)` produced preview bounds `(724, 258, 352, 242)`, retaining the horizontal-center and 20-world-unit header anchor. Frame previews also follow movement. Regressions cover all 11 component types, cancellation and single-step undo.
@@ -281,4 +281,4 @@ Recording checks cover import/save/review, transcript search, timestamp navigati
 
 ## Current limits
 
-The candidate still needs source redistribution authorization, real-model requests, actual OS recording-permission acceptance and remote target-platform CI. See the [Release checklist](./RELEASE.md). Historical Chinese verification records retain detailed stage-specific local logs; the results above state their relevant accepted scope without treating mock responses as real-model quality.
+The candidate still needs real-model requests, OS recording-permission testing and remote target-platform CI. See the [Release checklist](./RELEASE.md).

@@ -16,6 +16,8 @@ vp run start
 
 Open <http://127.0.0.1:5858> and try a built-in example. You can draw, edit, and export without a model connection. For AI generation or transcription, add a service in **Settings → Model connections**.
 
+To import PDFs, DOCX files or workbooks, [install the document parsing dependencies](./docs/en/DEPLOYMENT.md#document-parsing) on the machine running Huayu.
+
 Projects and recordings are saved on the machine running Huayu. Model settings and API keys are stored only in your browser. When you use a remote model, the browser sends the selected inputs directly to that service.
 
 ## What you can do
@@ -30,4 +32,4 @@ Projects and recordings are saved on the machine running Huayu. Model settings a
 
 ## License
 
-Huayu’s own code and documentation use the [MIT License](./LICENSE). For source attribution and redistribution status, see [Licensing](./docs/en/LICENSING.md) and [Third-party notices](./docs/en/THIRD_PARTY_NOTICES.md).
+Huayu’s own code and documentation use the [MIT License](./LICENSE). See [Licensing](./docs/en/LICENSING.md) and [Third-party notices](./docs/en/THIRD_PARTY_NOTICES.md) for the applicable terms and acknowledgments.

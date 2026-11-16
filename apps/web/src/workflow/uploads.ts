@@ -5,7 +5,7 @@ import {
   extractAPIData,
   uploadFileAPI,
 } from "@/api/backend";
-import { validateFile } from "@/api/mentex";
+import { validateFile } from "@/api/canvas-components";
 import type { NodeData } from "./execute";
 import { nodeIsBusy } from "./execute";
 import type { Editor } from "@/features/canvas/editor";

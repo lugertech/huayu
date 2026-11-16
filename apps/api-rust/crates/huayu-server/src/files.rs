@@ -1,7 +1,4 @@
-use std::{
-    io::{Cursor, Read},
-    path::Path as FilePath,
-};
+use std::path::Path as FilePath;
 
 use axum::{
     Extension, Json,
@@ -10,7 +7,6 @@ use axum::{
     http::{HeaderValue, header},
     response::{IntoResponse, Response},
 };
-use calamine::{Reader, open_workbook_auto_from_rs};
 use huayu_core::Asset;
 use huayu_store::Store;
 use serde::Serialize;
@@ -20,7 +16,7 @@ use tower::ServiceExt;
 use tower_http::services::ServeFile;
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState, ErrorCode, access::CanvasAccess};
+use crate::{ApiError, ApiResult, AppState, ErrorCode, access::CanvasAccess, documents};
 
 pub(crate) const MAX_FILE_NAME_CHARS: usize = 240;
 pub(crate) const MAX_UPLOAD_BYTES: usize = 512 * 1024 * 1024;
@@ -195,87 +191,11 @@ pub(crate) async fn parse(
         .and_then(|value| value.to_str())
         .unwrap_or("")
         .to_lowercase();
-    let bytes = tokio::fs::read(&*upload.path)
-        .await
-        .map_err(ApiError::internal)?;
-    let text = tokio::task::spawn_blocking(move || extract_document(&bytes, &extension))
-        .await
-        .map_err(ApiError::internal)??;
+    let text = documents::extract(&upload.path, &extension, &state.document_python).await?;
     let _guard = state.mutations.lock().await;
     access.ensure_active(&state).await?;
     Ok(Json(ParsedDocument {
         asset: upload.save(&state.store, access.project_id()).await?.into(),
         text,
     }))
-}
-
-fn extract_document(bytes: &[u8], extension: &str) -> ApiResult<String> {
-    let text = match extension {
-        "pdf" => pdf_extract::extract_text_from_mem(bytes)
-            .map_err(|_| ApiError::new(ErrorCode::PdfTextUnreadable))?,
-        "docx" => {
-            let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
-                .map_err(|_| ApiError::new(ErrorCode::InvalidDocx))?;
-            let file = archive
-                .by_name("word/document.xml")
-                .map_err(|_| ApiError::new(ErrorCode::DocxBodyMissing))?;
-            if file.size() > 8 * 1024 * 1024 {
-                return Err(ApiError::new(ErrorCode::DocxBodyTooLarge));
-            }
-            let mut xml = String::new();
-            file.take(8 * 1024 * 1024 + 1)
-                .read_to_string(&mut xml)
-                .map_err(|_| ApiError::new(ErrorCode::DocxBodyUnreadable))?;
-            let document = roxmltree::Document::parse(&xml)
-                .map_err(|_| ApiError::new(ErrorCode::InvalidDocxBody))?;
-            let mut text = String::new();
-            for paragraph in document.descendants().filter(|node| node.has_tag_name("p")) {
-                for node in paragraph
-                    .descendants()
-                    .filter(|node| node.has_tag_name("t"))
-                {
-                    if let Some(value) = node.text() {
-                        text.push_str(value);
-                    }
-                }
-                text.push('\n');
-            }
-            text
-        }
-        "xlsx" | "xls" | "ods" => {
-            let mut workbook = open_workbook_auto_from_rs(Cursor::new(bytes.to_vec()))
-                .map_err(|_| ApiError::new(ErrorCode::WorkbookUnreadable))?;
-            let mut text = String::new();
-            for name in workbook.sheet_names() {
-                let range = workbook
-                    .worksheet_range(&name)
-                    .map_err(|_| ApiError::new(ErrorCode::WorksheetUnreadable))?;
-                text.push_str(&format!("[{name}]\n"));
-                for row in range.rows() {
-                    text.push_str(
-                        &row.iter()
-                            .map(ToString::to_string)
-                            .collect::<Vec<_>>()
-                            .join("\t"),
-                    );
-                    text.push('\n');
-                    if text.len() > 4 * 1024 * 1024 {
-                        return Err(ApiError::new(ErrorCode::WorkbookTextTooLarge));
-                    }
-                }
-            }
-            text
-        }
-        "txt" | "md" | "csv" | "tsv" | "json" | "yaml" | "yml" | "xml" | "html" | "css" | "js" => {
-            String::from_utf8(bytes.to_vec())
-                .map_err(|_| ApiError::new(ErrorCode::TextNotUtf8))?
-                .trim_start_matches('\u{feff}')
-                .to_owned()
-        }
-        _ => return Err(ApiError::new(ErrorCode::UnsupportedDocumentFormat)),
-    };
-    if text.len() > 4 * 1024 * 1024 {
-        return Err(ApiError::new(ErrorCode::DocumentTextTooLarge));
-    }
-    Ok(text)
 }

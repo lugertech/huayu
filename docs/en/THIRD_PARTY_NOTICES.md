@@ -2,12 +2,6 @@
 
 The repository’s MIT license covers only application content it may license. It does not relicense third-party software or assets.
 
-## Source projects
-
-AI cards and chart editors derive from MenteX; prompts and business behavior reference the MenteX modules in tpk-admin. Application records, adapters, card integration and exports were implemented in this project. Fixed commits and authorization limits are in [Open-source licensing](./LICENSING.md). Original brand PNG, ICO and site assets are excluded from distribution; the current SVG icon is original.
-
-MenteX metadata names `flowerdance` and MIT. tpk-admin’s MIT Composer declaration still describes the Laravel skeleton. Neither checked commit had an independent license file; the latter does not independently establish redistribution rights for custom business code and prompts. Preserve rightsholders’ interests and [source notices](../../licenses/SOURCE-NOTICES.txt).
-
 ## Excalidraw
 
 The canvas uses [Excalidraw 0.18.1](https://github.com/excalidraw/excalidraw/tree/v0.18.1), under MIT without a license-key requirement. See [retained license](../../licenses/excalidraw-MIT.txt). This project uses the open-source editor library, not its hosted rooms, accounts, analytics or paid services.
@@ -34,6 +28,8 @@ Pressure-sensitive stroke outlines use `perfect-freehand` 1.2.3 under [MIT](../.
 See [Dependency licenses](./DEPENDENCY_LICENSES.md) for production package metadata and [npm notices](../../licenses/npm-NOTICES.txt) for complete retained texts. Multi-license packages use a permissive branch when available; `MIT AND Zlib` requires both. External FFmpeg tools are not bundled and follow the terms of the user’s installed build.
 
 Builds copy notices to `assets/licenses/` for distribution alongside the frontend.
+
+Document parsing uses separately installed Python packages. Its direct dependencies include [MarkItDown (MIT)](https://github.com/microsoft/markitdown/blob/v0.1.9/LICENSE) and [odfpy (Apache-2.0 license option)](https://pypi.org/project/odfpy/1.4.1/) for ODS. See [requirements-documents.txt](../../apps/api-rust/requirements-documents.txt) for versions.
 
 ## BeautifulRust
 

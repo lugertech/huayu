@@ -22,6 +22,7 @@ Copy `.env.example` to `.env` if needed. The startup scripts read the root `.env
 | `HUAYU_PORT` | `5858` | Service port |
 | `HUAYU_DATA_DIR` | `var/dev` | Database and attachments |
 | `HUAYU_WEB_DIR` | `apps/web/dist` | Frontend build directory |
+| `HUAYU_DOCUMENT_PYTHON` | `python3` on macOS/Linux, `python` on Windows | Python executable with the document parsing dependencies installed |
 | `RUST_LOG` | `huayu_server=info,tower_http=warn` | Local logging |
 
 Relative paths are based on the repository root. When launching the binary directly, set environment variables yourself and check the working directory or use appropriate paths.
@@ -29,6 +30,30 @@ Relative paths are based on the repository root. When launching the binary direc
 The development launcher and Web proxy share `HUAYU_HOST` and `HUAYU_PORT`: values in the root `.env` take precedence, followed by the process environment and then the defaults above. Restart development processes after changing them; the `/api`, `/uploads` and WebSocket proxies follow automatically. Development requires a port from 1 to 65535. Wildcard bind addresses use the corresponding loopback address as the proxy target.
 
 Browser connections, language choices and drafts belong to an origin. Moving files or changing ports does not transfer browser data. Configure connections again at the new origin.
+
+## Document parsing
+
+PDF, DOCX, XLS, XLSX and ODS are converted to Markdown on the machine running Huayu. For these formats, install [Python 3.12](https://www.python.org/downloads/) and run the following commands from the repository root.
+
+macOS and Linux
+
+```sh
+python3 -m venv var/tools/markitdown
+var/tools/markitdown/bin/python -m pip install --upgrade pip
+var/tools/markitdown/bin/python -m pip install -r apps/api-rust/requirements-documents.txt
+```
+
+Add `HUAYU_DOCUMENT_PYTHON=var/tools/markitdown/bin/python` to the root `.env`.
+
+Windows (Git Bash)
+
+```sh
+python -m venv var/tools/markitdown
+var/tools/markitdown/Scripts/python.exe -m pip install --upgrade pip
+var/tools/markitdown/Scripts/python.exe -m pip install -r apps/api-rust/requirements-documents.txt
+```
+
+Add `HUAYU_DOCUMENT_PYTHON=var/tools/markitdown/Scripts/python.exe` to the root `.env`. Restart Huayu after setting the path. PDFs must contain selectable text. Scans require OCR before import.
 
 ## Local-network collaboration
 

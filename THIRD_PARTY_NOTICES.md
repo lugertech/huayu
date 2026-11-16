@@ -2,12 +2,6 @@
 
 本仓库的 MIT 许可仅覆盖有权按 MIT 提供的应用代码，不重新许可任何第三方依赖或素材。
 
-## 原项目
-
-AI 节点、图表编辑器来自 MenteX；提示词及业务行为参考 tpk-admin 的 MenteX 模块。应用记录存储、兼容转换、AI 卡片及导出接入由本项目实现。原仓库及固定版本见 [来源仓库与版本](./docs/LICENSING.md#两个来源仓库)。原品牌 PNG、ICO 和网页素材已移出分发目录；当前图标为本项目绘制的 SVG。
-
-MenteX 的根包声明作者为 `flowerdance`、许可为 MIT。tpk-admin 的 `composer.json` 声明 MIT，但名称和描述仍是 Laravel 骨架项目。两个固定提交均未找到独立许可正文；后者的模板声明不能单独确认自有业务代码与提示词的公开再分发授权。保留原作者和权利人的权益，原项目包元数据也不重新许可其中的第三方 SDK、品牌或素材。完整核对范围见 [开源许可](./docs/LICENSING.md)，原始元数据摘要见 [SOURCE-NOTICES.txt](./licenses/SOURCE-NOTICES.txt)。
-
 ## Excalidraw
 
 白板使用 [`@excalidraw/excalidraw` 0.18.1](https://github.com/excalidraw/excalidraw/tree/v0.18.1)，采用 MIT 许可，允许免费商用，无许可证密钥要求。完整原版权与许可保存在 [excalidraw-MIT.txt](./licenses/excalidraw-MIT.txt)。本项目使用开源编辑器库，不接入 Excalidraw 的云端房间、账号、分析统计或付费服务。
@@ -36,6 +30,8 @@ MenteX 的根包声明作者为 `flowerdance`、许可为 MIT。tpk-admin 的 `c
 React Markdown、remark-gfm、Excalidraw 的间接依赖及其他运行包的固定版本和许可元数据见 [DEPENDENCY_LICENSES.md](./docs/DEPENDENCY_LICENSES.md)。安装包内的许可与版权文本汇集于 [npm-NOTICES.txt](./licenses/npm-NOTICES.txt)；缺失的核心库许可单独保存在本目录。多重许可包选择 MIT 或 Apache-2.0 等宽松分支；`MIT AND Zlib` 同时遵守两项条件。外部 FFmpeg 工具不随本仓库分发，遵守用户安装版本自身的许可。
 
 生产构建会将本目录的许可正文复制到 `assets/licenses/`，使单独分发构建产物时仍携带版权与许可说明。
+
+文档解析的 Python 依赖由部署者单独安装。直接依赖包括 [MarkItDown（MIT）](https://github.com/microsoft/markitdown/blob/v0.1.9/LICENSE) 和用于读取 ODS 的 [odfpy（含 Apache-2.0 许可选项）](https://pypi.org/project/odfpy/1.4.1/)。版本见 [requirements-documents.txt](./apps/api-rust/requirements-documents.txt)。
 
 ## BeautifulRust
 

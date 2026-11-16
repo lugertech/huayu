@@ -70,7 +70,11 @@ JSON、查询参数、multipart 和请求方法等入口拒绝也返回相同的
 
 更新项目时，省略 `cover` 保留原封面，传入 `"cover": null` 清除封面。单独更新封面不改变文档修订号或编辑时间。
 
-普通附件的文件内容上限为 512 MiB，上传请求额外预留 64 KiB 容纳 multipart 边界和字段头，不占用文件内容额度。文档解析上传限于 10 MiB。只有成功提取文本后才保存附件；解析失败或上传超限时不保留文件或附件记录。
+普通附件的文件内容上限为 512 MiB。上传请求额外预留 64 KiB 容纳 multipart 边界和字段头。
+
+文档解析返回 `{ "asset": ..., "text": "..." }`。PDF、DOCX、XLS、XLSX、ODS 转为 Markdown。TXT、MD、CSV、TSV、JSON、YAML、YML、XML、HTML、CSS、JS 按 UTF-8 原文返回，移除开头的 BOM。上传上限为 10 MiB，文本上限为 4 MiB。DOCX、XLSX、ODS 的包内文件总量上限为 64 MiB，其中 DOCX 的 `word/document.xml` 上限为 8 MiB。成功时保存原始附件及其记录。
+
+文件损坏、格式不支持或内容超限返回 `422`。压缩包总量超限返回 `DOCUMENT_CONTENT_TOO_LARGE`，DOCX 正文超限返回 `DOCX_BODY_TOO_LARGE`，无法读取的 DOCX 和工作簿分别返回 `INVALID_DOCX` 和 `WORKBOOK_UNREADABLE`。解析依赖不可用返回 `503 DOCUMENT_PARSER_UNAVAILABLE`，排队和转换合计超过 30 秒返回 `504 DOCUMENT_PARSE_TIMEOUT`。失败时丢弃临时上传。[文档解析安装步骤](./DEPLOYMENT.md#文档解析)
 
 通过协作链接打开时，项目读取、文档补丁及 WebSocket 请求携带 `?share={share_token}`。关闭协作后，该链接返回 `403 COLLABORATION_CLOSED`，已连接的协作页面停止同步；重新开启会生成新链接。分享令牌更新后，使用旧令牌的 WebSocket 连接同样停止同步。协作者不能访问项目列表、其他项目、模板管理、全局素材库、录屏或分享管理接口；超出范围返回 `403 SHARED_SCOPE_FORBIDDEN`。
 

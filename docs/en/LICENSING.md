@@ -14,15 +14,6 @@ The root license covers only content the project is authorized to license. Depen
 
 New contributions are normally supplied under MIT, unless explicitly agreed otherwise. Contributors retain their copyright, submit only content they may license, and preserve applicable notices.
 
-## Source repositories
-
-Checked on 2026-10-24 against fixed local commits, not future repository versions:
-
-- **MenteX** — `8d9da964571dd26ea80056936ea8829804be07cf`. Root package metadata declares author `flowerdance` and MIT. No separate license text was found at that commit. Author, metadata and provenance are retained; bundled third-party SDKs and assets are not relicensed.
-- **tpk-admin** — `2d2c1bd8397712b81933b9380f9178a72d70af58`. Composer metadata declares MIT but still identifies the Laravel skeleton. No independent license or specific authorization for custom business modules was found. That field alone does not establish redistribution rights for the MenteX business code, prompts and assets. Obtain the rightsholder’s authorization before public distribution; choosing MIT does not replace it.
-
-Original metadata is retained in [SOURCE-NOTICES.txt](../../licenses/SOURCE-NOTICES.txt). No source repository license or history was changed.
-
 ## Dependencies
 
 Excalidraw, React, Base UI and React Flow retain their licenses. Fonts retain OFL or their stated terms. See [Dependency licenses](./DEPENDENCY_LICENSES.md).

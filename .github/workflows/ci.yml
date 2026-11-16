@@ -31,12 +31,21 @@ jobs:
         run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
       - name: Select Rust
         run: rustup default 1.95.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install document parsing dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r apps/api-rust/requirements-documents.txt
       - run: vp install --frozen-lockfile
       - run: vp run check:security
       - run: vp run check:release
       - run: vp run licenses:check
       - run: vp run check
       - run: vp run test
+        env:
+          HUAYU_DOCUMENT_PYTHON: python
       - name: Rust formatting
         run: cargo fmt --manifest-path apps/api-rust/Cargo.toml --all -- --check
       - name: Rust lint
@@ -56,4 +65,17 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
-      - run: vp pm audit --prod --audit-level high
+      - name: Audit frontend production dependencies
+        run: vp pm audit -- --prod --audit-level high
+
+  rust-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        with:
+          tool: cargo-audit@0.22.2
+          fallback: none
+      - name: Audit Rust dependencies
+        run: cargo audit --file apps/api-rust/Cargo.lock

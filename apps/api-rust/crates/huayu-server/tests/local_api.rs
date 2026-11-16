@@ -10,14 +10,19 @@ use tempfile::TempDir;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 use tower::ServiceExt;
 
-async fn application(directory: &TempDir) -> Application {
-    Application::new(Config {
+fn test_config(directory: &TempDir) -> Config {
+    Config {
         address: "127.0.0.1:0".parse().expect("valid loopback test address"),
         data_dir: directory.path().join("data"),
         web_dir: directory.path().join("web"),
-    })
-    .await
-    .expect("test application starts in its temporary directory")
+        ..Config::from_env().expect("valid test configuration")
+    }
+}
+
+async fn application(directory: &TempDir) -> Application {
+    Application::new(test_config(directory))
+        .await
+        .expect("test application starts in its temporary directory")
 }
 
 async fn request(router: &Router, method: &str, path: &str, body: Value) -> (StatusCode, Value) {
@@ -434,9 +439,8 @@ async fn database_paths_preserve_literal_url_characters() {
     let directory = TempDir::new().unwrap();
     let data_dir = directory.path().join("data #1%2Fcache &+中文");
     let config = Config {
-        address: "127.0.0.1:0".parse().unwrap(),
         data_dir: data_dir.clone(),
-        web_dir: directory.path().join("web"),
+        ..test_config(&directory)
     };
     let app = Application::new(config.clone()).await.unwrap();
     let (status, project) = request(
@@ -465,13 +469,83 @@ async fn database_paths_preserve_literal_url_characters() {
 }
 
 #[tokio::test]
+async fn document_upload_extracts_markdown_and_retains_the_original_attachments() {
+    let directory = TempDir::new().unwrap();
+    let router = application(&directory).await.router();
+    let workbook_markdown = "## Totals\n| Item | Units |\n| --- | --- |\n| Paper | 3 |";
+    let documents: [(&str, &str, &[u8], &str); 5] = [
+        (
+            "example.pdf",
+            "application/pdf",
+            include_bytes!("fixtures/example.pdf"),
+            "Huayu PDF example",
+        ),
+        (
+            "example.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            include_bytes!("fixtures/example.docx"),
+            "Huayu document example",
+        ),
+        (
+            "example.XLS",
+            "application/vnd.ms-excel",
+            include_bytes!("fixtures/example.xls"),
+            workbook_markdown,
+        ),
+        (
+            "example.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            include_bytes!("fixtures/example.xlsx"),
+            workbook_markdown,
+        ),
+        (
+            "example.ods",
+            "application/vnd.oasis.opendocument.spreadsheet",
+            include_bytes!("fixtures/example.ods"),
+            "## Totals\n|  |  |\n| --- | --- |\n| Paper | 3 |",
+        ),
+    ];
+    for (name, mime, bytes, expected) in documents {
+        let parsed = upload(&router, "/api/documents/parse", name, mime, bytes).await;
+        assert_eq!(parsed["text"].as_str().unwrap().trim(), expected, "{name}");
+        assert_eq!(parsed["asset"]["name"], name);
+        let asset_id = parsed["asset"]["id"].as_str().unwrap();
+        assert_eq!(
+            std::fs::read(directory.path().join("data/assets").join(asset_id)).unwrap(),
+            bytes,
+            "{name}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn failed_document_parsing_does_not_keep_uploaded_assets() {
     let directory = TempDir::new().unwrap();
     let router = application(&directory).await.router();
-    for (name, content) in [
-        ("broken.pdf", b"not a pdf".as_slice()),
-        ("unsupported.bin", b"unsupported".as_slice()),
-        ("broken.txt", &[0xff, 0xfe]),
+    for (name, content, code) in [
+        ("broken.pdf", b"not a pdf".as_slice(), "PDF_TEXT_UNREADABLE"),
+        ("broken.docx", b"not a docx".as_slice(), "INVALID_DOCX"),
+        (
+            "broken.xls",
+            b"not a spreadsheet".as_slice(),
+            "WORKBOOK_UNREADABLE",
+        ),
+        (
+            "broken.xlsx",
+            b"not a spreadsheet".as_slice(),
+            "WORKBOOK_UNREADABLE",
+        ),
+        (
+            "broken.ods",
+            b"not a spreadsheet".as_slice(),
+            "WORKBOOK_UNREADABLE",
+        ),
+        (
+            "unsupported.bin",
+            b"unsupported".as_slice(),
+            "UNSUPPORTED_DOCUMENT_FORMAT",
+        ),
+        ("broken.txt", &[0xff, 0xfe], "TEXT_NOT_UTF8"),
     ] {
         let response = multipart_request(
             &router,
@@ -486,23 +560,87 @@ async fn failed_document_parsing_does_not_keep_uploaded_assets() {
             StatusCode::UNPROCESSABLE_ENTITY,
             "file {name}"
         );
+        let bytes = to_bytes(response.into_body(), 1024).await.unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&bytes).unwrap()["code"],
+            code
+        );
     }
-    let oversized = vec![b'a'; 10 * 1024 * 1024 + 1];
-    let response = multipart_request(
-        &router,
-        "/api/documents/parse",
-        "large.txt",
-        "text/plain",
-        &oversized,
-    )
-    .await;
-    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    for (size, code) in [
+        (4 * 1024 * 1024 + 1, "DOCUMENT_TEXT_TOO_LARGE"),
+        (10 * 1024 * 1024 + 1, "DOCUMENT_UPLOAD_TOO_LARGE"),
+    ] {
+        let oversized = vec![b'a'; size];
+        let response = multipart_request(
+            &router,
+            "/api/documents/parse",
+            "large.txt",
+            "text/plain",
+            &oversized,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        let bytes = to_bytes(response.into_body(), 1024).await.unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&bytes).unwrap()["code"],
+            code
+        );
+    }
     assert_eq!(
         std::fs::read_dir(directory.path().join("data/assets"))
             .unwrap()
             .count(),
         0
     );
+}
+
+#[tokio::test]
+async fn missing_document_parser_leaves_no_attachment_and_text_uploads_still_work() {
+    let directory = TempDir::new().unwrap();
+    let app = Application::new(Config {
+        document_python: directory.path().join("missing-python"),
+        ..test_config(&directory)
+    })
+    .await
+    .unwrap();
+    let router = app.router();
+    let response = multipart_request(
+        &router,
+        "/api/documents/parse",
+        "example.pdf",
+        "application/pdf",
+        include_bytes!("fixtures/example.pdf"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(response.headers()["content-language"], "zh-CN");
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    let bytes = to_bytes(response.into_body(), 1024).await.unwrap();
+    assert_eq!(
+        serde_json::from_slice::<Value>(&bytes).unwrap(),
+        json!({
+            "code": "DOCUMENT_PARSER_UNAVAILABLE",
+            "message": "暂时无法解析文档",
+            "params": {},
+        })
+    );
+    assert_eq!(
+        std::fs::read_dir(directory.path().join("data/assets"))
+            .unwrap()
+            .count(),
+        0
+    );
+
+    let source = "\u{feff}<h1>画语</h1>\r\n\t末行  \n";
+    let parsed = upload(
+        &router,
+        "/api/documents/parse",
+        "source.html",
+        "text/html",
+        source.as_bytes(),
+    )
+    .await;
+    assert_eq!(parsed["text"], &source['\u{feff}'.len_utf8()..]);
 }
 
 #[tokio::test]

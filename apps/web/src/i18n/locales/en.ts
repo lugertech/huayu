@@ -155,6 +155,12 @@ export const en = {
   "api.errors.chooseAVideoOrAudioFile": "Choose a video or audio file",
   "api.errors.content": "Content",
   "api.errors.contentNotFound": "Content not found",
+  "api.errors.documentContentTooLarge":
+    "The document contains too much content. Split it into smaller files.",
+  "api.errors.documentParseTimeout":
+    "Document parsing timed out. Try again or split the file into smaller files.",
+  "api.errors.documentParserUnavailable":
+    "Document parsing is currently unavailable",
   "api.errors.documentsToParseCannotExceed10Mb":
     "Documents to parse can’t exceed 10 MB",
   "api.errors.filesCannotExceed512Mb": "Files can’t exceed 512 MB",
@@ -322,7 +328,7 @@ export const en = {
   "canvas.components.file.description":
     "Upload material or generate PDF, Word and other files",
   "canvas.components.file.help":
-    "Upload and read documents, or generate a file from a description. Supported inputs include text, Markdown, CSV, JSON, YAML, XML, HTML, CSS, JavaScript, PDF, DOCX and XLSX.",
+    "Upload a PDF, DOCX, XLSX, XLS, ODS or text file to extract its content. You can also describe a file to generate.",
   "canvas.components.file.placeholder":
     "Upload a file, or connect a step and run to generate one",
   "canvas.components.image.description":

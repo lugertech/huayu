@@ -14,15 +14,6 @@
 
 项目接受的新增贡献原则上也以 MIT 提供，除非双方另有明确约定。贡献者保留自身版权，只应提交自己有权许可的内容，并保留第三方版权及许可声明。
 
-## 两个来源仓库
-
-核对日期：2026-10-24。核对对象为本地固定提交，不代表之后的仓库版本。
-
-- **MenteX**：`8d9da964571dd26ea80056936ea8829804be07cf`。根 `package.json` 声明 `author: flowerdance`、`license: MIT`；该提交未找到独立的许可正文文件。保留作者、许可元数据及来源记录，不把第三方 SDK 或素材重新许可为 MIT。
-- **tpk-admin**：`2d2c1bd8397712b81933b9380f9178a72d70af58`。`composer.json` 声明 MIT，但名称和描述仍是 Laravel 骨架项目；该提交未找到独立许可文件或覆盖自有业务模块的专门授权。这个字段不足以单独确认 MenteX 业务代码、提示词及素材的对外再分发授权。正式公开这些来源内容前，需要权利人已有的授权依据；本次协议选择不代替这项授权。
-
-原始声明摘要随仓库保存在 [SOURCE-NOTICES.txt](../licenses/SOURCE-NOTICES.txt)。未向来源仓库写入许可或修改其历史声明。
-
 ## 依赖的不同许可
 
 Excalidraw、React、Base UI、React Flow 等保留原有许可。字体继续使用 OFL 或各自声明的许可。前端版本清单见 [DEPENDENCY_LICENSES.md](./DEPENDENCY_LICENSES.md)。

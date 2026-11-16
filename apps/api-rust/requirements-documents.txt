@@ -1,0 +1,2 @@
+markitdown[docx,pdf,xls,xlsx]==0.1.9
+odfpy==1.4.1

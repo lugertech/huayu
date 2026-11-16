@@ -28,6 +28,8 @@ vp run start
 
 Open [the built application](http://127.0.0.1:5858). Installing dependencies and the first Rust compilation require internet access. Once built, ordinary canvas editing does not need a model service.
 
+PDF, DOCX, XLS, XLSX and ODS imports require the local document parsing dependencies. UTF-8 text imports work with the base installation. [Document parsing setup](./DEPLOYMENT.md#document-parsing)
+
 ## Choose a language
 
 The application supports English and Simplified Chinese. On a first visit, the browser’s preferred languages determine the default; unsupported languages fall back to English. Choose a language in **Settings → General → Language**. A manual choice takes precedence and is remembered in the current browser. Choose **Browser default** to follow the browser again.

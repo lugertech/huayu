@@ -68,9 +68,7 @@ if (import.meta.main) {
     console.log(
       `Release checks passed: ${result.files.length} files, version ${result.version}.`,
     );
-    console.log(
-      "Publication readiness still follows docs/RELEASE.md, including source authorization and real-device/model acceptance.",
-    );
+    console.log("See docs/RELEASE.md for the full release checklist.");
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

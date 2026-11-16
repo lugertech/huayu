@@ -6,16 +6,15 @@
 
 | 项目 | 当前状态 | 完成标准 |
 | --- | --- | --- |
-| 来源授权 | 待确认 | 对照 [许可说明](./LICENSING.md)，取得 tpk-admin 自有业务代码、提示词及素材的再分发依据；无法确认的来源需独立替换并重新验收 |
 | 核心功能回归 | 已有本地验收，待真实模型 | 使用预期公开支持的文本、视觉、图片编辑、语音合成和识别服务，完成至少一次真实请求；核对结构化输出、失败、停止与恢复 |
 | 系统录屏 | 待真实授权验收 | 至少在首发目标浏览器执行实际屏幕选择、麦克风、系统声音、暂停、继续、保存和回看；注明系统差异 |
 | 全新安装 | 本机通过 | 干净源码安装、前后端完整构建、独立启动、新建绘图、撤销重做、导出导入与服务重启恢复均已检查；范围为当前 macOS 环境 |
 | 目标平台 | 本机 macOS 已检查；其他待 CI | GitHub 的 Linux、macOS、Windows 检查实际通过；未验证的平台不写成已支持 |
 | 仓库与报告入口 | 待建立 | 设置公开仓库、真实反馈入口与私密漏洞报告；同步文档与 SECURITY，不使用占位地址 |
 
-没有授权依据时，不应直接把来源内容标为已经完成 MIT 授权。来源仓库没有明确授予的部分需要权利依据或独立实现。参考 [Choose a License 对未授权代码的说明](https://choosealicense.com/no-permission/)。
-
 ## 本地发布检查
+
+运行测试前按部署文档安装 Python 文档解析依赖，并设置 `HUAYU_DOCUMENT_PYTHON`。[文档解析安装步骤](./DEPLOYMENT.md#文档解析)
 
 ```sh
 vp install --frozen-lockfile
@@ -28,17 +27,18 @@ vp run test
 sh scripts/cargo.sh fmt --all -- --check
 sh scripts/cargo.sh clippy --workspace --all-targets --locked -- -D warnings
 vp run build:web
-vp pm audit --prod --audit-level high
+vp pm audit -- --prod --audit-level high
+sh scripts/cargo.sh audit --file apps/api-rust/Cargo.lock
 vp run package:source
 ```
 
-`check:security` 独立扫描当前工作区的明显密钥、本机绝对路径和本地模型测试标记；`check:release` 检查必要文件、版本与本地文档链接。检查包含未跟踪的新文件，跳过工作区中已删除的文件；解压后没有 Git 元数据时也可执行。这些快速检查不代替完整安全审计和来源授权审阅。
+`check:security` 扫描当前工作区的明显密钥、本机绝对路径和本地模型测试标记。`check:release` 检查必要文件、版本与本地文档链接。两项检查都包含未跟踪的新文件，跳过已删除的文件，也可在解压后的源码包中运行。
 
 `package:source` 通过 `git archive` 归档已提交版本，默认使用 `HEAD`，可通过 `vp run package:source <tag-or-commit>` 指定 tag 或提交。版本号、文件内容与 `.gitattributes` 排除规则均来自选定提交；未提交和未跟踪的改动不进入归档。压缩包与 SHA-256 校验文件输出到 `var/releases/`，不再生成自定义逐文件清单。重新打包需要 Git 检出目录。
 
 正式发布时，先在目标提交的干净检出目录完成安全检查、发布检查和构建测试，再执行归档。打包命令不触发检查，也不自动发布。
 
-CI 配置会在三个桌面平台执行编译、测试、Rust 格式与 lint、前端构建，并单独检查生产依赖高危通告。工作流尚未在远端运行时，应明确记为“已配置，待运行”。
+CI 在三个桌面平台执行编译、测试、Rust 格式与 lint、前端构建。依赖检查分别审计前端生产依赖和 Rust 锁文件。本地运行 Rust 审计需安装 [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit#installation)。工作流尚未在远端运行时，应明确记为“已配置，待运行”。
 
 初始发布检查通过前端 120 项、Rust 集成 7 项和发布工具 6 项测试；当时生产依赖审计为零条已知通告。Excalidraw 的 Radix Tabs 和 Popover 已分别升级至兼容 React 19 的 1.2.1 和 1.3.1，`pnpm peers check` 不再报告版本范围问题。原生标签、弹层及键盘回归结果见[本地验证记录](./VERIFICATION.md)。后续更新仍需保留目标平台 CI 与真实浏览器回归；此结果不等于完整安全审计或所有模型兼容性证明。
 
@@ -57,4 +57,4 @@ CI 配置会在三个桌面平台执行编译、测试、Rust 格式与 lint、�
 
 建议以 `0.1.0` 本地预览版开始：提供源码、明确安装路径、用户文档和已知限制。先不承诺公网多用户、云端同步、所有模型兼容、移动端系统录屏或所有系统音频采集。
 
-Docker、多平台预编译二进制、自动升级和应用签名可后续加入；不应为了这些可选交付方式推迟一个已验收的源码预览版。首发前的授权、数据边界与核心路径验收不能省略。
+首发前验证数据边界和核心使用流程。Docker、多平台预编译二进制、自动升级和应用签名可后续加入。

@@ -311,7 +311,7 @@ export function CanvasNode({
               ? "image/*"
               : shape.type === "speech"
                 ? "audio/*,video/webm"
-                : ".txt,.md,.csv,.json,.yaml,.yml,.xml,.html,.css,.js,.pdf,.docx,.xlsx"
+                : ".txt,.md,.csv,.tsv,.json,.yaml,.yml,.xml,.html,.css,.js,.pdf,.docx,.xlsx,.xls,.ods"
           }
           onChange={(event) => {
             const file = event.target.files?.[0];

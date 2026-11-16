@@ -48,16 +48,15 @@ pub enum ErrorCode {
     UploadRequired,
     PdfTextUnreadable,
     InvalidDocx,
-    DocxBodyMissing,
     DocxBodyTooLarge,
-    DocxBodyUnreadable,
-    InvalidDocxBody,
     WorkbookUnreadable,
-    WorksheetUnreadable,
     WorkbookTextTooLarge,
     TextNotUtf8,
     UnsupportedDocumentFormat,
     DocumentTextTooLarge,
+    DocumentContentTooLarge,
+    DocumentParserUnavailable,
+    DocumentParseTimeout,
     InvalidWebUrl,
     UnsupportedWebUrl,
     WebHostMissing,
@@ -94,10 +93,13 @@ impl ErrorCode {
             | Self::InvalidHost
             | Self::InvalidOrigin => StatusCode::FORBIDDEN,
             Self::RoomFull | Self::StalePreview => StatusCode::CONFLICT,
-            Self::CoverDecoderUnavailable | Self::AudioDecoderUnavailable | Self::MediaBusy => {
-                StatusCode::SERVICE_UNAVAILABLE
+            Self::CoverDecoderUnavailable
+            | Self::AudioDecoderUnavailable
+            | Self::MediaBusy
+            | Self::DocumentParserUnavailable => StatusCode::SERVICE_UNAVAILABLE,
+            Self::MediaTimeout | Self::CoverTimeout | Self::DocumentParseTimeout => {
+                StatusCode::GATEWAY_TIMEOUT
             }
-            Self::MediaTimeout | Self::CoverTimeout => StatusCode::GATEWAY_TIMEOUT,
             Self::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
             Self::RequestTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
             Self::UnsupportedMediaType => StatusCode::UNSUPPORTED_MEDIA_TYPE,
@@ -219,14 +221,8 @@ impl ErrorCode {
                 "Couldn’t extract PDF text. Use a PDF that contains selectable text.",
             ),
             Self::InvalidDocx => ("DOCX 文件格式有误", "Invalid DOCX format"),
-            Self::DocxBodyMissing => ("DOCX 中缺少正文", "The DOCX file has no document body"),
             Self::DocxBodyTooLarge => ("DOCX 正文过大", "The DOCX document body is too large"),
-            Self::DocxBodyUnreadable => {
-                ("无法读取 DOCX 正文", "Couldn’t read the DOCX document body")
-            }
-            Self::InvalidDocxBody => ("DOCX 正文格式有误", "Invalid DOCX document body"),
             Self::WorkbookUnreadable => ("无法读取工作簿", "Couldn’t read workbook"),
-            Self::WorksheetUnreadable => ("无法读取工作表", "Couldn’t read worksheet"),
             Self::WorkbookTextTooLarge => (
                 "工作簿文本过多，请拆分文件",
                 "The workbook contains too much text. Split it into smaller files.",
@@ -241,6 +237,18 @@ impl ErrorCode {
             Self::DocumentTextTooLarge => (
                 "文档文本过多，请拆分文件",
                 "The document contains too much text. Split it into smaller files.",
+            ),
+            Self::DocumentContentTooLarge => (
+                "文档内容过多，请拆分文件",
+                "The document contains too much content. Split it into smaller files.",
+            ),
+            Self::DocumentParserUnavailable => (
+                "暂时无法解析文档",
+                "Document parsing is currently unavailable",
+            ),
+            Self::DocumentParseTimeout => (
+                "文档解析超时，请重试或拆分文件",
+                "Document parsing timed out. Try again or split the file into smaller files.",
             ),
             Self::InvalidWebUrl => ("网页地址格式有误", "Invalid web address"),
             Self::UnsupportedWebUrl => (

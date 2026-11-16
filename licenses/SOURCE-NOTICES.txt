@@ -1,31 +1,4 @@
-Huayu source and dependency attribution
-Reviewed: 2026-10-24
-
-Huayu's own application code and documentation are provided under the MIT
-License in the repository root. Third-party material retains its own license.
-This notice records source metadata; it does not grant additional rights.
-
-MenteX
-Source: https://codeup.aliyun.com/65b0683c6cfbead1a8f73587/MenteX
-Commit: 8d9da964571dd26ea80056936ea8829804be07cf
-Root package.json declares:
-  "author": "flowerdance"
-  "license": "MIT"
-No standalone license text was found in this tracked revision. Preserve any
-original notices in reused code and assets. The package declaration does not
-relicense its third-party dependencies or establish trademark permissions.
-
-tpk-admin
-Source: https://codeup.aliyun.com/65b0683c6cfbead1a8f73587/edu/tpk-admin
-Commit: 2d2c1bd8397712b81933b9380f9178a72d70af58
-composer.json declares:
-  "name": "laravel/laravel"
-  "description": "The skeleton application for the Laravel framework."
-  "license": "MIT"
-No standalone license text or dedicated grant for the custom business modules
-was found in this tracked revision. The Laravel skeleton declaration alone
-does not establish redistribution rights for custom code, prompts or assets.
-Source authorization must be established before publicly redistributing them.
+Huayu dependency source notices
 
 MPL-2.0 Rust components
 These components retain MPL-2.0. Their source has not been modified by Huayu.

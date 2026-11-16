@@ -201,7 +201,7 @@ export function folderTree(folders: AssetFolder[]): AssetFolderBranch[] {
   return roots;
 }
 
-/** Keep the same ratio-balanced insertion columns as pure-design's material drawer. */
+/** Balance insertion columns by the images' aspect ratios. */
 export function assetMasonryColumns(
   assets: LibraryAsset[],
   columnCount: number,

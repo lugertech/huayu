@@ -23,11 +23,11 @@ The following separates team statements from Huayu’s design inferences. Resear
 
 ## Implemented journeys
 
-Add components and connect materials to an instruction, then run it from its header. Image, speech, website, file and chart components receive preceding outputs. Inputs and outputs follow the original MenteX handlers; text replaces its body, websites generate and preview HTML, frames supply a single snapshot, and the drawing agent uses native shapes inside its own box.
+Add components and connect materials to an instruction, then run it from its header. Image, speech, website, file and chart components receive upstream outputs. Text components replace their body with upstream text. Websites generate and preview HTML, frames supply a single snapshot, and the drawing agent uses native shapes inside its own box.
 
 Recording text, chapters and selected excerpts become editable canvas materials with original source/time links. Chapters use the matching transcript range. Conversion makes no model call, so facts can be checked before creating.
 
-Compact headers leave room for content. Component tools remain inside the original MenteX positions and stay visible without selection. Image upload/download sits at the bottom left, ratio at the bottom right, and instruction web search at the bottom left. The extra selection toolbar, external action bars and creation panel have been removed. Port dragging shows targets and previews; dropping on empty space continues the flow, with click and keyboard alternatives. Duplicate, cycle and cross-page connections explain their limits. Real port positions account for rotation and frames. Focusing input does not independently scroll the card layer.
+Compact headers leave room for content. Component tools stay visible inside their cards. Image upload and download sit at the bottom left, aspect ratio at the bottom right, and web search at the bottom left of instruction cards. The extra selection toolbar, external action bars and creation panel have been removed. Port dragging shows targets and previews; dropping on empty space continues the flow, with click and keyboard alternatives. Duplicate, cycle and cross-page connections explain their limits. Real port positions account for rotation and frames. Focusing input does not independently scroll the card layer.
 
 Execution paths and per-card state show waiting, running, failure, stopping and elapsed time. Content fingerprints persist freshness after reload; changed material marks affected descendants and allows branch-only updates. Locked results remain reusable. Changed inputs during a request do not falsely mark old output as fresh. Existing works survive stopping and failure.
 

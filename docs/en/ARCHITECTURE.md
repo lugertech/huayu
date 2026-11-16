@@ -35,7 +35,7 @@ Rust follows a workspace with a thin binary entry point, business modules, extra
 
 The project list loads metadata and local cover addresses from `templates/index.json`. Workflow covers are generated ahead of time; full materials, instructions and authored outputs load with the canvas module. Editable SVGs live in `templates/art/`, with bundled PNGs for canvas and model image inputs. After editing the catalog, run `node scripts/generate-template-index.ts`, then format the template files. The Web build checks the index and generated covers.
 
-MenteX AI cards, ports and chart editors were adapted. MIT-licensed Excalidraw replaces tldraw. Application records retain legacy import compatibility; native shapes, bindings, groups, pages, images, pressure and path data round-trip through the scene adapter. React card content overlays native geometry. Excalidraw owns selection, movement, resizing, bindings and undo history. Workflow execution is centralized to avoid recursive or duplicate runs. Necessary tpk-admin behavior moved to Rust, with prompts and model orchestration in the browser.
+Excalidraw manages canvas geometry, selection, movement, resizing, bindings and undo history. React renders AI cards and their ports, and React Flow handles chart editing. The scene adapter preserves native shapes, arrow bindings, groups, pages, images, pressure, paths and extension fields when converting records, including records from older projects. The `workflow` module plans and runs workflows. Prompts and model orchestration run in the browser, and Rust handles local APIs and persistence.
 
 | Original capability | Local implementation |
 | --- | --- |
@@ -44,10 +44,9 @@ MenteX AI cards, ports and chart editors were adapted. MIT-licensed Excalidraw r
 | Templates, tags and copies | Local library with 24 built-in templates |
 | Text, images, audio, pages, charts and files | Browser model clients and prompts |
 | Cloud file storage | Local UUID-named attachments |
-| Document parsing | Rust text, PDF, DOCX and workbook parsing |
+| Document parsing | Rust reads UTF-8 text. A local Python process converts PDF, DOCX, XLS, XLSX and ODS to Markdown |
 | Cloud recording queues | Browser capture, local FFmpeg, browser requests and resumable checkpoints |
 | Accounts, memberships, points and payment | Removed |
-| Unrelated education administration | Excluded |
 
 Original production databases are not included or automatically migrated. Existing compatible canvas JSON can be imported without accessing those databases.
 

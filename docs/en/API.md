@@ -66,7 +66,11 @@ Patches may include `sequence`, a monotonically increasing edit number within th
 
 When updating a project, omit `cover` to preserve it or send `"cover": null` to clear it. Updating only the cover preserves the document revision and edit time.
 
-Ordinary attachments accept up to 512 MiB of file content. Their upload requests reserve an additional 64 KiB for multipart boundaries and field headers without consuming the file allowance. Document parsing accepts uploads up to 10 MiB. Attachments are saved only after text extraction succeeds. Failed parsing or oversized uploads retain neither the file nor an attachment record.
+Ordinary attachments accept up to 512 MiB of file content. Upload requests reserve another 64 KiB for multipart boundaries and field headers.
+
+Document parsing returns `{ "asset": ..., "text": "..." }`. PDF, DOCX, XLS, XLSX and ODS return Markdown. TXT, MD, CSV, TSV, JSON, YAML, YML, XML, HTML, CSS and JS return the original UTF-8 text with any leading BOM removed. The upload limit is 10 MiB and the output limit is 4 MiB. DOCX, XLSX and ODS archives have a 64 MiB limit for the total uncompressed size. The DOCX `word/document.xml` entry has an 8 MiB limit. A successful parse saves the original attachment and its record.
+
+Damaged, unsupported or oversized files return `422`. An oversized archive returns `DOCUMENT_CONTENT_TOO_LARGE`, and an oversized DOCX body returns `DOCX_BODY_TOO_LARGE`. Unreadable DOCX files and workbooks return `INVALID_DOCX` and `WORKBOOK_UNREADABLE`, respectively. An unavailable parser returns `503 DOCUMENT_PARSER_UNAVAILABLE`. Waiting and conversion share a 30-second deadline, after which the API returns `504 DOCUMENT_PARSE_TIMEOUT`. On failure, the temporary upload is discarded. [Document parsing setup](./DEPLOYMENT.md#document-parsing)
 
 Collaboration reads, patches and WebSockets include `?share={share_token}`. Closing collaboration returns `403 COLLABORATION_CLOSED` for the old link and stops its connected pages. Reopening generates a new link. Updating the share token also stops WebSocket connections using the old token. Collaborators cannot access project lists, other projects, template management, the global asset library, recordings or share management. Out-of-scope requests return `403 SHARED_SCOPE_FORBIDDEN`.
 

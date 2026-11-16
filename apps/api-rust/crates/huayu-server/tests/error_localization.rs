@@ -15,6 +15,7 @@ async fn application() -> (TempDir, Router) {
         address: "127.0.0.1:0".parse().expect("loopback test address"),
         data_dir: directory.path().join("data"),
         web_dir: directory.path().join("web"),
+        ..Config::from_env().expect("valid test configuration")
     })
     .await
     .expect("local test application starts");

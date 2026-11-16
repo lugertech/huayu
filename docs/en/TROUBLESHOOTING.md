@@ -52,7 +52,7 @@ The isolated preview restricts external scripts, network requests, fonts and for
 
 ## PDF text cannot be extracted
 
-Local parsing reads existing text. Scans need OCR first; oversized or encrypted documents may also fail. Preserve the original and reproduce with a small, redacted file.
+Local parsing reads existing text. Scans need OCR first. Oversized or encrypted documents may also fail. If PDF, DOCX or workbook imports say document parsing is unavailable, check that `HUAYU_DOCUMENT_PYTHON` points to the Python executable with the dependencies installed on the host, then restart Huayu. [Document parsing setup](./DEPLOYMENT.md#document-parsing)
 
 ## Report a problem
 

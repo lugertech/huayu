@@ -29,7 +29,7 @@ beforeEach(() => {
   });
 });
 
-describe("MenteX component uploads", () => {
+describe("canvas component uploads", () => {
   it("keeps the old attachment if the node becomes locked before processing finishes", async () => {
     const editor = new Editor(createCanvasStore());
     editor.createShape({

@@ -36,7 +36,7 @@ import {
   blobAsDataURL,
   type AIAPIInput,
 } from "../api/backend";
-import { generateChart } from "../api/mentex";
+import { generateChart } from "../api/canvas-components";
 import {
   callAgentSSE,
   buildAgentRequest,
@@ -286,7 +286,7 @@ export async function inputsForShapes(
   return inputs;
 }
 
-/** Component execution follows MenteX's per-destination input contracts. */
+/** Each component type chooses how to use its upstream inputs. */
 export async function inputsForNode(
   editor: Editor,
   type: string,

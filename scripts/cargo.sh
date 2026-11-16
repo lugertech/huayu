@@ -7,6 +7,11 @@ if [ -f .env ]; then
   . ./.env
   set +a
 fi
+# Cargo runs integration tests from their crate, so resolve repository-relative executables here.
+case "${HUAYU_DOCUMENT_PYTHON:-}" in
+  /*|[A-Za-z]:/*) ;;
+  */*) export HUAYU_DOCUMENT_PYTHON="$HUAYU_ROOT/$HUAYU_DOCUMENT_PYTHON" ;;
+esac
 if [ -n "${HUAYU_RUST_TOOLCHAIN_DIR:-}" ]; then
   export CARGO_HOME="$HUAYU_RUST_TOOLCHAIN_DIR/.cargo"
   export RUSTUP_HOME="$HUAYU_RUST_TOOLCHAIN_DIR/.rustup"

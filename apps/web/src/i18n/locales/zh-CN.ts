@@ -137,6 +137,9 @@ export const zhCN = {
   "api.errors.chooseAVideoOrAudioFile": "请选择视频或音频文件",
   "api.errors.content": "内容",
   "api.errors.contentNotFound": "未找到对应内容",
+  "api.errors.documentContentTooLarge": "文档内容过多，请拆分文件",
+  "api.errors.documentParseTimeout": "文档解析超时，请重试或拆分文件",
+  "api.errors.documentParserUnavailable": "暂时无法解析文档",
   "api.errors.documentsToParseCannotExceed10Mb": "待解析文档不能超过 10 MB",
   "api.errors.filesCannotExceed512Mb": "文件不能超过 512 MB",
   "api.errors.huayuStarted": "画语已启动",
@@ -279,7 +282,7 @@ export const zhCN = {
   "canvas.components.externalLink": "外部链接",
   "canvas.components.file.description": "上传素材，或生成 PDF、Word 等文档",
   "canvas.components.file.help":
-    "支持文档上传解析和AI文件生成两种模式。可以上传文档提取内容（支持 txt、md、csv、json、yaml、yml、xml、html、css、js、pdf、docx、xlsx），或根据描述生成指定格式的文档文件。",
+    "上传 PDF、DOCX、XLSX、XLS、ODS 或文本文件来提取内容，也可以描述要生成的文件。",
   "canvas.components.file.placeholder": "上传文件，或连接组件后运行生成",
   "canvas.components.image.description": "从描述创作图片，也能使用参考图",
   "canvas.components.image.help":

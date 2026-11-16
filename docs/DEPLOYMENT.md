@@ -24,6 +24,7 @@ Rust 服务提供本地 API 和前端文件，地址为 `http://127.0.0.1:5858`�
 | `HUAYU_PORT` | `5858` | 服务端口 |
 | `HUAYU_DATA_DIR` | `var/dev` | 数据库与附件目录 |
 | `HUAYU_WEB_DIR` | `apps/web/dist` | 前端构建目录 |
+| `HUAYU_DOCUMENT_PYTHON` | macOS/Linux 为 `python3`，Windows 为 `python` | 安装了文档解析依赖的 Python 可执行文件 |
 | `RUST_LOG` | `huayu_server=info,tower_http=warn` | 本地日志级别 |
 
 相对路径以仓库根目录为基准。直接运行二进制时，需由调用环境设置变量，并确保工作目录或路径正确。
@@ -31,6 +32,30 @@ Rust 服务提供本地 API 和前端文件，地址为 `http://127.0.0.1:5858`�
 开发启动器和 Web 代理共同使用 `HUAYU_HOST`、`HUAYU_PORT`：根目录 `.env` 中的值优先，其次是进程环境，最后使用上表默认值。修改后重启开发进程，`/api`、`/uploads` 和 WebSocket 代理会自动跟随。开发端口需为 1 至 65535；监听所有地址时，代理使用对应的本机回环地址连接。
 
 模型连接属于浏览器来源，端口变化后需要重新配置。静态文件可以复制，浏览器中的配置与草稿不会随服务目录自动移动。
+
+## 文档解析
+
+PDF、DOCX、XLS、XLSX 和 ODS 在运行画语的电脑上转换为 Markdown。需要这些格式时，安装 [Python 3.12](https://www.python.org/downloads/) 并从仓库根目录运行以下命令。
+
+macOS 和 Linux：
+
+```sh
+python3 -m venv var/tools/markitdown
+var/tools/markitdown/bin/python -m pip install --upgrade pip
+var/tools/markitdown/bin/python -m pip install -r apps/api-rust/requirements-documents.txt
+```
+
+在根目录 `.env` 添加 `HUAYU_DOCUMENT_PYTHON=var/tools/markitdown/bin/python`。
+
+Windows（Git Bash）：
+
+```sh
+python -m venv var/tools/markitdown
+var/tools/markitdown/Scripts/python.exe -m pip install --upgrade pip
+var/tools/markitdown/Scripts/python.exe -m pip install -r apps/api-rust/requirements-documents.txt
+```
+
+在根目录 `.env` 添加 `HUAYU_DOCUMENT_PYTHON=var/tools/markitdown/Scripts/python.exe`。配置后重启画语。PDF 需包含可选中的文字，纯扫描件需要先做 OCR。
 
 ## 局域网协作
 
