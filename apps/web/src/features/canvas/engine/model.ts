@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 /** Application-owned records. Legacy document records remain readable without their original SDK. */
@@ -59,9 +60,9 @@ export interface CanvasSession {
     selectedShapeIds?: string[];
   }>;
 }
-export const createShapeId = (id: string = crypto.randomUUID()) =>
+export const createShapeId = (id: string = uuid()) =>
   id.startsWith("shape:") ? id : `shape:${id}`;
-export const createBindingId = () => `binding:${crypto.randomUUID()}`;
+export const createBindingId = () => `binding:${uuid()}`;
 export const SCHEMA = { schemaVersion: 1, sequences: { "huayu.canvas": 1 } };
 export const EMPTY_TEXT = { type: "doc", content: [{ type: "paragraph" }] };
 export function richText(text: string) {

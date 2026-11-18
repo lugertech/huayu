@@ -187,6 +187,99 @@ describe("attachment address changes during project transfer", () => {
     }
     expect(source).toEqual(before);
   });
+  it("moves website image references alongside image cards without rewriting authored markup or external URLs", async () => {
+    const editor = new Editor(createCanvasStore());
+    const src = "/api/assets/leaf";
+    const untouched =
+      '<!-- <img src="/api/assets/comment"> --><p>/api/assets/leaf</p><script>const example = \'<img src="/api/assets/example">\'</script><img src="https://example.test/api/assets/external">';
+    const html =
+      '<!doctype html><IMG alt="Leaf" SRC=' +
+      src +
+      '><source srcset=" ' +
+      src +
+      ", " +
+      src +
+      ' 2x"><style>p { background:url(' +
+      src +
+      ") }</style>" +
+      '<script>const preview = "' +
+      src +
+      '";</script>' +
+      untouched;
+    editor.createShape({
+      id: "shape:site",
+      type: "website",
+      props: { htmlContent: html, result: html },
+    });
+    editor.createShape({ id: "shape:img", type: "ai-image", props: { src } });
+    const source = getSnapshot(editor.store).document;
+    const toData = vi.fn(async () => "data:image/jpeg;base64,YQ==");
+    const portable = await rewriteProjectResources(source, toData);
+    expect(toData.mock.calls).toEqual([[src]]);
+    const toLocal = vi.fn(async () => "/api/assets/new-leaf");
+    const imported = await rewriteProjectResources(portable, toLocal);
+    expect(toLocal.mock.calls).toEqual([["data:image/jpeg;base64,YQ=="]]);
+    const props = editorFor(imported).getShape("shape:site").props;
+    const expected =
+      html.slice(0, -untouched.length).replaceAll(src, "/api/assets/new-leaf") +
+      untouched;
+    expect(props.htmlContent).toBe(expected);
+    expect(props.result).toBe(expected);
+    expect(editor.getShape("shape:site").props.htmlContent).toBe(html);
+  });
+  it("moves the attachment once and keeps each SVG and media fragment across a round trip", async () => {
+    const editor = new Editor(createCanvasStore());
+    const src = "/api/assets/illustration";
+    const html = `<svg><use href="${src}#leaf"/><use href="${src}#stem"/></svg>`;
+    editor.createShape({
+      id: "shape:site",
+      type: "website",
+      props: { htmlContent: html },
+    });
+    const video = "/api/assets/clip";
+    editor.createShape({
+      id: "shape:clip",
+      type: "video",
+      props: { src: video + "#t=2,4" },
+    });
+    const embedded = new Map([
+      [src, "data:image/svg+xml;base64,PHN2Zy8+"],
+      [video, "data:video/mp4;base64,AAAA"],
+    ]);
+    const embed = vi.fn(async (url: string) => embedded.get(url)!);
+    const portable = await rewriteProjectResources(
+      getSnapshot(editor.store).document,
+      embed,
+    );
+    expect(embed.mock.calls.map(([url]) => url).sort()).toEqual([video, src]);
+    const restored = editorFor(
+      await rewriteProjectResources(portable, async (url) =>
+        url === embedded.get(src)
+          ? "/api/assets/new-illustration"
+          : "/api/assets/new-clip",
+      ),
+    );
+    expect(restored.getShape("shape:site").props.htmlContent).toBe(
+      html.replaceAll(src, "/api/assets/new-illustration"),
+    );
+    expect(restored.getShape("shape:clip").props.src).toBe(
+      "/api/assets/new-clip#t=2,4",
+    );
+  });
+  it("preserves legacy asset records without a source or properties", async () => {
+    const document = getSnapshot(createCanvasStore()).document;
+    const asset = {
+      id: "asset:placeholder",
+      typeName: "asset",
+      type: "image",
+    } as const;
+    document.store[asset.id] = asset;
+    const { document: parsed } = parseProjectFile({ document });
+    const rewrite = vi.fn();
+    const transferred = await rewriteProjectResources(parsed, rewrite);
+    expect(transferred.store[asset.id]).toEqual(asset);
+    expect(rewrite).not.toHaveBeenCalled();
+  });
   it("does not make a genuinely outdated result fresh when attachments move", async () => {
     const editor = generatedImageBoard();
     editor.setCurrentPage(editor.pages[0].id);

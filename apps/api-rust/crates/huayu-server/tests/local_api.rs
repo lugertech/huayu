@@ -751,6 +751,50 @@ async fn upload(router: &Router, route: &str, name: &str, mime: &str, bytes: &[u
 }
 
 #[tokio::test]
+async fn name_search_matches_punctuation_literally_for_projects_and_assets() {
+    let directory = TempDir::new().unwrap();
+    let router = application(&directory).await.router();
+    for name in ["Cut!_1%", "Cut!A10"] {
+        let (status, _) = request(&router, "POST", "/api/projects", json!({"name":name})).await;
+        assert_eq!(status, StatusCode::CREATED);
+        let file = upload(
+            &router,
+            "/api/assets",
+            "sample.txt",
+            "text/plain",
+            name.as_bytes(),
+        )
+        .await;
+        let (status, _) = request(
+            &router,
+            "POST",
+            "/api/library/assets",
+            json!({"asset_id":file["id"],"name":name,"width":0,"height":0,"trashed":false}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NO_CONTENT);
+    }
+    let (_, projects) = request(
+        &router,
+        "GET",
+        "/api/projects?search=cut%21_1%25",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(projects.as_array().unwrap().len(), 1);
+    assert_eq!(projects[0]["name"], "Cut!_1%");
+    let (_, library) = request(
+        &router,
+        "GET",
+        "/api/library/assets?search=cut%21_1%25",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(library["total"], 1);
+    assert_eq!(library["assets"][0]["name"], "Cut!_1%");
+}
+
+#[tokio::test]
 async fn library_folders_images_and_trash_persist_without_removing_project_files() {
     let directory = TempDir::new().unwrap();
     let app = application(&directory).await;

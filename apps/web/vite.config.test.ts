@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { createServer as createViteServer } from "vite-plus";
 import { createServer } from "node:http";
+import { Buffer } from "node:buffer";
 import type { AddressInfo } from "node:net";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getDevApiConfig } from "../../scripts/dev-api-config.ts";
-import definition from "./vite.config";
+import definition, { whiteboardAssets } from "./vite.config";
 
 vi.mock("../../scripts/dev-api-config.ts", () => ({
   getDevApiConfig: vi.fn(() => ({
@@ -96,4 +97,34 @@ describe("development backend configuration", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+});
+
+it("serves the local whiteboard font as WOFF2 on the host platform", async () => {
+  const root = await mkdtemp(join(tmpdir(), "huayu-dev-fonts-"));
+  let server: Awaited<ReturnType<typeof createViteServer>> | undefined;
+  try {
+    server = await createViteServer({
+      configFile: false,
+      root,
+      plugins: [whiteboardAssets()],
+      logLevel: "silent",
+      optimizeDeps: { noDiscovery: true },
+      server: { host: "127.0.0.1", port: 0 },
+    });
+    await server.listen();
+    const port = (server.httpServer!.address() as AddressInfo).port;
+    const response = await fetch(
+      "http://127.0.0.1:" +
+        port +
+        "/assets/excalidraw/fonts/Assistant/Assistant-Bold.woff2",
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("font/woff2");
+    expect(
+      Buffer.from(await response.arrayBuffer()).toString("ascii", 0, 4),
+    ).toBe("wOF2");
+  } finally {
+    await server?.close();
+    await rm(root, { recursive: true, force: true });
+  }
 });

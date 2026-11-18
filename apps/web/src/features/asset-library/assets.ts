@@ -1,3 +1,5 @@
+import { limitName } from "@/lib/file-name";
+import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { api, uploadAsset } from "@/api/client";
 import { nodeIsBusy } from "@/workflow/execute";
@@ -44,7 +46,7 @@ export function applyLibraryImage(
     throw new LocalizedError({ key: "assets.targetUnavailable" });
   editor.run(() => {
     if (shape.type === "image") {
-      const assetId = `asset:${crypto.randomUUID()}`;
+      const assetId = `asset:${uuid()}`;
       editor.store.put([
         {
           id: assetId,
@@ -112,7 +114,7 @@ export async function importLibraryFile(file: File, folderId: string | null) {
     method: "POST",
     body: JSON.stringify({
       asset_id: asset.id,
-      name: file.name.slice(0, 120),
+      name: limitName(file.name),
       width,
       height,
       folder_id: folderId,
@@ -142,7 +144,7 @@ export function insertLibraryImage(
   const w = asset.width * scale;
   const h = asset.height * scale;
   const center = point || viewport.center;
-  const assetId = `asset:${crypto.randomUUID()}`;
+  const assetId = `asset:${uuid()}`;
   const id = createShapeId();
   editor.run(() => {
     editor.store.put([

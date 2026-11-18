@@ -29,11 +29,13 @@ import {
   OPENAI_API_BASE_URL,
   TAVILY_API_ORIGIN,
   useModelSettings,
-  saveSettings,
+  changedConnectionFields,
+  saveConnectionEdits,
   defaultSettings,
   connectionIssue,
   type Capability,
-  type ModelSettings as Settings,
+  type Connection,
+  type ConnectionEdits,
 } from "@/ai/settings";
 import { testConnection } from "@/ai/provider";
 import { useToast } from "./common/ToastProvider";
@@ -49,21 +51,32 @@ export function ModelSettings({
 }) {
   useLocale();
   const saved = useModelSettings();
-  const [draft, setDraft] = useState<Settings>(() => structuredClone(saved));
+  const [edits, setEdits] = useState<ConnectionEdits>({});
+  function editedConnection(value: Capability): Connection {
+    return { ...saved.connections[value], ...edits[value] };
+  }
   const [capability, setCapability] = useState<Capability>(initialCapability);
+  const connection = editedConnection(capability);
+  const testTarget = JSON.stringify([capability, connection]);
   const [visible, setVisible] = useState(false);
   const [testState, setTestState] = useState<
-    | { status: "idle" | "testing" }
+    | { status: "idle" }
+    | { status: "testing"; target: string }
     | {
         status: "complete";
+        target: string;
         result: {
           status: "success" | "warning" | "error";
           message: Error | ErrorTranslation;
         };
       }
   >({ status: "idle" });
-  const testing = testState.status === "testing";
-  const result = testState.status === "complete" ? testState.result : null;
+  const testing =
+    testState.status === "testing" && testState.target === testTarget;
+  const result =
+    testState.status === "complete" && testState.target === testTarget
+      ? testState.result
+      : null;
   const resultMessage = result
     ? result.message instanceof Error
       ? errorText(result.message)
@@ -71,7 +84,6 @@ export function ModelSettings({
     : "";
   const request = useRef<AbortController | null>(null);
   const { showToast } = useToast();
-  const connection = draft.connections[capability];
   const issue = connectionIssue(capability, connection);
   const settingUpOpenAI =
     modelSetup &&
@@ -85,28 +97,39 @@ export function ModelSettings({
     transcription: "settings.models.transcriptionPurpose",
     search: "settings.models.searchPurpose",
   } as const;
-  const dirty = JSON.stringify(saved) !== JSON.stringify(draft);
+  const dirty = CAPABILITIES.some(
+    (value) =>
+      JSON.stringify(saved.connections[value]) !==
+      JSON.stringify(editedConnection(value)),
+  );
 
-  useEffect(() => () => request.current?.abort(), []);
+  useEffect(
+    () => () => {
+      request.current?.abort();
+      request.current = null;
+    },
+    [testTarget],
+  );
 
   function resetTest() {
     request.current?.abort();
     request.current = null;
     setTestState({ status: "idle" });
   }
-  function change(key: keyof typeof connection, value: string) {
+  function change(fields: Partial<Connection>) {
     resetTest();
-    setDraft((current) => ({
+    setEdits((current) => ({
       ...current,
-      connections: {
-        ...current.connections,
-        [capability]: { ...current.connections[capability], [key]: value },
-      },
+      [capability]: changedConnectionFields(saved.connections[capability], {
+        ...saved.connections[capability],
+        ...current[capability],
+        ...fields,
+      }),
     }));
   }
   function save() {
     try {
-      saveSettings(draft);
+      saveConnectionEdits(edits);
       resetTest();
       showToast({ title: t("settings.models.saved") });
       onClose();
@@ -126,6 +149,7 @@ export function ModelSettings({
     if (issue) {
       setTestState({
         status: "complete",
+        target: testTarget,
         result: { status: "error", message: issue.error },
       });
       document
@@ -139,7 +163,7 @@ export function ModelSettings({
     }
     const controller = new AbortController();
     request.current = controller;
-    setTestState({ status: "testing" });
+    setTestState({ status: "testing", target: testTarget });
     try {
       const value = await testConnection(
         capability,
@@ -147,11 +171,12 @@ export function ModelSettings({
         controller.signal,
       );
       if (request.current === controller)
-        setTestState({ status: "complete", result: value });
+        setTestState({ status: "complete", target: testTarget, result: value });
     } catch (error) {
       if (request.current === controller && !controller.signal.aborted)
         setTestState({
           status: "complete",
+          target: testTarget,
           result: {
             status: "error",
             message:
@@ -202,7 +227,7 @@ export function ModelSettings({
                 key={value}
                 value={value}
                 className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs leading-4"
-                aria-label={`${CAPABILITY_LABELS[value]} · ${t(connectionIssue(value, draft.connections[value]) ? "settings.models.notConfigured" : "settings.models.detailsComplete")}`}
+                aria-label={`${CAPABILITY_LABELS[value]} · ${t(connectionIssue(value, editedConnection(value)) ? "settings.models.notConfigured" : "settings.models.detailsComplete")}`}
               >
                 {CAPABILITY_LABELS[value]}
               </TabsTrigger>
@@ -232,18 +257,8 @@ export function ModelSettings({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    resetTest();
-                    setDraft((current) => ({
-                      ...current,
-                      connections: {
-                        ...current.connections,
-                        [capability]: {
-                          ...current.connections[capability],
-                          baseUrl: current.connections.text.baseUrl,
-                          apiKey: current.connections.text.apiKey,
-                        },
-                      },
-                    }));
+                    const text = editedConnection("text");
+                    change({ baseUrl: text.baseUrl, apiKey: text.apiKey });
                   }}
                 >
                   <Link2 /> {t("settings.models.reuseTextService")}
@@ -259,13 +274,17 @@ export function ModelSettings({
                   id="search-provider"
                   value={connection.provider}
                   onChange={(event) => {
-                    change("provider", event.target.value);
-                    change(
-                      "baseUrl",
-                      event.target.value === "brave"
-                        ? "https://api.search.brave.com"
-                        : TAVILY_API_ORIGIN,
-                    );
+                    const provider =
+                      event.target.value === "brave" ? "brave" : "tavily";
+                    change({
+                      provider,
+                      baseUrl:
+                        provider === "brave"
+                          ? "https://api.search.brave.com"
+                          : TAVILY_API_ORIGIN,
+                      apiKey: "",
+                    });
+                    setVisible(false);
                   }}
                 >
                   <NativeSelectOption value="tavily">Tavily</NativeSelectOption>
@@ -290,7 +309,7 @@ export function ModelSettings({
                     : undefined
                 }
                 value={connection.baseUrl}
-                onChange={(event) => change("baseUrl", event.target.value)}
+                onChange={(event) => change({ baseUrl: event.target.value })}
                 placeholder="http://localhost:11434/v1"
                 autoComplete="off"
                 spellCheck={false}
@@ -339,7 +358,7 @@ export function ModelSettings({
                   }
                   type={visible ? "text" : "password"}
                   value={connection.apiKey}
-                  onChange={(event) => change("apiKey", event.target.value)}
+                  onChange={(event) => change({ apiKey: event.target.value })}
                   placeholder={
                     settingUpOpenAI
                       ? undefined
@@ -387,7 +406,7 @@ export function ModelSettings({
                       : undefined
                   }
                   value={connection.model}
-                  onChange={(event) => change("model", event.target.value)}
+                  onChange={(event) => change({ model: event.target.value })}
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -410,7 +429,7 @@ export function ModelSettings({
                 <Input
                   id="model-voice"
                   value={connection.voice}
-                  onChange={(event) => change("voice", event.target.value)}
+                  onChange={(event) => change({ voice: event.target.value })}
                   placeholder="alloy"
                 />
               </div>
@@ -424,7 +443,10 @@ export function ModelSettings({
                   id="transcription-format"
                   value={connection.transcriptionFormat || "verbose_json"}
                   onChange={(event) =>
-                    change("transcriptionFormat", event.target.value)
+                    change({
+                      transcriptionFormat:
+                        event.target.value === "json" ? "json" : "verbose_json",
+                    })
                   }
                 >
                   <NativeSelectOption value="verbose_json">
@@ -489,7 +511,18 @@ export function ModelSettings({
               className="mr-auto text-muted-foreground"
               onClick={() => {
                 resetTest();
-                setDraft(defaultSettings());
+                const defaults = defaultSettings().connections;
+                setEdits(
+                  Object.fromEntries(
+                    CAPABILITIES.map((value) => [
+                      value,
+                      changedConnectionFields(
+                        saved.connections[value],
+                        defaults[value],
+                      ),
+                    ]),
+                  ),
+                );
                 setVisible(false);
               }}
             >

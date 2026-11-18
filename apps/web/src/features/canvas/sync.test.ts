@@ -490,3 +490,44 @@ describe("collaboration save ordering and recovery", () => {
     expect(TestSocket.instances).toHaveLength(1);
   });
 });
+
+it("flushes a pending edit on navigation and leaves other tabs' recovery data alone on a clean exit", async () => {
+  const idle = await client();
+  idle.sync.disconnect();
+  expect(mocks.saveDraft).not.toHaveBeenCalled();
+  const { sync, editor } = await client();
+  editor.updateShape({
+    id: "shape:left",
+    props: { text: "Just before leaving" },
+  });
+  sync.disconnect();
+  await sync.flush();
+  expect(mocks.api).toHaveBeenCalledTimes(1);
+  expect(mocks.saveDraft).toHaveBeenLastCalledWith(
+    sync.project.id,
+    expect.objectContaining({
+      upsert: [
+        expect.objectContaining({
+          id: "shape:left",
+          props: expect.objectContaining({ text: "Just before leaving" }),
+        }),
+      ],
+    }),
+    "acknowledged",
+  );
+});
+
+it("retries a failed recovery write if the server cannot save the edit either", async () => {
+  const { sync, editor } = await client();
+  mocks.saveDraft.mockRejectedValueOnce(
+    new Error("IndexedDB temporarily unavailable"),
+  );
+  editor.updateShape({ id: "shape:left", props: { text: "Keep this edit" } });
+  await Promise.resolve();
+  mocks.api.mockRejectedValueOnce(new Error("Offline"));
+  await expect(sync.flush()).rejects.toThrow("Offline");
+  expect(mocks.saveDraft).toHaveBeenCalledTimes(2);
+  expect(mocks.saveDraft.mock.calls[1][1].upsert[0].props.text).toBe(
+    "Keep this edit",
+  );
+});

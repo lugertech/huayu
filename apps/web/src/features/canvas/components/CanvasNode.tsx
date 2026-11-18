@@ -1,3 +1,4 @@
+import { mediaFileName } from "@/lib/file-name";
 import { LocalizedError } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -137,13 +138,14 @@ export function CanvasNode({
           new Blob([props.htmlContent || ""], { type: "text/html" }),
           `${props.name || t("common.webPage")}.html`,
         );
-      else if (props.src)
+      else if (props.src) {
+        const blob = await blobForSource(props.src);
         downloadBlob(
-          await blobForSource(props.src),
+          blob,
           props.fileName ||
-            `${props.name || t("api.generatedContent")}.${shape.type === "ai-image" ? "png" : "mp3"}`,
+            mediaFileName(props.name || t("api.generatedContent"), blob.type),
         );
-      else
+      } else
         downloadBlob(
           new Blob([props.result || props.text || ""], {
             type: "text/plain;charset=utf-8",

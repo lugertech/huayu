@@ -96,6 +96,21 @@ describe("connection tests", () => {
     },
   );
 
+  it("reports connection failures that have no HTTP response as a network error", async () => {
+    vi.stubGlobal("window", { location: { origin: "http://127.0.0.1:5861" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+    );
+    await expect(
+      testConnection("image", {
+        ...defaultSettings().connections.image,
+        apiKey: "test-only-key",
+      }),
+    ).rejects.toMatchObject({
+      translation: { key: "models.connection.network" },
+    });
+  });
   it("distinguishes reaching the service from finding the chosen model", async () => {
     vi.stubGlobal("window", { location: { origin: "http://127.0.0.1:5861" } });
     vi.stubGlobal(

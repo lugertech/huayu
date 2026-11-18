@@ -10,7 +10,7 @@ import {
 } from "@/config/components";
 import { createConnectedComponent } from "@/features/canvas/connection-parser";
 import { connectionProblem, linkWorkflow } from "@/workflow/connections";
-import { materialLabel } from "@/workflow/context";
+import { focusShapes, materialLabel } from "@/workflow/context";
 import { useToast } from "@/components/common/ToastProvider";
 import {
   DropdownMenu,
@@ -118,7 +118,21 @@ function ConnectionMenu({
                     "",
                     side,
                   );
-                  if (id) editor.select(id);
+                  if (!id) return;
+                  editor.select(id);
+                  focusShapes(
+                    editor,
+                    editor.getViewportPageBounds().w < 700
+                      ? [id]
+                      : [shape.id, id],
+                  );
+                  requestAnimationFrame(() => {
+                    editor.container
+                      ?.querySelector<HTMLTextAreaElement>(
+                        '[data-node-id="' + CSS.escape(id) + '"] textarea',
+                      )
+                      ?.focus({ preventScroll: true });
+                  });
                 }}
               >
                 <Icon />

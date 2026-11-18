@@ -1,3 +1,4 @@
+import { limitName } from "@/lib/file-name";
 import { t, useLocale, getLocale } from "@/i18n";
 import { errorText, LocalizedError } from "@/i18n/errors";
 import { useNavigate } from "react-router-dom";
@@ -176,7 +177,7 @@ export function RecordingsPage() {
             const value = await api<Recording>("/api/recordings", {
               method: "POST",
               body: JSON.stringify({
-                name: file.name.slice(0, 120),
+                name: limitName(file.name),
                 asset_id: asset.id,
                 duration,
               }),

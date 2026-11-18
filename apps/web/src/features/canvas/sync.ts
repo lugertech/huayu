@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { type MessageKey } from "@/i18n";
 import {
@@ -12,6 +13,7 @@ import { api, APIError, type CanvasDocument, type Project } from "@/api/client";
 import {
   applyDraft,
   canvasDraftKey,
+  clearDraft,
   saveDraft,
   type RecordPatch,
 } from "./drafts";
@@ -66,7 +68,7 @@ export function sanitizedRecord(record: CanvasRecord): CanvasRecord {
 export class CanvasSync {
   readonly store: CanvasStore;
   readonly mergedPages: boolean;
-  readonly clientId = crypto.randomUUID();
+  readonly clientId = uuid();
   private pending = new Map<string, CanvasRecord | null>();
   private inFlight = new Map<string, CanvasRecord | null>();
   private deferredRemote = new Map<
@@ -101,6 +103,7 @@ export class CanvasSync {
     | { phase: "stopped" | "active" | "deleted" }
     | { phase: "revoked"; reason: CollaborationExit } = { phase: "stopped" };
   private retryDelay = 1000;
+  private retryDraftWrite = false;
   private saving?: Promise<void>;
   private get stopped() {
     return this.lifecycle.phase !== "active";
@@ -254,20 +257,24 @@ export class CanvasSync {
     this.unsubscribe = this.store.listen(
       (entry) => {
         this.localSequence += 1;
+        const changes = new Map<string, CanvasRecord | null>();
         for (const record of [
           ...Object.values(entry.changes.added),
           ...Object.values(entry.changes.updated).map(([, record]) => record),
         ]) {
           const sanitized = sanitizedRecord(record);
           this.remotePreviews.delete(record.id);
-          this.pending.set(record.id, sanitized);
-          this.realtimeChanges.set(record.id, sanitized);
+          changes.set(record.id, sanitized);
         }
         for (const record of Object.values(entry.changes.removed)) {
           this.remotePreviews.delete(record.id);
-          this.pending.set(record.id, null);
-          this.realtimeChanges.set(record.id, null);
+          changes.set(record.id, null);
         }
+        for (const [id, value] of changes) {
+          this.pending.set(id, value);
+          this.realtimeChanges.set(id, value);
+        }
+        void this.persist(this.patch(changes));
         this.scheduleBroadcast();
         this.schedule();
       },
@@ -277,7 +284,11 @@ export class CanvasSync {
       for (const record of Object.values(this.store.serialize("document")))
         this.pending.set(record.id, sanitizedRecord(record));
     }
-    if (this.pending.size) this.schedule();
+    if (this.pending.size) {
+      if (!this.project.document || this.mergedPages)
+        void this.persist(this.patch(this.pending));
+      this.schedule();
+    }
     this.realtimeChanges = new Map([...this.inFlight, ...this.pending]);
     queueMicrotask(() => {
       if (!this.stopped) this.openSocket();
@@ -311,7 +322,8 @@ export class CanvasSync {
     window.removeEventListener("beforeunload", this.beforeUnload);
     window.removeEventListener("blur", this.hidePointer);
     document.removeEventListener("visibilitychange", this.onVisibilityChange);
-    if (!this.deleted) void this.persist();
+    if (this.lifecycle.phase === "stopped" && this.pending.size)
+      void this.flush().catch(() => {});
   }
   private beforeUnload = (event: BeforeUnloadEvent) => {
     if (this.pending.size || this.inFlight.size) {
@@ -361,14 +373,13 @@ export class CanvasSync {
       sequence: this.localSequence,
     };
   }
-  private async persist() {
-    const changes = new Map([...this.inFlight, ...this.pending]);
+  private async persist(patch: RecordPatch, acknowledged = false) {
     try {
-      await saveDraft(
-        canvasDraftKey(this.project.id, this.shareToken),
-        this.patch(changes),
-      );
+      const key = canvasDraftKey(this.project.id, this.shareToken);
+      if (acknowledged) await saveDraft(key, patch, "acknowledged");
+      else await saveDraft(key, patch);
     } catch (error) {
+      if (!acknowledged) this.retryDraftWrite = true;
       this.update({
         error:
           error instanceof Error ? error : "canvas.cannotSaveLocalRecoveryData",
@@ -380,7 +391,6 @@ export class CanvasSync {
       status: "saving",
       savePhase: this.inFlight.size ? "sending-dirty" : "waiting",
     });
-    void this.persist();
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       void this.flush().catch(() => {});
@@ -429,6 +439,7 @@ export class CanvasSync {
           revision: Math.max(response.revision, this.state.revision),
           error: null,
         });
+        await this.persist(patch, true);
       } catch (error) {
         if (this.deleted || this.accessRevoked) throw error;
         this.pending = new Map([...this.inFlight, ...this.pending]);
@@ -462,9 +473,12 @@ export class CanvasSync {
           this.timer = setTimeout(() => {
             void this.flush().catch(() => {});
           }, 3000);
+        if (this.retryDraftWrite) {
+          this.retryDraftWrite = false;
+          await this.persist(this.patch(this.pending));
+        }
         throw error;
       } finally {
-        if (!this.deleted) await this.persist();
         this.saving = undefined;
       }
     })();
@@ -586,11 +600,9 @@ export class CanvasSync {
             savePhase: "blocked",
             error: "canvas.thisProjectWasDeleted",
           });
-          void saveDraft(canvasDraftKey(this.project.id, this.shareToken), {
-            upsert: [],
-            remove: [],
-            client_id: this.clientId,
-          });
+          void clearDraft(
+            canvasDraftKey(this.project.id, this.shareToken),
+          ).catch(() => {});
           this.disconnect();
           this.onDeleted?.();
           return;

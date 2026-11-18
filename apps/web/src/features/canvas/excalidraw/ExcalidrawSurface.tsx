@@ -677,7 +677,7 @@ export function ExcalidrawSurface({
       const ids = [...editor.getCurrentPageShapeIds()];
       const name =
         editor.pages.find((page) => page.id === editor.getCurrentPageId())
-          ?.name || appT("canvas.canvas");
+          ?.name || appT("canvas.canvas", undefined, editor.locale);
       if (format === "png")
         downloadBlob(
           (
@@ -953,7 +953,7 @@ export function ExcalidrawSurface({
                   type: "image",
                   props: {
                     src: file.dataURL,
-                    name: appT("canvas.canvasImage"),
+                    name: appT("canvas.canvasImage", undefined, editor.locale),
                     mimeType: file.mimeType,
                   },
                   meta: {},

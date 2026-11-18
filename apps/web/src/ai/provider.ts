@@ -81,6 +81,11 @@ async function modelRequest<T>(
       error instanceof OpenAI.APIConnectionTimeoutError
     )
       message = { key: "models.connection.timeout", values: values };
+    else if (
+      error instanceof OpenAI.APIConnectionError ||
+      error instanceof TypeError
+    )
+      message = { key: "models.connection.network", values };
     else if (error instanceof OpenAI.APIError) {
       if (error.status === 401)
         message = { key: "models.connection.unauthorized", values: values };
@@ -108,12 +113,8 @@ async function modelRequest<T>(
             status: error.status || "",
           },
         };
-    } else if (
-      error instanceof OpenAI.APIConnectionError ||
-      error instanceof TypeError
-    )
-      message = { key: "models.connection.network", values: values };
-    else message = { key: "models.connection.invalidResponse", values: values };
+    } else
+      message = { key: "models.connection.invalidResponse", values: values };
     throw new ModelConnectionError(capability, message);
   } finally {
     clearTimeout(timer);

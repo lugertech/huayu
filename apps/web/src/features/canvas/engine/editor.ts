@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { type Locale } from "@/i18n";
 import { COMPONENT_CONFIGS } from "@/config/components";
@@ -244,7 +245,7 @@ export class Editor {
     this.store.notifySession();
   }
   createPage(name = `Page ${this.pages.length + 1}`) {
-    const id = `page:${crypto.randomUUID()}`;
+    const id = `page:${uuid()}`;
     this.store.put([
       {
         id,
@@ -321,7 +322,7 @@ export class Editor {
       opacity: input.opacity ?? this.styles.opacity,
       index:
         input.index ||
-        `b${String(Date.now()).padStart(15, "0")}-${crypto.randomUUID().slice(0, 8)}`,
+        `b${String(Date.now()).padStart(15, "0")}-${uuid().slice(0, 8)}`,
       parentId: input.parentId || this.getCurrentPageId(),
       isLocked: !!input.isLocked,
       meta: input.meta || {},
@@ -851,6 +852,10 @@ export class Editor {
     if (this.bridge?.exportSVG) return this.bridge.exportSVG(ids, options);
     const { exportSVG } = await import("./export");
     return exportSVG(this, ids, options);
+  }
+  /** Keep the current renderer for a thumbnail that may finish after navigation. */
+  getImageExporter() {
+    return this.bridge?.exportPNG?.bind(this.bridge) ?? this.toImage.bind(this);
   }
   async toImage(
     ids: string[],

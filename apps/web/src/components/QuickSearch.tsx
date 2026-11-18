@@ -49,7 +49,7 @@ export function QuickSearch({
   const [projects, setProjects] = useState<Project[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<MessageKey[]>([]);
   const [reload, setReload] = useState(0);
   const [activeId, setActiveId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -85,10 +85,10 @@ export function QuickSearch({
       );
       setErrors([
         ...(projectResult.status === "rejected"
-          ? [t("navigation.projects")]
+          ? ["navigation.projects" as const]
           : []),
         ...(recordingResult.status === "rejected"
-          ? [t("navigation.recordings")]
+          ? ["navigation.recordings" as const]
           : []),
       ]);
       setLoading(false);
@@ -312,7 +312,9 @@ export function QuickSearch({
             >
               <span>
                 {t("search.cannotLoad", {
-                  items: errors.join(t("common.listSeparator")),
+                  items: errors
+                    .map((key) => t(key, undefined, locale))
+                    .join(t("common.listSeparator")),
                 })}
               </span>
               <Button

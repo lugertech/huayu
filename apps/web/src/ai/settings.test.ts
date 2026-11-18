@@ -27,6 +27,73 @@ describe("browser model settings", () => {
       });
     });
 
+    it("merges edited fields with changes already written by another tab", async () => {
+      const {
+        getSettings,
+        defaultSettings,
+        MODEL_STORAGE_KEY,
+        saveConnectionEdits,
+      } = await import("./settings");
+      getSettings();
+      const other = defaultSettings();
+      other.connections.text.model = "changed-elsewhere";
+      other.connections.image.baseUrl = "https://example.test/images";
+      localStorage.setItem(MODEL_STORAGE_KEY, JSON.stringify(other));
+      saveConnectionEdits({ image: { model: "new-image" } });
+      expect(getSettings().connections).toMatchObject({
+        text: { model: "changed-elsewhere" },
+        image: { baseUrl: "https://example.test/images", model: "new-image" },
+      });
+    });
+    it("releases reverted fields and keeps credentials with their service when merging tabs", async () => {
+      const {
+        changedConnectionFields,
+        defaultSettings,
+        getSettings,
+        saveSettings,
+        saveConnectionEdits,
+      } = await import("./settings");
+      const original = defaultSettings();
+      const saved = original.connections.text;
+      const changed = changedConnectionFields(saved, {
+        ...saved,
+        model: "temporary",
+      });
+      const reverted = changedConnectionFields(saved, {
+        ...saved,
+        ...changed,
+        model: saved.model,
+      });
+      expect(reverted).toEqual({});
+      const credentials = changedConnectionFields(saved, {
+        ...saved,
+        apiKey: "test-only",
+      });
+      const other = defaultSettings();
+      other.connections.text.model = "newer-text";
+      other.connections.text.baseUrl = "https://example.test/other";
+      saveSettings(other);
+      saveConnectionEdits({ text: reverted, image: { model: "edited-image" } });
+      expect(getSettings().connections.text).toEqual(other.connections.text);
+      saveConnectionEdits({ text: credentials });
+      expect(getSettings().connections.text).toMatchObject({
+        model: "newer-text",
+        baseUrl: saved.baseUrl,
+        apiKey: "test-only",
+      });
+      const search = original.connections.search;
+      expect(
+        changedConnectionFields(search, {
+          ...search,
+          provider: "brave",
+          baseUrl: "https://api.search.brave.com",
+        }),
+      ).toEqual({
+        provider: "brave",
+        baseUrl: "https://api.search.brave.com",
+        apiKey: "",
+      });
+    });
     it("offers setup for defaults and remembers skipping without saving model settings", async () => {
       const { shouldOfferModelSetup, dismissModelSetup, MODEL_STORAGE_KEY } =
         await import("./settings");

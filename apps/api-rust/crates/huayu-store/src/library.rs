@@ -9,6 +9,7 @@ use uuid::Uuid;
 use crate::{
     Store, StoreError, StoreResult,
     entities::{asset, asset_folder, library_asset},
+    name_contains,
 };
 
 pub struct LibraryQuery<'a> {
@@ -124,7 +125,7 @@ impl Store {
         let mut query = library_asset::Entity::find()
             .filter(library_asset::Column::Trashed.eq(filters.trashed));
         if !filters.search.is_empty() {
-            query = query.filter(library_asset::Column::Name.contains(filters.search));
+            query = query.filter(library_asset::Column::Name.like(name_contains(filters.search)));
         }
         if filters.unfiled {
             query = query.filter(library_asset::Column::FolderId.is_null());

@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -8,12 +8,16 @@ import {
 export function CanvasToolbarTooltip({
   label,
   children,
+  onOpenChange,
+  open,
 }: {
   label: string;
   children: ReactElement;
+  open?: boolean;
+  onOpenChange?: ComponentProps<typeof Tooltip>["onOpenChange"];
 }) {
   return (
-    <Tooltip>
+    <Tooltip open={open} onOpenChange={onOpenChange}>
       <TooltipTrigger render={children} />
       <TooltipContent side="bottom" sideOffset={10}>
         {label}

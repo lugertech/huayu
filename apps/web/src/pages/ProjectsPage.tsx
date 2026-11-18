@@ -1,3 +1,4 @@
+import { readDraft, applyDraft } from "@/features/canvas/drafts";
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
 import { errorText, LocalizedError } from "@/i18n/errors";
@@ -424,8 +425,9 @@ export function ProjectsPage() {
     setNameDialog((current) => ({ ...current, project: null }));
   }
   async function duplicate(projectId: string, name: string) {
+    const draft = await readDraft(projectId).catch(() => undefined);
     const original = await api<Project>(`/api/projects/${projectId}`);
-    let document = original.document;
+    let document = applyDraft(original.document, draft);
     if (!document && original.recipe) {
       const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
         await Promise.all([

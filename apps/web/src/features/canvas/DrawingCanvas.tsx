@@ -3,6 +3,7 @@ import { LocaleContext, t as appT, useTranslations } from "@/i18n";
 import {
   useEffect,
   useEffectEvent,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -125,6 +126,11 @@ function DrawingCanvasContent({
     if (inspectId)
       navigate(route.pathname + route.search, { replace: true, state: null });
   }, [inspectId, navigate, route.pathname, route.search]);
+  const [backTipOpen, setBackTipOpen] = useState(false);
+  const backHover = useRef({
+    moved: false,
+    transition: null as Animation | null,
+  });
   const [shareOpen, setShareOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState(initial.name);
@@ -171,17 +177,10 @@ function DrawingCanvasContent({
   useEffect(() => {
     if (!editor) return;
     let viewTimer: ReturnType<typeof setTimeout>;
-    let coverTimer: ReturnType<typeof setTimeout>;
-    type CoverJob = {
-      phase:
-        | "waiting"
-        | "flushing"
-        | "rendering"
-        | "uploading"
-        | "completed"
-        | "failed";
-    };
-    let coverJob: CoverJob | null = null;
+    let coverTimer: ReturnType<typeof setTimeout> | undefined;
+    let coverJob: (() => Promise<void>) | undefined;
+    let documentChanged = false;
+    let disposed = false;
     const unsubscribe = editor.store.listen(
       () => {
         clearTimeout(viewTimer);
@@ -196,62 +195,60 @@ function DrawingCanvasContent({
     const previewKey = `huayu:thumbnail:${project.id}`;
     function scheduleCover(delay = 1000, attempt = 0) {
       if (shareToken !== null) return;
-      const job: CoverJob = { phase: "waiting" };
-      coverJob = job;
       clearTimeout(coverTimer);
-      coverTimer = setTimeout(async () => {
+      const renderImage = editor.getImageExporter();
+      async function render() {
         try {
-          job.phase = "flushing";
           await sync.flush();
-          if (job !== coverJob) return;
+          if (render !== coverJob) return;
           const revision = sync.getSnapshot().revision;
           const ids = [...editor.getCurrentPageShapeIds()];
-          if (!ids.length || job !== coverJob) {
-            job.phase = "completed";
-            return;
+          let cover: string | null = null;
+          if (ids.length) {
+            const bounds = Bounds.union(
+              ids.map((id) => editor.getShapePageBounds(id)!).filter(Boolean),
+            );
+            let scale = thumbnailScale(bounds.w + 40, bounds.h + 40);
+            let blob: Blob | undefined;
+            for (let sizeAttempt = 0; sizeAttempt < 3; sizeAttempt++) {
+              if (render !== coverJob) return;
+              ({ blob } = await renderImage(ids, {
+                format: "png",
+                scale,
+                background: false,
+                padding: 20,
+              }));
+              if (blob.size <= 350000) break;
+              scale *= 0.6;
+            }
+            if (render !== coverJob) return;
+            if (!blob || blob.size > 350000) return;
+            cover = await blobAsDataURL(blob);
           }
-          const bounds = Bounds.union(
-            ids.map((id) => editor.getShapePageBounds(id)!).filter(Boolean),
-          );
-          let scale = thumbnailScale(bounds.w + 40, bounds.h + 40);
-          let blob: Blob | undefined;
-          for (let sizeAttempt = 0; sizeAttempt < 3; sizeAttempt++) {
-            if (job !== coverJob) return;
-            job.phase = "rendering";
-            ({ blob } = await editor.toImage(ids, {
-              format: "png",
-              scale,
-              background: false,
-              padding: 20,
-            }));
-            if (blob.size <= 350000) break;
-            scale *= 0.6;
-          }
-          if (job !== coverJob) return;
-          if (!blob || blob.size > 350000) {
-            job.phase = "failed";
-            return;
-          }
-          const cover = await blobAsDataURL(blob);
-          if (job !== coverJob) return;
-          job.phase = "uploading";
-          if (cover !== project.cover)
-            await api(`/api/projects/${project.id}`, {
-              method: "PATCH",
-              body: JSON.stringify({ cover, cover_revision: revision }),
-            });
-          if (job !== coverJob) return;
-          job.phase = "completed";
+          if (render !== coverJob) return;
+
+          await api(`/api/projects/${project.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ cover, cover_revision: revision }),
+          });
+          if (render !== coverJob) return;
+
           try {
-            localStorage.setItem(previewKey, thumbnailStamp(cover, revision));
+            if (cover)
+              localStorage.setItem(previewKey, thumbnailStamp(cover, revision));
+            else localStorage.removeItem(previewKey);
           } catch {
             /* The preview remains usable when browser storage is unavailable. */
           }
         } catch {
-          job.phase = "failed";
-          if (job === coverJob && attempt < 2)
+          if (!disposed && render === coverJob && attempt < 2)
             scheduleCover(1500 * (attempt + 1), attempt + 1);
         }
+      }
+      coverJob = render;
+      coverTimer = setTimeout(() => {
+        coverTimer = undefined;
+        void render();
       }, delay);
     }
     const bounds = Bounds.union(
@@ -266,6 +263,7 @@ function DrawingCanvasContent({
       /* Refreshing a derived preview does not require browser storage. */
     }
     if (
+      (project.cover || editor.getCurrentPageShapeIds().size) &&
       needsThumbnailRefresh(
         project.cover,
         bounds.w + 40,
@@ -275,13 +273,20 @@ function DrawingCanvasContent({
       )
     )
       scheduleCover(800);
-    const documentUnsubscribe = editor.store.listen(() => scheduleCover(), {
-      scope: "document",
-    });
+    const documentUnsubscribe = editor.store.listen(
+      (entry) => {
+        if (entry.source === "user") documentChanged = true;
+        scheduleCover();
+      },
+      { scope: "document" },
+    );
     return () => {
-      coverJob = null;
+      disposed = true;
       clearTimeout(viewTimer);
       clearTimeout(coverTimer);
+      // Navigation may precede the debounce. Finish the edited revision for the project list.
+      if (!documentChanged) coverJob = undefined;
+      else if (coverTimer !== undefined) void coverJob?.();
       unsubscribe();
       documentUnsubscribe();
       void saveView(project.id, getSnapshot(editor.store).session).catch(
@@ -368,11 +373,66 @@ function DrawingCanvasContent({
   const pageTitle = (
     <div className="board-toolbar-project">
       {shareToken === null && (
-        <CanvasToolbarTooltip label={t("navigation.backToProjects")}>
+        <CanvasToolbarTooltip
+          label={t("navigation.backToProjects")}
+          open={backTipOpen}
+          onOpenChange={(open, details) => {
+            if (open && details.reason === "trigger-hover") {
+              const transition = document
+                .getElementById("app-sidebar")
+                ?.getAnimations()
+                .find(
+                  (animation) =>
+                    animation instanceof CSSTransition &&
+                    animation.transitionProperty === "width" &&
+                    animation.playState === "running",
+                );
+              if (transition) {
+                details.cancel();
+                const hover = backHover.current;
+                hover.transition = transition;
+                const trigger = details.trigger;
+                void transition.finished.then(
+                  () => {
+                    if (
+                      backHover.current === hover &&
+                      hover.transition === transition &&
+                      hover.moved &&
+                      trigger?.matches(":hover")
+                    ) {
+                      hover.transition = null;
+                      setBackTipOpen(true);
+                    }
+                  },
+                  () => {},
+                );
+                return;
+              }
+            }
+            backHover.current.transition = null;
+            setBackTipOpen(open);
+          }}
+        >
           <Button
             variant="ghost"
             size="icon"
             className="board-toolbar-back"
+            onPointerMove={(event) => {
+              if (
+                event.pointerType !== "mouse" ||
+                !(event.movementX || event.movementY)
+              )
+                return;
+              const hover = backHover.current;
+              hover.moved = true;
+              if (hover.transition?.playState === "finished") {
+                hover.transition = null;
+                setBackTipOpen(true);
+              }
+            }}
+            onPointerLeave={() => {
+              backHover.current = { moved: false, transition: null };
+            }}
             aria-label={t("navigation.backToProjects")}
             onClick={() => navigate("/projects")}
           >

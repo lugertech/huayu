@@ -30,6 +30,7 @@ export interface ModelSettings {
   version: 1;
   connections: Record<Capability, Connection>;
 }
+export type ConnectionEdits = Partial<Record<Capability, Partial<Connection>>>;
 export const MODEL_STORAGE_KEY = "huayu:model-settings:v1";
 const MODEL_SETUP_DISMISSED_KEY = "huayu:model-setup-dismissed";
 export const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
@@ -135,6 +136,31 @@ export function saveSettings(value: ModelSettings) {
   localStorage.setItem(MODEL_STORAGE_KEY, JSON.stringify(normalized));
   cached = normalized;
   listeners.forEach((listener) => listener());
+}
+
+export function changedConnectionFields(
+  saved: Connection,
+  next: Connection,
+): Partial<Connection> {
+  const fields: Partial<Connection> = Object.fromEntries(
+    Object.entries(next).filter(
+      ([key, value]) => saved[key as keyof Connection] !== value,
+    ),
+  );
+  // A credential belongs to the provider and address the user was editing.
+  if ("provider" in fields || "baseUrl" in fields || "apiKey" in fields) {
+    fields.provider = next.provider;
+    fields.baseUrl = next.baseUrl;
+    fields.apiKey = next.apiKey;
+  }
+  return fields;
+}
+
+export function saveConnectionEdits(edits: ConnectionEdits) {
+  const latest = parseSettings(localStorage.getItem(MODEL_STORAGE_KEY));
+  for (const capability of CAPABILITIES)
+    Object.assign(latest.connections[capability], edits[capability]);
+  saveSettings(latest);
 }
 
 if (typeof window !== "undefined")

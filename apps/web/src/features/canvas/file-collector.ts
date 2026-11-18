@@ -1,3 +1,4 @@
+import { mediaFileName } from "@/lib/file-name";
 import { getTranslator, getLocale, type Locale } from "@/i18n";
 import type { Editor } from "@/features/canvas/editor";
 import { downloadBlob } from "@/api/client";
@@ -58,33 +59,26 @@ export function collectDownloadableFiles(
         sourceLabel: t("canvas.websiteStep"),
         content: props.htmlContent,
       });
-    else if (
-      ["ai-image", "image"].includes(shape.type) &&
-      resultSource(editor, shape)
-    )
+    else if (["ai-image", "image", "speech"].includes(shape.type)) {
+      const url = resultSource(editor, shape);
+      if (!url) continue;
+      const audio = shape.type === "speech";
+      const name =
+        props.fileName ||
+        (audio ? props.name || t("common.speech") : imageName);
+      const mime =
+        (imageAsset?.typeName === "asset" && imageAsset.props.mimeType) ||
+        /^data:([^;,]+)/i.exec(url)?.[1];
       files.push({
         id: shape.id,
         shapeId: shape.id,
-        fileName: /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(imageName)
-          ? imageName
-          : `${imageName}.png`,
-        fileType: "png",
-        source: "image",
-        sourceLabel: t("canvas.imageStep"),
-        downloadUrl: resultSource(editor, shape),
+        fileName: mediaFileName(name, mime),
+        fileType: audio ? "mp3" : "png",
+        source: audio ? "speech" : "image",
+        sourceLabel: t(audio ? "canvas.audioStep" : "canvas.imageStep"),
+        downloadUrl: url,
       });
-    else if (shape.type === "speech" && props.src)
-      files.push({
-        id: shape.id,
-        shapeId: shape.id,
-        fileName: /\.(mp3|wav|webm|m4a|flac)$/i.test(props.name || "")
-          ? props.name
-          : `${props.name || t("common.speech")}.mp3`,
-        fileType: "mp3",
-        source: "speech",
-        sourceLabel: t("canvas.audioStep"),
-        downloadUrl: props.src,
-      });
+    }
   }
   return files;
 }
@@ -93,5 +87,9 @@ export async function downloadFile(file: DownloadableFile) {
   const blob = file.downloadUrl
     ? await blobForSource(file.downloadUrl)
     : await createDocumentBlob(file.content || "", file.fileType);
-  downloadBlob(blob, file.fileName);
+  const name =
+    file.source === "image" || file.source === "speech"
+      ? mediaFileName(file.fileName, blob.type)
+      : file.fileName;
+  downloadBlob(blob, name);
 }

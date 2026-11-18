@@ -1,3 +1,5 @@
+import { rewriteWebsiteAttachments } from "./website-attachments";
+import { limitName } from "@/lib/file-name";
 import { t } from "@/i18n";
 import { LocalizedError } from "@/i18n/errors";
 import {
@@ -39,21 +41,6 @@ function assertProjectFileSize(size: number) {
     throw new LocalizedError({ key: "canvas.projectFilesCannotExceed128Mb" });
 }
 
-function resourceRecords(
-  document: CanvasDocument,
-): Array<{ props: Record<string, unknown> }> {
-  return Object.values(document.store).filter((record) => {
-    if (!record || typeof record !== "object" || !("props" in record))
-      return false;
-    return (
-      (record["typeName"] === "asset" &&
-        ["image", "video"].includes(record["type"])) ||
-      (record["typeName"] === "shape" &&
-        ["ai-image", "speech", "file", "video"].includes(record["type"]))
-    );
-  }) as Array<{ props: Record<string, unknown> }>;
-}
-
 /** Re-address unchanged attachments without making completed results look outdated. */
 export async function rewriteProjectResources(
   source: CanvasDocument,
@@ -61,6 +48,16 @@ export async function rewriteProjectResources(
 ): Promise<CanvasDocument> {
   const document = structuredClone(source);
   const resources = new Map<string, string>();
+  async function resource(src: string) {
+    const hash = src.indexOf("#");
+    const url = hash < 0 ? src : src.slice(0, hash);
+    let replacement = resources.get(url);
+    if (replacement === undefined) {
+      replacement = await rewrite(url);
+      resources.set(url, replacement);
+    }
+    return hash < 0 ? replacement : replacement + src.slice(hash);
+  }
   function read(value: CanvasDocument) {
     const store = createCanvasStore();
     loadSnapshot(store, {
@@ -76,11 +73,23 @@ export async function rewriteProjectResources(
       if (generationInfo(shape) && !resultIsStale(before, shape.id))
         fresh.add(shape.id);
   }
-  for (const record of resourceRecords(document)) {
-    const src = record.props.src;
-    if (typeof src !== "string" || !src) continue;
-    if (!resources.has(src)) resources.set(src, await rewrite(src));
-    record.props.src = resources.get(src);
+  for (const record of Object.values(document.store) as CanvasRecord[]) {
+    if (record.typeName === "shape" && record.type === "website") {
+      for (const key of ["htmlContent", "result"] as const) {
+        const html = record.props[key];
+        if (typeof html === "string")
+          record.props[key] = await rewriteWebsiteAttachments(html, resource);
+      }
+    } else if (
+      (record.typeName === "asset" &&
+        ["image", "video"].includes(record.type)) ||
+      (record.typeName === "shape" &&
+        ["ai-image", "speech", "file", "video"].includes(record.type))
+    ) {
+      const src = record.props?.src;
+      if (typeof src === "string" && src)
+        record.props.src = await resource(src);
+    }
   }
   const after = read(document);
   for (const page of after.pages) {
@@ -170,7 +179,7 @@ export function parseProjectFile(value: unknown): {
     return {
       name:
         typeof object.name === "string"
-          ? object.name.trim().slice(0, 120) || t("canvas.importedCanvas")
+          ? limitName(object.name.trim()) || t("canvas.importedCanvas")
           : t("canvas.importedCanvas"),
       document: getSnapshot(store).document,
     };
@@ -208,7 +217,7 @@ export function parseProjectFile(value: unknown): {
   }
   const name =
     typeof object.name === "string" && object.name.trim()
-      ? object.name.trim().slice(0, 120)
+      ? limitName(object.name.trim())
       : t("canvas.importedProject");
   return { name, document: getSnapshot(store).document };
 }

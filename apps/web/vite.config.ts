@@ -2,7 +2,7 @@ import { defineConfig, type Plugin, lazyPlugins } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+import { resolve, sep } from "node:path";
 import { createReadStream, readdirSync, readFileSync } from "node:fs";
 import { externalFontWasm } from "./build/external-font-wasm";
 import { precompressAssets } from "./build/precompress-assets.ts";
@@ -15,7 +15,7 @@ const fontsRoot = resolve(
   "node_modules/@excalidraw/excalidraw/dist/prod/fonts",
 );
 const noticesRoot = resolve(root, "../../licenses");
-function whiteboardAssets(): Plugin {
+export function whiteboardAssets(): Plugin {
   return {
     name: "local-whiteboard-fonts",
     configureServer(server) {
@@ -33,7 +33,7 @@ function whiteboardAssets(): Plugin {
           }
           const file = resolve(fontsRoot, "." + pathname);
           if (
-            !file.startsWith(fontsRoot + "/") ||
+            !file.startsWith(fontsRoot + sep) ||
             !/\.(woff2?|ttf|otf)$/.test(file)
           ) {
             next();
@@ -73,7 +73,7 @@ function whiteboardAssets(): Plugin {
         if (/\.(woff2?|ttf|otf)$/.test(name))
           this.emitFile({
             type: "asset",
-            fileName: `assets/excalidraw/fonts/${name}`,
+            fileName: `assets/excalidraw/fonts/${name.split(sep).join("/")}`,
             source: readFileSync(resolve(fontsRoot, name)),
           });
       }

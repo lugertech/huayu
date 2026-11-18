@@ -13,7 +13,7 @@ use huayu_core::{Asset, Document, DocumentPatch, Project, Recording, Template, V
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectOptions, ConnectionTrait, Database,
     DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder, SqlErr,
-    TransactionTrait,
+    TransactionTrait, sea_query::LikeExpr,
 };
 use uuid::Uuid;
 
@@ -32,6 +32,14 @@ pub enum StoreError {
 }
 
 pub type StoreResult<T> = Result<T, StoreError>;
+
+fn name_contains(text: &str) -> LikeExpr {
+    let escaped = text
+        .replace('!', "!!")
+        .replace('%', "!%")
+        .replace('_', "!_");
+    LikeExpr::new(format!("%{escaped}%")).escape('!')
+}
 
 pub struct CollaborationMember {
     pub id: String,
@@ -122,7 +130,7 @@ impl Store {
     pub async fn projects(&self, search: Option<&str>) -> StoreResult<Vec<Project>> {
         let mut query = project::Entity::find().order_by_desc(project::Column::UpdatedAt);
         if let Some(search) = search.filter(|value| !value.is_empty()) {
-            query = query.filter(project::Column::Name.contains(search));
+            query = query.filter(project::Column::Name.like(name_contains(search)));
         }
         let rows = query.all(&self.db).await?;
         rows.into_iter()
