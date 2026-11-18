@@ -133,14 +133,16 @@ export async function api<T>(
 export async function uploadAsset(
   file: File | Blob,
   name?: string,
+  signal?: AbortSignal,
 ): Promise<Asset> {
+  signal?.throwIfAborted();
   const body = new FormData();
   body.append(
     "file",
     file,
     name || (file instanceof File ? file.name : "file"),
   );
-  return api<Asset>("/api/assets", { method: "POST", body });
+  return api<Asset>("/api/assets", { method: "POST", body, signal });
 }
 
 export function downloadBlob(blob: Blob, name: string) {

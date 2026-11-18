@@ -1,4 +1,3 @@
-import { t, type Locale } from "@/i18n";
 import type { CanvasShape, Editor } from "@/features/canvas/editor";
 import { connectedShapes } from "@/features/canvas/connection-parser";
 import { drawingShapes } from "./context";
@@ -169,22 +168,4 @@ export function resultIsStale(editor: Editor, id: string) {
     );
   }
   return changed(id);
-}
-
-export function formatElapsed(milliseconds: number, locale?: Locale) {
-  const seconds = Math.max(0, milliseconds) / 1000;
-  return seconds < 60
-    ? t(
-        "common.duration.seconds",
-        { arg0: seconds < 10 ? seconds.toFixed(1) : Math.floor(seconds) },
-        locale,
-      )
-    : t(
-        "common.duration.minutesSeconds",
-        {
-          arg0: Math.floor(seconds / 60),
-          arg1: Math.floor(seconds % 60),
-        },
-        locale,
-      );
 }

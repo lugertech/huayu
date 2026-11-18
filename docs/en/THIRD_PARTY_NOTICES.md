@@ -6,7 +6,7 @@ The repository’s MIT license covers only application content it may license. I
 
 The canvas uses [Excalidraw 0.18.1](https://github.com/excalidraw/excalidraw/tree/v0.18.1), under MIT without a license-key requirement. See [retained license](../../licenses/excalidraw-MIT.txt). This project uses the open-source editor library, not its hosted rooms, accounts, analytics or paid services.
 
-A [local patch](../../patches/@excalidraw__excalidraw@0.18.1.patch) moves the editor's interaction reset from `unload` to `pagehide`, preserving the callback and listener cleanup in both development and production builds. Recheck the patch and editing after page navigation when upgrading the dependency.
+A [local patch](../../patches/@excalidraw__excalidraw@0.18.1.patch) uses overlap for box selection and moves the editor's interaction reset from `unload` to `pagehide` while preserving the callback and listener cleanup. Both development and production builds apply the patch. When upgrading the dependency, verify partial-overlap selection and editing after leaving and returning to the page.
 
 Bundled fonts are served locally and remain unmodified. See [font notices](../../licenses/excalidraw-fonts-NOTICE.md) and adjacent OFL texts. Comic Shanns uses MIT; other bundled fonts use SIL OFL. Helvetica and Segoe UI Emoji are system fonts and are not distributed.
 

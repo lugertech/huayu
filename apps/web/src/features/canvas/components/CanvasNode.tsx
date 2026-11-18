@@ -29,7 +29,6 @@ import { ComponentToolSelect } from "./ComponentToolSelect";
 import { ComponentConnectionDots } from "./ComponentConnectionDots";
 import { ComponentHeader } from "./ComponentHeader";
 import { canvasErrorToast } from "./CanvasErrorToast";
-import { requestInspection } from "@/workflow/context";
 import { isSharedCanvas } from "@/lib/canvas-access";
 import { IMAGE_RATIOS } from "@/workflow/results";
 import { componentPlaceholder } from "@/config/components";
@@ -102,15 +101,6 @@ export function CanvasNode({
   async function run() {
     try {
       await runWorkflow(editor, shape.id);
-      if (running) showToast({ title: t("canvas.creationStopped") });
-      else
-        showToast({
-          title: t("canvas.creationComplete"),
-          action: {
-            label: t("canvas.viewResult"),
-            onClick: () => requestInspection(editor, shape.id),
-          },
-        });
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError"))
         failed(error, () => void run());

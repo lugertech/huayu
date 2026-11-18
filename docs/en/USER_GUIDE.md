@@ -103,9 +103,9 @@ The asset library manages uploaded files independently of projects. Its sidebar 
 
 ## Connect and run
 
-Drag a card’s left or right port to another card to connect an input or next step. Release on empty space to add a step. You can also click a port or use the keyboard menu. Direction expresses content flow; invalid cycles and duplicate connections explain why they cannot be created.
+Select a card, then click the plus button on the left to add input material or on the right to add a next step. You can also open the menu with the keyboard. Choose a component to create or select **Connect an existing card**. Arrows show the direction of content flow. The menu explains why duplicate connections and cycles are unavailable.
 
-Run one step or the entire workflow. Watch status and elapsed time, and stop when needed. Changes to source material mark downstream results as outdated. Update only affected branches; locked results are reused.
+Run one step or the entire workflow. The top of the canvas shows **Running** and a stop button with a solid red square icon. Click the stop button to cancel active requests and skip queued steps. The control shows **Stopping** until all tasks have been cancelled, then disappears. Changes to source material mark downstream results as outdated. You can update affected branches on their own. Locked results are reused.
 
 ## Multiplayer collaboration
 

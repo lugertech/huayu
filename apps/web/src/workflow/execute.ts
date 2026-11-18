@@ -76,8 +76,6 @@ const executions = new WeakMap<Editor, Map<string, WorkflowRun>>();
 export interface NodeExecution {
   status: "idle" | "queued" | "running" | "success" | "error" | "cancelled";
   message: string;
-  startedAt?: number;
-  completedAt?: number;
   modelCapability?: Capability;
 }
 const idleExecution: NodeExecution = { status: "idle", message: "" };
@@ -147,18 +145,11 @@ export function useWorkflowState(editor: Editor) {
     },
     () => version,
   );
-  const values = [...(states.get(editor)?.values() || [])];
-  const runs = [...(executions.get(editor)?.values() || [])];
+  const runs = [...(executions.get(editor)?.values() ?? [])];
   return {
     busy: runs.length > 0,
-    phase: runs.some((run) => run.phase === "cancelling")
-      ? "cancelling"
-      : runs.length
-        ? "running"
-        : "idle",
-    total: values.length,
-    completed: values.filter((value) => value.status === "success").length,
-    failed: values.filter((value) => value.status === "error").length,
+    stopping:
+      runs.length > 0 && runs.every((run) => run.phase === "cancelling"),
   };
 }
 function updateExecution(
@@ -176,12 +167,22 @@ function updateExecution(
   current.set(id, next);
   changed();
 }
-export function stopAllExecutions(editor: Editor) {
-  for (const run of new Set(executions.get(editor)?.values())) {
+function cancelRuns(editor: Editor, runs: Set<WorkflowRun>) {
+  for (const run of runs) {
     run.phase = "cancelling";
     run.controller.abort();
   }
+  for (const [id, run] of executions.get(editor) || []) {
+    if (runs.has(run) && states.get(editor)?.get(id)?.status === "queued")
+      updateExecution(editor, id, {
+        status: "cancelled",
+        messageKey: "workflow.status.notRun",
+      });
+  }
   changed();
+}
+export function stopAllExecutions(editor: Editor) {
+  cancelRuns(editor, new Set(executions.get(editor)?.values()));
 }
 
 export async function inputForShape(
@@ -539,6 +540,8 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
           padding: 10,
         })
       : { blob: null };
+    const screenshot = blob ? await blobAsDataURL(blob) : undefined;
+    signal.throwIfAborted();
     const request = buildAgentRequest(
       query,
       bounds,
@@ -555,11 +558,12 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
           text: data.text || plainText(item.props.richText) || "",
         };
       }),
-      blob ? await blobAsDataURL(blob) : undefined,
+      screenshot,
     );
     const events = await callAgentSSE(
       request,
       (events) => {
+        if (signal.aborted) return;
         const message = events
           .map((event) => event.text || event.intent)
           .filter((value) => typeof value === "string")
@@ -605,9 +609,7 @@ export async function runWorkflow(
 ): Promise<void> {
   const existing = executions.get(editor)?.get(root);
   if (existing) {
-    existing.phase = "cancelling";
-    existing.controller.abort();
-    changed();
+    cancelRuns(editor, new Set([existing]));
     return;
   }
   await runPlan(editor, [root]);
@@ -673,8 +675,6 @@ async function runPlan(editor: Editor, roots: string[]) {
     updateExecution(editor, id, {
       status: "queued",
       messageKey: "workflow.status.queued",
-      startedAt: undefined,
-      completedAt: undefined,
       modelCapability: undefined,
     });
   changed();
@@ -687,7 +687,6 @@ async function runPlan(editor: Editor, roots: string[]) {
           updateExecution(editor, id, {
             status: "running",
             messageKey: "workflow.status.processing",
-            startedAt: Date.now(),
           });
           try {
             await executeNode(editor, id, controller.signal);
@@ -697,16 +696,14 @@ async function runPlan(editor: Editor, roots: string[]) {
               messageKey: editor.getShape(id)?.props.isLocked
                 ? "workflow.status.reusedLockedResult"
                 : "workflow.status.completed",
-              completedAt: Date.now(),
             });
           } catch (error) {
             const aborted = controller.signal.aborted;
             if (!aborted) failureCause = error;
-            run.phase = "cancelling";
             updateExecution(editor, id, {
               status: aborted ? "cancelled" : "error",
               modelCapability:
-                error instanceof ModelConnectionError
+                !aborted && error instanceof ModelConnectionError
                   ? error.capability
                   : undefined,
               messageKey: aborted ? "workflow.status.cancelled" : undefined,
@@ -719,18 +716,14 @@ async function runPlan(editor: Editor, roots: string[]) {
                 : error instanceof Error
                   ? error.message
                   : t("workflow.status.failed"),
-              completedAt: Date.now(),
             });
-            controller.abort();
+            if (!aborted) cancelRuns(editor, new Set([run]));
             throw error;
           }
         }),
       );
       const failure = results.find((result) => result.status === "rejected");
-      if (failure?.status === "rejected") {
-        controller.abort();
-        throw failureCause || failure.reason;
-      }
+      if (failure?.status === "rejected") throw failureCause || failure.reason;
     }
   } finally {
     ids.forEach((id) => {
@@ -740,7 +733,6 @@ async function runPlan(editor: Editor, roots: string[]) {
         updateExecution(editor, id, {
           status: "cancelled",
           messageKey: "workflow.status.notRun",
-          completedAt: Date.now(),
         });
     });
     changed();

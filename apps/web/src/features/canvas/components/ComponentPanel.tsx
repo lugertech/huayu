@@ -139,7 +139,14 @@ export function ComponentPanel() {
         !!hit &&
         !!editor.container?.contains(hit) &&
         !hit.closest("[data-canvas-ui]");
-      active.drag.finish({ x: event.clientX, y: event.clientY }, valid);
+      const shapeId = active.drag.finish(
+        { x: event.clientX, y: event.clientY },
+        valid,
+      );
+      if (shapeId)
+        editor.container
+          ?.querySelector<HTMLElement>(".excalidraw")
+          ?.focus({ preventScroll: true });
     } else if (hit && active.button.contains(hit))
       createCanvasShape(editor, active.drag.type);
     clearGesture();

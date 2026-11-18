@@ -403,6 +403,65 @@ describe("workflow execution parity", () => {
     editor.updateShape({ id: "shape:inside", props: { text: "框内变化" } });
     expect(resultIsStale(editor, "shape:drawing")).toBe(true);
   });
+  it("stops all active requests and skips queued steps even when a response arrives late", async () => {
+    const editor = board();
+    node(editor, "shape:source", "ai-text", "用户输入");
+    node(editor, "shape:active", "instruction", "第一条工作流");
+    editor.updateShape({ id: "shape:active", props: { result: "已有结果" } });
+    node(editor, "shape:queued", "instruction", "未开始的步骤");
+    node(editor, "shape:independent", "instruction", "第二条工作流");
+    connectShapes(editor, "shape:source", "shape:active");
+    connectShapes(editor, "shape:active", "shape:queued");
+    type Finish = (result: ReturnType<typeof value>) => void;
+    const requests = new Map<string, { signal: AbortSignal; finish: Finish }>();
+    mocks.instruction.mockImplementation(
+      (query: string, _inputs, _search, signal: AbortSignal) =>
+        new Promise<ReturnType<typeof value>>((finish) => {
+          requests.set(query, { signal, finish });
+        }),
+    );
+    const settled = Promise.allSettled([
+      runWorkflow(editor, "shape:source"),
+      runWorkflow(editor, "shape:independent"),
+    ]);
+    await vi.waitFor(() => expect(requests.size).toBe(2));
+    expect(nodeExecution(editor, "shape:source").status).toBe("success");
+    expect(nodeExecution(editor, "shape:queued").status).toBe("queued");
+
+    stopAllExecutions(editor);
+    expect([...requests.values()].every(({ signal }) => signal.aborted)).toBe(
+      true,
+    );
+    expect(nodeExecution(editor, "shape:queued", "zh-CN")).toMatchObject({
+      status: "cancelled",
+      message: "未继续运行",
+    });
+    expect(nodeExecution(editor, "shape:queued", "en").message).toBe("Not run");
+    expect(nodeIsBusy(editor, "shape:active")).toBe(true);
+    expect(nodeIsBusy(editor, "shape:independent")).toBe(true);
+    requests.get("第一条工作流")!.finish(value("迟到的结果"));
+    await vi.waitFor(() =>
+      expect(nodeIsBusy(editor, "shape:active")).toBe(false),
+    );
+    expect(nodeIsBusy(editor, "shape:independent")).toBe(true);
+    expect(mocks.instruction).toHaveBeenCalledTimes(2);
+    requests.get("第二条工作流")!.finish(value("迟到的结果"));
+    for (const result of await settled)
+      expect(result).toMatchObject({
+        status: "rejected",
+        reason: { name: "AbortError" },
+      });
+
+    expect(mocks.instruction).toHaveBeenCalledTimes(2);
+    expect(nodeExecution(editor, "shape:active").status).toBe("cancelled");
+    expect(nodeExecution(editor, "shape:independent").status).toBe("cancelled");
+    expect(nodeExecution(editor, "shape:source").status).toBe("success");
+    expect(editor.getShape("shape:active").props.result).toBe("已有结果");
+    expect(editor.getShape("shape:independent").props.result).toBeUndefined();
+    expect(nodeIsBusy(editor, "shape:queued")).toBe(false);
+    expect(nodeIsBusy(editor, "shape:independent")).toBe(false);
+  });
+
   it("stops an active AI drawing request and allows it to run again", async () => {
     const editor = board();
     editor.createShape({

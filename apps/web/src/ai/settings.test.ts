@@ -14,11 +14,52 @@ describe("browser model settings", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("defaults new image connections to a supported model", async () => {
+  describe("initial model setup", () => {
+    beforeEach(() => {
+      const storage = new Map<string, string>();
+      vi.stubGlobal("localStorage", {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+      });
+      vi.stubGlobal("window", {
+        location: { origin: "http://127.0.0.1:5858" },
+        addEventListener: vi.fn(),
+      });
+    });
+
+    it("offers setup for defaults and remembers skipping without saving model settings", async () => {
+      const { shouldOfferModelSetup, dismissModelSetup, MODEL_STORAGE_KEY } =
+        await import("./settings");
+      expect(shouldOfferModelSetup()).toBe(true);
+
+      dismissModelSetup();
+      expect(shouldOfferModelSetup()).toBe(false);
+      expect(localStorage.getItem(MODEL_STORAGE_KEY)).toBeNull();
+    });
+
+    it("offers setup with only search configured and accepts an existing keyless model", async () => {
+      const { shouldOfferModelSetup, saveSettings, defaultSettings } =
+        await import("./settings");
+      const settings = defaultSettings();
+      settings.connections.search.apiKey = "test-only-search-key";
+      saveSettings(settings);
+      expect(shouldOfferModelSetup()).toBe(true);
+
+      settings.connections.transcription.baseUrl = "http://localhost:8001/v1";
+      saveSettings(settings);
+      expect(shouldOfferModelSetup()).toBe(false);
+    });
+  });
+
+  it("prefills current OpenAI models for new text and image connections", async () => {
     const { defaultSettings } = await import("./settings");
-    expect(defaultSettings().connections.image).toMatchObject({
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-image-1.5",
+    expect(defaultSettings().connections).toMatchObject({
+      text: { baseUrl: "https://api.openai.com/v1", model: "gpt-6-luna" },
+      vision: { baseUrl: "https://api.openai.com/v1", model: "gpt-6-luna" },
+      image: {
+        baseUrl: "https://api.openai.com/v1",
+        model: "gpt-image-2.6-flare",
+      },
     });
   });
 

@@ -1,5 +1,5 @@
 import { LocalizedError } from "@/i18n/errors";
-import { getTranslator, getLocale, type Locale } from "@/i18n";
+import { formatNumber, getTranslator, getLocale, type Locale } from "@/i18n";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Bounds, type Editor } from "./editor";
@@ -11,7 +11,7 @@ import {
   componentPlaceholder,
   type ComponentType,
 } from "@/config/components";
-import { ImageIcon, ImageOff } from "lucide-react";
+import { FileText, ImageIcon, ImageOff } from "lucide-react";
 import { blobForSource, blobAsDataURL } from "@/api/backend";
 import { layoutMindmap } from "@/features/canvas/components/shapes/chart-shape/MindmapRenderer";
 import { layoutFlowchart } from "@/features/canvas/components/shapes/chart-shape/FlowchartRenderer";
@@ -165,7 +165,33 @@ async function card(editor: Editor, shape: CanvasShape, locale: Locale) {
     </g>,
   );
   let body: string;
-  if (shape.type === "ai-image") {
+  if (shape.type === "file") {
+    const size = props.fileSize
+      ? `${formatNumber(props.fileSize / 1024, { minimumFractionDigits: 1, maximumFractionDigits: 1 }, locale)} KB`
+      : "";
+    const top = 36 + Math.max(4, (h - 36 - (size ? 88 : 64)) / 2);
+    body = renderToStaticMarkup(
+      <g color={muted} transform={`translate(0 ${top})`}>
+        <g transform={`translate(${w / 2 - 16} 0)`}>
+          <FileText size={32} />
+        </g>
+        <g transform="translate(0 36)">
+          <TextSVG
+            text={props.fileName || componentPlaceholder(shape.type, locale)}
+            w={w}
+            h={28}
+            size={13}
+            color={muted}
+          />
+        </g>
+        {size && (
+          <g transform="translate(0 64)">
+            <TextSVG text={size} w={w} h={24} size={13} color={muted} />
+          </g>
+        )}
+      </g>,
+    );
+  } else if (shape.type === "ai-image") {
     const mediaHeight = Math.max(32, h - 84);
     const Icon = imageSource && !source ? ImageOff : ImageIcon;
     body = source

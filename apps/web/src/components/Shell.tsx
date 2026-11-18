@@ -22,7 +22,11 @@ import {
 import { useIsMobile } from "@/lib/use-mobile";
 import "./sidebar.css";
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
-import type { Capability } from "@/ai/settings";
+import {
+  dismissModelSetup,
+  shouldOfferModelSetup,
+  type Capability,
+} from "@/ai/settings";
 
 import { AppSidebar } from "./AppSidebar";
 
@@ -81,12 +85,13 @@ export function Shell({
     }
   });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "settings" | "search">(
-    "none",
-  );
-  const settingsOpen = overlay === "settings";
+  const [overlay, setOverlay] = useState<
+    "none" | "settings" | "model-setup" | "search"
+  >(() => (shouldOfferModelSetup() ? "model-setup" : "none"));
+  const modelSetup = overlay === "model-setup";
+  const settingsOpen = overlay === "settings" || modelSetup;
   const searchOpen = overlay === "search";
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(settingsOpen);
   const [searchLoaded, setSearchLoaded] = useState(false);
   const [settingsCapability, setSettingsCapability] =
     useState<Capability>("text");
@@ -251,14 +256,20 @@ export function Shell({
         {settingsLoaded && (
           <Suspense fallback={null}>
             <SettingsDialog
-              initialTab={settingsTab}
+              initialTab={modelSetup ? "models" : settingsTab}
               initialCapability={settingsCapability}
               open={settingsOpen}
-              onOpenChange={(open) =>
+              modelSetup={modelSetup}
+              onOpenChange={(open) => {
+                if (open) {
+                  if (!modelSetup) setOverlay("settings");
+                  return;
+                }
+                if (modelSetup) dismissModelSetup();
                 setOverlay((current) =>
-                  open ? "settings" : current === "settings" ? "none" : current,
-                )
-              }
+                  current === "search" ? current : "none",
+                );
+              }}
             />
           </Suspense>
         )}

@@ -1,5 +1,5 @@
 const PNG_PREFIX = "data:image/png;base64,";
-const RENDERER_VERSION = 6;
+const RENDERER_VERSION = 7;
 
 export function thumbnailStamp(cover: string, revision = 0) {
   let hash = 2166136261;

@@ -31,6 +31,9 @@ export interface ModelSettings {
   connections: Record<Capability, Connection>;
 }
 export const MODEL_STORAGE_KEY = "huayu:model-settings:v1";
+const MODEL_SETUP_DISMISSED_KEY = "huayu:model-setup-dismissed";
+export const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
+export const TAVILY_API_ORIGIN = "https://api.tavily.com";
 export const CAPABILITY_MESSAGE_KEYS = {
   text: "models.textGeneration",
   vision: "models.imageUnderstanding",
@@ -62,9 +65,9 @@ export const CAPABILITY_LABELS: Record<Capability, string> = {
 
 export function defaultSettings(): ModelSettings {
   const models = {
-    text: "gpt-4o-mini",
-    vision: "gpt-4o-mini",
-    image: "gpt-image-1.5",
+    text: "gpt-6-luna",
+    vision: "gpt-6-luna",
+    image: "gpt-image-2.6-flare",
     speech: "tts-1",
     transcription: "whisper-1",
     search: "",
@@ -76,9 +79,7 @@ export function defaultSettings(): ModelSettings {
         capability,
         {
           baseUrl:
-            capability === "search"
-              ? "https://api.tavily.com"
-              : "https://api.openai.com/v1",
+            capability === "search" ? TAVILY_API_ORIGIN : OPENAI_API_BASE_URL,
           apiKey: "",
           model: models[capability],
           voice: "alloy",
@@ -151,6 +152,29 @@ export function useModelSettings() {
       listeners.delete(listener);
     };
   }, getSettings);
+}
+
+export function shouldOfferModelSetup() {
+  try {
+    if (localStorage.getItem(MODEL_SETUP_DISMISSED_KEY) === "true")
+      return false;
+  } catch {
+    // Offer setup when the browser cannot read the preference.
+  }
+  const { connections } = getSettings();
+  return !CAPABILITIES.some(
+    (capability) =>
+      capability !== "search" &&
+      !connectionIssue(capability, connections[capability]),
+  );
+}
+
+export function dismissModelSetup() {
+  try {
+    localStorage.setItem(MODEL_SETUP_DISMISSED_KEY, "true");
+  } catch {
+    // The user can continue in this session without saving the preference.
+  }
 }
 
 export function connectionFor(capability: Capability): Connection {

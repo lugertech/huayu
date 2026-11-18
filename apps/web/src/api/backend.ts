@@ -227,6 +227,7 @@ export async function imageAPI(
       options.signal,
     ),
     "image.png",
+    options.signal,
   );
   return success([
     {
@@ -279,6 +280,7 @@ export async function audioGenerateAPI(
   const asset = await uploadAsset(
     await synthesizeSpeech(text, signal),
     "speech.mp3",
+    signal,
   );
   return success([
     {
@@ -380,9 +382,11 @@ export async function documentGenerateAPI(
   const extension = fileName.split(".").pop()?.toLowerCase() || "txt";
   if (!(FILE_EXTENSIONS as readonly string[]).includes(extension))
     throw new LocalizedError({ key: "api.theModelChoseAnUnsupportedFormat" });
+  signal?.throwIfAborted();
   const asset = await uploadAsset(
     await createDocumentBlob(text, extension),
     fileName,
+    signal,
   );
   return success({
     type: "file",

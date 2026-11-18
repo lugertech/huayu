@@ -38,8 +38,8 @@ Changing language does not translate your existing projects, prompts, transcript
 
 ## Your first creation
 
-1. On the Projects page, choose **Inspired writing**, or select **Create new project** to open a blank canvas and add text.
-2. In **Settings → Model connections**, configure text generation. Enter an API root URL such as `http://localhost:11434/v1` and the exact model ID provided by your service.
+1. If you have yet to set up a model, Huayu opens **Model connections** on your first workspace visit. Configure text generation, or choose **Set up later** to continue. Return anytime from **Settings → Model connections**.
+2. On the Projects page, choose **Inspired writing**, or select **Create new project** to open a blank canvas and add text.
 3. Add an instruction component, write your request and connect the text material to it.
 4. Click Run at the instruction component's top right. The result appears in a connected text component.
 

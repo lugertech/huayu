@@ -29,11 +29,13 @@ export function SettingsDialog({
   onOpenChange,
   initialTab = "general",
   initialCapability = "text",
+  modelSetup = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTab?: "general" | "models";
   initialCapability?: Capability;
+  modelSetup?: boolean;
 }) {
   useLocale();
   const language = useLanguagePreference();
@@ -146,6 +148,7 @@ export function SettingsDialog({
           >
             <ModelSettings
               initialCapability={initialCapability}
+              modelSetup={modelSetup}
               onClose={() => onOpenChange(false)}
             />
           </TabsContent>

@@ -118,7 +118,6 @@ export function createConnectedComponent(
   type: ComponentType,
   text: string,
   side: "left" | "right" = "right",
-  position?: { x: number; y: number },
 ): ShapeId | null {
   const pageIds = editor.getCurrentPageShapeIds();
   const ids = [...new Set(sources)].filter((id) => pageIds.has(id));
@@ -126,9 +125,8 @@ export function createConnectedComponent(
   if (!boxes.length) return null;
   const bounds = Bounds.union(boxes as Bounds[]);
   const { w, h } = COMPONENT_CONFIGS[type].defaultSize;
-  const x =
-    position?.x ?? (side === "right" ? bounds.maxX + 80 : bounds.x - w - 80);
-  let y = position?.y ?? bounds.y;
+  const x = side === "right" ? bounds.maxX + 80 : bounds.x - w - 80;
+  let y = bounds.center.y - h / 2;
   const occupied = editor
     .getCurrentPageShapes()
     .filter(

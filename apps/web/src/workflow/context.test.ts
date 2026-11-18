@@ -7,6 +7,45 @@ import {
 
 const board = () => new Editor(createCanvasStore());
 describe("connected component creation", () => {
+  it("aligns card ports and connector endpoints across different card heights", () => {
+    const editor = board();
+    editor.createShape({
+      id: "shape:instruction",
+      type: "instruction",
+      y: 200,
+    });
+    const text = createConnectedComponent(
+      editor,
+      ["shape:instruction"],
+      "ai-text",
+      "",
+    )!;
+    const website = createConnectedComponent(editor, [text], "website", "")!;
+    const file = createConnectedComponent(
+      editor,
+      ["shape:instruction"],
+      "file",
+      "",
+      "left",
+    )!;
+    const centerY = editor.getShapePageBounds("shape:instruction")!.center.y;
+    expect(
+      [text, website, file].map(
+        (id) => editor.getShapePageBounds(id)!.center.y,
+      ),
+    ).toEqual([centerY, centerY, centerY]);
+    const arrows = editor
+      .getCurrentPageShapes()
+      .filter((shape) => shape.type === "arrow");
+    expect(arrows).toHaveLength(3);
+    for (const arrow of arrows) {
+      const { start, end } = editor.arrowPoints(arrow);
+      expect(start.y).toBe(centerY);
+      expect(end.y).toBe(centerY);
+      expect(start.x).toBeLessThan(end.x);
+    }
+  });
+
   it("combines materials into one step without changing their content and undoes the step atomically", () => {
     const editor = board();
     editor.createShape({

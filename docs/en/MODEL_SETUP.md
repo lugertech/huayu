@@ -25,9 +25,11 @@ Configure only the capabilities you need. Missing AI connections do not prevent 
 | Transcription | `audio/transcriptions` | Transcribe audio and recordings |
 | Web search | Tavily or Brave Search | Research for tasks where search is explicitly enabled |
 
-Enter the API root URL, without appending the endpoint again. Use the service’s real model ID rather than a display nickname. Leave the API key blank for local services that do not require one; otherwise use your own valid key.
+Enter only the API root URL, such as `http://localhost:11434/v1` for a local service. Use the model ID your service provides. Leave the API key blank for a local service that runs without one. Use your own valid key for remote services.
 
 You can reuse the text service’s URL and key for other capabilities. Model IDs, voices and transcription formats remain separate. Supported editing operations, dimensions, voices and timestamps depend on the service; API compatibility does not guarantee every capability.
+
+An OpenAI project API key with access to the relevant models can cover text generation, image understanding, image generation, text to speech and transcription. Set up **Text generation** and choose **Use the text generation service** in each of the other model tabs. Web search uses a separate provider key. For example, select Tavily and enter a Tavily API key.
 
 ## Local and remote services
 

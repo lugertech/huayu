@@ -144,6 +144,7 @@ describe("image request sizes", () => {
     ["gpt-image-1.5-2025-12-16", "1664x2496", "1024x1536", false],
     ["gpt-image-1.5", "auto", "auto", false],
     ["gpt-image-2", "2496x1664", "2496x1664", false],
+    ["gpt-image-2.6-flare", "3024x1296", "3024x1296", true],
     ["local-model", "2048x2048", "2048x2048", true],
   ])(
     "sends %s size %s as %s (editing=%s)",
@@ -267,7 +268,7 @@ describe("SDK transport errors and bounded tests", () => {
     expect(result.status).toBe("warning");
     expect(translatedErrorMessage(result.message)).toContain("仍需实际生成");
   });
-  it("tests search with the unsaved connection instead of the saved text service", async () => {
+  it("tests the unsaved Tavily connection with bearer authentication", async () => {
     const fetchMock = vi.fn().mockResolvedValue(json({ results: [] }));
     vi.stubGlobal("fetch", fetchMock);
     const { defaultSettings } = await import("./settings");
@@ -279,9 +280,29 @@ describe("SDK transport errors and bounded tests", () => {
     expect((await testConnection("search", connection)).status).toBe("success");
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe("https://api.tavily.com/search");
-    expect(JSON.parse(request.body)).toMatchObject({
-      api_key: "test-search-key",
+    expect(JSON.parse(request.body)).toEqual({
       query: "Huayu",
+      max_results: 6,
+    });
+    expect(request.headers.get("Authorization")).toBe("Bearer test-search-key");
+  });
+  it("preserves the legacy authentication format for a custom Tavily gateway", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ results: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { defaultSettings } = await import("./settings");
+    const connection = {
+      ...defaultSettings().connections.search,
+      baseUrl: "http://localhost:8800",
+      apiKey: "test-search-key",
+    };
+    const { searchWeb } = await import("./provider");
+    await searchWeb("Huayu", undefined, connection);
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://localhost:8800/search");
+    expect(JSON.parse(request.body)).toEqual({
+      query: "Huayu",
+      max_results: 6,
+      api_key: "test-search-key",
     });
     expect(request.headers.get("Authorization")).toBeNull();
   });

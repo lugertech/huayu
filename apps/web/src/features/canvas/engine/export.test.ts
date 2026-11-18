@@ -74,6 +74,27 @@ describe("canvas card export", () => {
         expect(output?.svg).toContain(config.displayName);
   });
 
+  it("shows the file name and size while preserving the attachment contents", async () => {
+    const editor = new Editor(new CanvasStore());
+    editor.createShape({
+      id: "shape:file",
+      type: "file",
+      props: {
+        fileName: "888.html",
+        fileSize: 5632,
+        text: "<!DOCTYPE html><html lang='en'>",
+        result: "Attachment body",
+      },
+    });
+    const before = getSnapshot(editor.store).document;
+    const output = await exportSVG(editor, ["shape:file"]);
+    expect(output?.svg).toContain("888.html");
+    expect(output?.svg).toContain("5.5 KB");
+    expect(output?.svg).not.toContain("DOCTYPE");
+    expect(output?.svg).not.toContain("Attachment body");
+    expect(getSnapshot(editor.store).document).toEqual(before);
+  });
+
   it("embeds an asset-backed image and preserves its title and prompt", async () => {
     const editor = new Editor(new CanvasStore());
     editor.store.put([

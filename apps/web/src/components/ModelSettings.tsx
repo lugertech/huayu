@@ -26,6 +26,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   CAPABILITIES,
   CAPABILITY_LABELS,
+  OPENAI_API_BASE_URL,
+  TAVILY_API_ORIGIN,
   useModelSettings,
   saveSettings,
   defaultSettings,
@@ -39,9 +41,11 @@ import { useToast } from "./common/ToastProvider";
 export function ModelSettings({
   onClose,
   initialCapability = "text",
+  modelSetup = false,
 }: {
   onClose: () => void;
   initialCapability?: Capability;
+  modelSetup?: boolean;
 }) {
   useLocale();
   const saved = useModelSettings();
@@ -69,6 +73,10 @@ export function ModelSettings({
   const { showToast } = useToast();
   const connection = draft.connections[capability];
   const issue = connectionIssue(capability, connection);
+  const settingUpOpenAI =
+    modelSetup &&
+    capability === "text" &&
+    connection.baseUrl.trim().replace(/\/+$/, "") === OPENAI_API_BASE_URL;
   const purpose = {
     text: "settings.models.textPurpose",
     vision: "settings.models.visionPurpose",
@@ -171,7 +179,11 @@ export function ModelSettings({
       <div className="min-h-0 flex-1 overflow-y-auto p-5 md:p-8">
         <h2 className="text-base font-medium">{t("settings.models.title")}</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {t("settings.models.optionalDescription")}
+          {t(
+            modelSetup
+              ? "settings.models.setupDescription"
+              : "settings.models.optionalDescription",
+          )}
         </p>
         <p className="mt-2 mb-6 text-xs leading-5 text-muted-foreground">
           {t("settings.models.privacyDescription")}
@@ -197,18 +209,20 @@ export function ModelSettings({
             ))}
           </TabsList>
           <TabsContent value={capability} className="space-y-5 pt-4">
-            <div className="space-y-1.5 text-xs leading-5 text-muted-foreground">
-              <p className="font-medium text-foreground" role="status">
-                {t(
-                  issue
-                    ? "settings.models.notConfigured"
-                    : result
-                      ? "settings.models.detailsComplete"
-                      : "settings.models.readyToTest",
-                )}
-              </p>
-              <p>{t(purpose[capability])}</p>
-            </div>
+            {!settingUpOpenAI && (
+              <div className="space-y-1.5 text-xs leading-5 text-muted-foreground">
+                <p className="font-medium text-foreground" role="status">
+                  {t(
+                    issue
+                      ? "settings.models.notConfigured"
+                      : result
+                        ? "settings.models.detailsComplete"
+                        : "settings.models.readyToTest",
+                  )}
+                </p>
+                <p>{t(purpose[capability])}</p>
+              </div>
+            )}
             {capability !== "text" && capability !== "search" && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 p-3">
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -250,7 +264,7 @@ export function ModelSettings({
                       "baseUrl",
                       event.target.value === "brave"
                         ? "https://api.search.brave.com"
-                        : "https://api.tavily.com",
+                        : TAVILY_API_ORIGIN,
                     );
                   }}
                 >
@@ -281,11 +295,13 @@ export function ModelSettings({
                 autoComplete="off"
                 spellCheck={false}
               />
-              <p className="text-xs text-muted-foreground">
-                {capability === "search"
-                  ? t("settings.models.searchUrlHint")
-                  : t("settings.models.serviceUrlHint")}
-              </p>
+              {!settingUpOpenAI && (
+                <p className="text-xs text-muted-foreground">
+                  {capability === "search"
+                    ? t("settings.models.searchUrlHint")
+                    : t("settings.models.serviceUrlHint")}
+                </p>
+              )}
               {result?.status === "error" && issue?.field === "baseUrl" && (
                 <p
                   id="model-url-issue"
@@ -297,7 +313,19 @@ export function ModelSettings({
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="model-key">{t("settings.models.apiKey")}</Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="model-key">{t("settings.models.apiKey")}</Label>
+                {settingUpOpenAI && (
+                  <a
+                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    href="https://platform.openai.com/api-keys"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("settings.models.getOpenAIKey")}
+                  </a>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Input
                   id="model-key"
@@ -312,7 +340,11 @@ export function ModelSettings({
                   type={visible ? "text" : "password"}
                   value={connection.apiKey}
                   onChange={(event) => change("apiKey", event.target.value)}
-                  placeholder={t("settings.models.apiKeyHint")}
+                  placeholder={
+                    settingUpOpenAI
+                      ? undefined
+                      : t("settings.models.apiKeyHint")
+                  }
                   autoComplete="new-password"
                   spellCheck={false}
                 />
@@ -441,28 +473,32 @@ export function ModelSettings({
         </Tabs>
       </div>
       <div className="shrink-0 border-t bg-muted/30 p-4">
-        <div className="mb-3 flex min-h-4 items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span role="status">
-            {dirty
-              ? t("settings.models.unsavedChanges")
-              : t("settings.models.allChangesSaved")}
-          </span>
-        </div>
+        {(dirty || !modelSetup) && (
+          <div className="mb-3 flex min-h-4 items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span role="status">
+              {dirty
+                ? t("settings.models.unsavedChanges")
+                : t("settings.models.allChangesSaved")}
+            </span>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            className="mr-auto text-muted-foreground"
-            onClick={() => {
-              resetTest();
-              setDraft(defaultSettings());
-              setVisible(false);
-            }}
-          >
-            <RotateCcw />
-            {t("settings.models.clearConnections")}
-          </Button>
+          {!modelSetup && (
+            <Button
+              variant="ghost"
+              className="mr-auto text-muted-foreground"
+              onClick={() => {
+                resetTest();
+                setDraft(defaultSettings());
+                setVisible(false);
+              }}
+            >
+              <RotateCcw />
+              {t("settings.models.clearConnections")}
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
+            {t(modelSetup ? "settings.models.setupLater" : "common.cancel")}
           </Button>
           <Button type="submit" disabled={!dirty}>
             {t("settings.models.saveSettings")}

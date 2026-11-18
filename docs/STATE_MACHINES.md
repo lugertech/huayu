@@ -70,7 +70,7 @@
 | --- | --- | --- | --- |
 | 39 | [工具与编辑目标](../apps/web/src/features/canvas/engine/editor.ts) | 已调整 | tool 与 editing 互斥，编辑态持有形状 ID；切换工具退出编辑。选择集合保持独立。 |
 | 40 | [拖入组件](../apps/web/src/features/canvas/component-creation.ts) | 已调整 | `pressed / dragging / finished / cancelled`，dragging 持有预览编辑器与形状 ID，结束后不再创建组件。 |
-| 41 | [连接与组件选择](../apps/web/src/features/canvas/excalidraw/BoardConnections.tsx) | 已调整 | idle、dragging、choosing 互斥，当前状态携带拖线数据或选择器数据。 |
+| 41 | [连接与组件选择](../apps/web/src/features/canvas/components/ComponentConnectionDots.tsx) | 已调整 | 点击或用键盘打开连接菜单。选择组件时按当前端口方向创建并连接卡片，保留画布视野。 |
 | 42 | [流程图编辑和平移](../apps/web/src/features/canvas/components/shapes/chart-shape/FlowchartRenderer.tsx) | 已调整 | 编辑目标与草稿作为同一值创建、更新、清除；平移由可空起点表达。 |
 | 43 | [思维导图编辑和平移](../apps/web/src/features/canvas/components/shapes/chart-shape/MindmapRenderer.tsx) | 已调整 | 编辑目标持有输入草稿，平移由可空起点表达；独立节点移动交互保持既有数据结构。 |
 | 44 | [检查器与焦点](../apps/web/src/features/canvas/excalidraw/NodeInspector.tsx) | 保留 | 可空目标 ID 已表达打开和关闭；模型设置交接使用 Shell 的互斥覆盖层。 |

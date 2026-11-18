@@ -1,8 +1,15 @@
-.huayu-board {
-  --canvas-stroke: #000000;
+.huayu-board,
+.board-run-controls {
   --board-glass-background: color-mix(in srgb, var(--popover) 82%, transparent);
   --board-glass-shadow:
     0 2px 5px #00000008, 0 6px 20px #00000008, inset 0 1px 0 #ffffffb3;
+}
+.dark :is(.huayu-board, .board-run-controls) {
+  --board-glass-shadow:
+    0 2px 5px #00000026, 0 6px 20px #00000026, inset 0 1px 0 #ffffff14;
+}
+.huayu-board {
+  --canvas-stroke: #000000;
   display: flex;
   position: relative;
   overflow: hidden;
@@ -11,10 +18,9 @@
 }
 .dark .huayu-board {
   --canvas-stroke: #e5e5e5;
-  --board-glass-shadow:
-    0 2px 5px #00000026, 0 6px 20px #00000026, inset 0 1px 0 #ffffff14;
 }
 .board-component-palette,
+.board-run-controls,
 .board-toolbar-project,
 .board-toolbar-utilities,
 .board-toolbar .board-toolbar-invite,
@@ -24,6 +30,12 @@
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   box-shadow: var(--board-glass-shadow);
+}
+.board-run-controls,
+.board-toolbar-project,
+.board-toolbar-utilities {
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 .huayu-board .excalidraw :is(.zoom-button, .undo-redo-buttons button) {
   background-color: transparent !important;
@@ -824,8 +836,6 @@
   max-width: 380px;
   flex: 0 1 auto;
   gap: 4px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
   padding: 3px 10px 3px 3px;
 }
 .board-toolbar-title-row {
@@ -925,8 +935,6 @@
   height: 36px;
   flex-shrink: 0;
   gap: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
   padding: 3px;
 }
 .board-toolbar .board-toolbar-button {
@@ -944,7 +952,8 @@
   flex-shrink: 0;
   stroke-width: 1.7;
 }
-.board-toolbar-utilities .board-toolbar-button {
+.board-toolbar-utilities .board-toolbar-button,
+.board-run-controls > button {
   width: 32px;
   height: 28px;
   border: 0;
@@ -1123,7 +1132,6 @@
 .board-frame-connections .connection-button {
   pointer-events: auto;
 }
-.board-connection-overlay,
 .board-execution-overlay,
 .board-native-feedback {
   position: absolute;
@@ -1137,27 +1145,21 @@
 .board-execution-overlay {
   z-index: 1;
 }
+.board-run-controls {
+  position: fixed;
+  z-index: 30;
+  top: 10px;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+}
+@media (width < 64rem) {
+  .board-run-controls {
+    top: 54px;
+  }
+}
 .board-native-feedback {
   z-index: 3;
-}
-.board-wire-hint {
-  position: absolute;
-  z-index: 6;
-  pointer-events: none;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 6px 9px;
-  background: var(--popover);
-  color: var(--popover-foreground);
-  font-size: 12px;
-  max-width: 200px;
-}
-.board-picker-anchor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
 }
 .workflow-wire-running {
   stroke-dasharray: 8 7;

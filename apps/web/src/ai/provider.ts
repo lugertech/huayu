@@ -3,6 +3,7 @@ import type OpenAI from "openai";
 import { APIError } from "openai/core/error";
 import {
   CAPABILITY_MESSAGE_KEYS,
+  TAVILY_API_ORIGIN,
   connectionFor,
   modelEndpoint,
   requireConnection,
@@ -48,6 +49,9 @@ async function modelRequest<T>(
     // The SDK requires a value; the fetch boundary removes it for keyless services.
     apiKey: connection.apiKey.trim() || "local-no-key",
     dangerouslyAllowBrowser: true,
+    // Search providers choose how to authenticate on each request.
+    defaultHeaders:
+      capability === "search" ? { Authorization: null } : undefined,
     maxRetries: 0,
     timeout: timeoutMs,
     fetch: (url, options) => {
@@ -55,8 +59,7 @@ async function modelRequest<T>(
       for (const name of [...headers.keys()])
         if (name.startsWith("x-stainless-") || name === "user-agent")
           headers.delete(name);
-      if (!connection.apiKey.trim() || capability === "search")
-        headers.delete("Authorization");
+      if (!connection.apiKey.trim()) headers.delete("Authorization");
       return fetch(url, {
         ...options,
         headers,
@@ -396,6 +399,7 @@ export async function searchWeb(
     connection,
     signal,
     async (client, requestSignal) => {
+      const apiKey = connection.apiKey.trim();
       if (connection.provider === "brave") {
         const data = await client.get<{
           web?: {
@@ -403,7 +407,7 @@ export async function searchWeb(
           };
         }>("/res/v1/web/search", {
           query: { q: query },
-          headers: { "X-Subscription-Token": connection.apiKey.trim() },
+          headers: { "X-Subscription-Token": apiKey },
           signal: requestSignal,
         });
         return (data.web?.results || [])
@@ -411,10 +415,20 @@ export async function searchWeb(
           .map((value) => `${value.title}\n${value.url}\n${value.description}`)
           .join("\n\n");
       }
+      const officialTavily =
+        new URL(client.baseURL).origin === TAVILY_API_ORIGIN;
       const data = await client.post<{
         results?: { title: string; url: string; content: string }[];
       }>("/search", {
-        body: { api_key: connection.apiKey.trim(), query, max_results: 6 },
+        headers: officialTavily
+          ? { Authorization: `Bearer ${apiKey}` }
+          : undefined,
+        // Custom gateways may still expect the legacy request field.
+        body: {
+          query,
+          max_results: 6,
+          ...(!officialTavily && { api_key: apiKey }),
+        },
         signal: requestSignal,
       });
       return (data.results || [])
