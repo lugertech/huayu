@@ -6,6 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import {
   EditorContext,
   useEditor,
@@ -68,6 +69,7 @@ export function ComponentPanel() {
   const [focusVisible, setFocusVisible] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false);
   const [preview, setPreview] = useState<Editor | null>(null);
+  const dragging = preview !== null;
   const gesture = useRef<{
     drag: ComponentDrag;
     pointerId: number;
@@ -107,7 +109,6 @@ export function ComponentPanel() {
     if (event.button !== 0 || !event.isPrimary || gesture.current) return;
     event.preventDefault();
     event.stopPropagation();
-    event.currentTarget.focus({ preventScroll: true });
     gesture.current = {
       drag: new ComponentDrag(editor, type, {
         x: event.clientX,
@@ -124,8 +125,13 @@ export function ComponentPanel() {
     if (!active || active.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
+    const wasDragging = active.drag.preview !== null;
     active.drag.move({ x: event.clientX, y: event.clientY });
-    setPreview(active.drag.preview);
+    const nextPreview = active.drag.preview;
+    if (!wasDragging && nextPreview) {
+      // Apply the collapsed layout before pointerup can read the drop target.
+      flushSync(() => setPreview(nextPreview));
+    }
   }
 
   function pointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
@@ -156,8 +162,9 @@ export function ComponentPanel() {
     <>
       <aside
         className="board-component-palette"
-        data-expanded={hovered || focusVisible}
-        data-hovered={hovered}
+        data-expanded={!dragging && (hovered || focusVisible)}
+        data-hovered={!dragging && hovered}
+        data-dragging={dragging || undefined}
         aria-label={t("canvas.components.palette")}
         data-canvas-ui
         onPointerEnter={(event) => {

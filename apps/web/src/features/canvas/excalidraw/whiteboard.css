@@ -233,6 +233,9 @@
   width: 169px;
   padding-left: 9px;
 }
+.board-component-palette[data-dragging="true"] {
+  transition: none;
+}
 .board-palette-items {
   display: flex;
   min-height: 0;
@@ -274,9 +277,15 @@
 .board-palette-item:active svg {
   transform: scale(0.94);
 }
-.board-palette-item:focus-visible {
+.board-component-palette .board-palette-item:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
+  box-shadow: none;
+}
+.board-component-palette[data-dragging="true"] .board-palette-item {
+  background-color: transparent;
+  outline: none;
+  transition: none;
 }
 .board-palette-label {
   position: absolute;
@@ -1456,6 +1465,12 @@
     .node-header,
     .connection-button
   ) {
+  pointer-events: auto;
+}
+.huayu-board:has(.board-component-preview) .board-connection-port {
+  pointer-events: none;
+}
+.huayu-board:has(.board-component-preview) .board-connection-port > span {
   pointer-events: auto;
 }
 .huayu-board:not([data-tool="selection"]) .board-component * {

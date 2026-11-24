@@ -133,7 +133,7 @@ describe("Excalidraw record compatibility", () => {
       type: "ai-text",
       x: 40,
       y: 80,
-      props: { w: 320, h: 220, text: "保留素材" },
+      props: { w: 320, h: 220, text: "保留素材", fill: "pattern" },
     });
     board.createShape({
       id: "shape:task",
@@ -147,10 +147,13 @@ describe("Excalidraw record compatibility", () => {
     const scene = sceneFromEditor(board) as any[];
     expect(JSON.stringify(board.store.serialize())).toBe(before);
     expect(
-      scene.filter(
-        (element) => element.type === "rectangle" && element.customData?.huayu,
-      ),
-    ).toHaveLength(2);
+      scene
+        .filter(
+          (element) =>
+            element.type === "rectangle" && element.customData?.huayu,
+        )
+        .map(({ fillStyle }) => fillStyle),
+    ).toEqual(["solid", "solid"]);
     expect(scene.every((element) => !element.link)).toBe(true);
     const arrow = scene.find((element) => element.type === "arrow");
     expect(arrow.strokeColor).toBe("#000000");

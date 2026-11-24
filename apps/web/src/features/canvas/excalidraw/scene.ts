@@ -276,6 +276,7 @@ export function sceneFromEditor(editor: Editor): ExcalidrawElement[] {
     };
     if (isCustomElement(shape)) {
       base.type = "rectangle";
+      base.fillStyle = "solid";
       base.link = null;
       base.strokeWidth = 0;
       base.backgroundColor = "#ffffff";
