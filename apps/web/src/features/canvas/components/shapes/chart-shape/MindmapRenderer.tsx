@@ -1,3 +1,4 @@
+import { useChartViewport } from "../../../charts/use-chart-viewport";
 import { useTranslations } from "@/i18n";
 import React, {
   useMemo,
@@ -171,14 +172,6 @@ function moveNode(
 
 export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
   const { t } = useTranslations();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
-    null,
-  );
-  const isDragging = dragStart !== null;
-  const hasInitialized = useRef(false);
-
   // 选中和编辑状态
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNode, setEditingNode] = useState<{
@@ -215,37 +208,16 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
     [data],
   );
 
-  // 初始化视图，居中并适配
-  useEffect(() => {
-    // 只在首次加载时初始化 transform,避免拖动时重置
-    if (hasInitialized.current || !containerRef.current) return;
-
-    // 使用 requestAnimationFrame 确保容器已渲染
-    requestAnimationFrame(() => {
-      if (!containerRef.current) return;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerWidth = rect.width;
-      const containerHeight = rect.height;
-
-      if (containerWidth === 0 || containerHeight === 0) return;
-
-      const scaleX = containerWidth / bounds.width;
-      const scaleY = containerHeight / bounds.height;
-      const scale = Math.min(scaleX, scaleY, 1) * 1.2;
-
-      const contentWidth = bounds.width * scale;
-      const contentHeight = bounds.height * scale;
-
-      setTransform({
-        x: (containerWidth - contentWidth) / 2 - bounds.minX * scale,
-        y: (containerHeight - contentHeight) / 2 - bounds.minY * scale,
-        scale,
-      });
-
-      hasInitialized.current = true;
-    });
-  }, [bounds]);
+  const {
+    containerRef,
+    transform,
+    isDragging,
+    startPan,
+    movePan,
+    endPan,
+    zoomIn,
+    zoomOut,
+  } = useChartViewport(bounds);
 
   // 聚焦输入框
   useEffect(() => {
@@ -409,7 +381,7 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
         setDropTarget(null);
       }
     },
-    [draggingNode, nodes, transform],
+    [containerRef, draggingNode, nodes, transform],
   );
 
   // 节点拖拽结束
@@ -427,93 +399,17 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
     setDropTarget(null);
   }, [draggingNode, dropTarget, data, onDataChange]);
 
-  // 点击空白处取消选中
-  const handleBackgroundClick = useCallback(() => {
+  function handleMouseDown(event: React.MouseEvent) {
+    if (event.button !== 0 || editingNode) return;
+    const target = event.target as Element;
+    if (
+      target.closest("button, textarea, foreignObject") ||
+      target.tagName === "INPUT"
+    )
+      return;
+    startPan(event);
     setSelectedNodeId(null);
-  }, []);
-
-  // 画布拖拽处理
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button !== 0 || editingNode) return;
-
-      // 检查是否点击了可交互元素
-      const target = e.target as Element;
-      const isInteractive =
-        target.tagName === "BUTTON" ||
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.closest("button") ||
-        target.closest("textarea") ||
-        target.closest("foreignObject");
-
-      // 只要不是交互元素,就允许拖拽
-      if (!isInteractive) {
-        e.stopPropagation();
-        setDragStart({
-          x: e.clientX - transform.x,
-          y: e.clientY - transform.y,
-        });
-        handleBackgroundClick();
-      }
-    },
-    [transform, editingNode, handleBackgroundClick],
-  );
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isDragging) return;
-      e.stopPropagation();
-      setTransform((prev) => ({
-        ...prev,
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      }));
-    },
-    [isDragging, dragStart],
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setDragStart(null);
-  }, []);
-
-  // 缩放控制
-  const handleZoom = useCallback(
-    (zoomIn: boolean) => {
-      const delta = zoomIn ? 1.1 : 0.9;
-      const newScale = Math.max(0.3, Math.min(2, transform.scale * delta));
-
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        // 以容器中心为缩放点
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        setTransform((prev) => ({
-          scale: newScale,
-          x: centerX - (centerX - prev.x) * (newScale / prev.scale),
-          y: centerY - (centerY - prev.y) * (newScale / prev.scale),
-        }));
-      }
-    },
-    [transform.scale],
-  );
-
-  const handleZoomIn = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleZoom(true);
-    },
-    [handleZoom],
-  );
-
-  const handleZoomOut = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleZoom(false);
-    },
-    [handleZoom],
-  );
+  }
 
   // 计算编辑框位置
   const getEditInputPosition = useCallback(
@@ -540,15 +436,15 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={(e) => {
-        handleMouseMove(e);
+        movePan(e);
         handleNodeDragMove(e);
       }}
       onMouseUp={() => {
-        handleMouseUp();
+        endPan();
         handleNodeDragEnd();
       }}
       onMouseLeave={() => {
-        handleMouseUp();
+        endPan();
         handleNodeDragEnd();
       }}
       onPointerDown={(e) => e.stopPropagation()}
@@ -779,14 +675,14 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
         onPointerDown={(e) => e.stopPropagation()}
       >
         <button
-          onClick={handleZoomOut}
+          onClick={zoomOut}
           className="p-2 bg-popover border border-input rounded shadow hover:bg-accent transition-colors cursor-pointer"
           title={t("canvas.chart.zoomOut")}
         >
           <Minus size={14} className="text-muted-foreground" />
         </button>
         <button
-          onClick={handleZoomIn}
+          onClick={zoomIn}
           className="p-2 bg-popover border border-input rounded shadow hover:bg-accent transition-colors cursor-pointer"
           title={t("canvas.chart.zoomIn")}
         >
