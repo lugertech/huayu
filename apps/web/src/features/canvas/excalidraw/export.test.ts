@@ -61,6 +61,12 @@ describe("native scene export completeness", () => {
     ]);
     expect(output.elements).toHaveLength(4);
     expect(Object.keys(output.files)).toHaveLength(3);
+    // Excalidraw embeds files in SVG using CSS ID selectors.
+    for (const element of output.elements) {
+      if (element.type !== "image") continue;
+      expect(element.fileId).toMatch(/^[a-zA-Z0-9_-]+$/);
+      expect(output.files[element.fileId!]?.id).toBe(element.fileId);
+    }
     expect(
       output.elements.filter((element) => element.type === "image"),
     ).toHaveLength(3);

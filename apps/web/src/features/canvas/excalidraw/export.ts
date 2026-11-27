@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { getLocale, type Locale } from "@/i18n";
 import { exportToCanvas, exportToSvg } from "@excalidraw/excalidraw";
@@ -64,7 +65,7 @@ export async function exportScene(
     });
     if (!snapshot)
       throw new LocalizedError({ key: "canvas.cardPreviewsCannotBeGenerated" });
-    const fileId = `snapshot-${element.id}` as ExcalidrawImageElement["fileId"];
+    const fileId = uuid() as ExcalidrawImageElement["fileId"];
     const dataURL = await blobAsDataURL(snapshot.blob);
     files[fileId] = {
       id: fileId,
