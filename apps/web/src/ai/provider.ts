@@ -1,16 +1,37 @@
-import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
-import type OpenAI from "openai";
-import { APIError } from "openai/core/error";
+import { getLocale, type Locale } from "@/i18n";
+import { LocalizedError } from "@/i18n/errors";
 import {
-  CAPABILITY_MESSAGE_KEYS,
-  TAVILY_API_ORIGIN,
-  connectionFor,
-  modelEndpoint,
-  requireConnection,
-  type Capability,
-  type Connection,
-} from "./settings";
+  requestSpeech,
+  requestTranscription,
+  type Transcription,
+} from "./aliyun-speech";
 import { ModelConnectionError } from "./errors";
+import {
+  blobDataUrl,
+  decodeBase64,
+  IMAGE_TIMEOUT,
+  invalidModelResponse,
+  isEventStream,
+  isRecord,
+  modelEvents,
+  modelRequest,
+  PROBE_TIMEOUT,
+  UnsupportedVisionError,
+} from "./model-request";
+import {
+  recordSuccessfulCheck,
+  requireConnection,
+  type CheckResult,
+  type Connection,
+  type ImageConnection,
+  type LanguageConnection,
+  type ModelCheck,
+  type SearchConnection,
+  type SpeechConnection,
+  type TranscriptionConnection,
+} from "./settings";
+
+export type { SpeechSegment, Transcription } from "./aliyun-speech";
 
 export type ChatPart =
   | { type: "text"; text: string }
@@ -23,105 +44,16 @@ export interface ChatOptions {
   capability?: "text" | "vision";
   signal?: AbortSignal;
   onDelta?: (text: string) => void;
-  connection?: Connection;
+  connection?: LanguageConnection;
   json?: boolean;
 }
 
-/** Credentials come from this browser; requests go directly to the chosen service. */
-async function modelRequest<T>(
-  capability: Capability,
-  connection: Connection,
-  signal: AbortSignal | undefined,
-  request: (client: OpenAI, signal: AbortSignal) => Promise<T>,
-  timeoutMs = 180_000,
-): Promise<T> {
-  requireConnection(capability, connection);
-  signal?.throwIfAborted();
-  const { default: OpenAI } = await import("openai");
-  signal?.throwIfAborted();
-  const timeout = new AbortController();
-  const timer = setTimeout(() => timeout.abort(), timeoutMs);
-  const combined = signal
-    ? AbortSignal.any([signal, timeout.signal])
-    : timeout.signal;
-  const client = new OpenAI({
-    baseURL: modelEndpoint(connection, "").replace(/\/$/, ""),
-    // The SDK requires a value; the fetch boundary removes it for keyless services.
-    apiKey: connection.apiKey.trim() || "local-no-key",
-    dangerouslyAllowBrowser: true,
-    // Search providers choose how to authenticate on each request.
-    defaultHeaders:
-      capability === "search" ? { Authorization: null } : undefined,
-    maxRetries: 0,
-    timeout: timeoutMs,
-    fetch: (url, options) => {
-      const headers = new Headers(options?.headers);
-      for (const name of [...headers.keys()])
-        if (name.startsWith("x-stainless-") || name === "user-agent")
-          headers.delete(name);
-      if (!connection.apiKey.trim()) headers.delete("Authorization");
-      return fetch(url, {
-        ...options,
-        headers,
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-      });
-    },
-  });
-  try {
-    return await request(client, combined);
-  } catch (error) {
-    signal?.throwIfAborted();
-    if (error instanceof ModelConnectionError) throw error;
-    const values = { capability: { key: CAPABILITY_MESSAGE_KEYS[capability] } };
-    let message: ErrorTranslation;
-    if (
-      timeout.signal.aborted ||
-      error instanceof OpenAI.APIConnectionTimeoutError
-    )
-      message = { key: "models.connection.timeout", values: values };
-    else if (
-      error instanceof OpenAI.APIConnectionError ||
-      error instanceof TypeError
-    )
-      message = { key: "models.connection.network", values };
-    else if (error instanceof OpenAI.APIError) {
-      if (error.status === 401)
-        message = { key: "models.connection.unauthorized", values: values };
-      else if (error.status === 403)
-        message = { key: "models.connection.forbidden", values: values };
-      else if (error.status === 404)
-        message = { key: "models.connection.notFound", values: values };
-      else if (error.status === 429)
-        message = {
-          key:
-            error.code === "insufficient_quota"
-              ? "models.connection.quota"
-              : "models.connection.rateLimit",
-          values: values,
-        };
-      else if (error.status === 408 || error.status === 504)
-        message = { key: "models.connection.timeout", values: values };
-      else if (error.status && error.status >= 500)
-        message = { key: "models.connection.unavailable", values: values };
-      else
-        message = {
-          key: "models.connection.rejected",
-          values: {
-            ...values,
-            status: error.status || "",
-          },
-        };
-    } else
-      message = { key: "models.connection.invalidResponse", values: values };
-    throw new ModelConnectionError(capability, message);
-  } finally {
-    clearTimeout(timer);
-  }
+function firstChoice(body: unknown) {
+  const choice: unknown =
+    isRecord(body) && Array.isArray(body.choices) ? body.choices[0] : undefined;
+  return isRecord(choice) ? choice : undefined;
 }
 
-/** Use the SDK's SSE decoder, including UTF-8 split across network chunks. */
 export async function readChatStream(
   response: Response,
   onDelta?: (text: string) => void,
@@ -131,23 +63,14 @@ export async function readChatStream(
     throw new LocalizedError({
       key: "models.theModelServiceReturnedNoContent",
     });
-  const { Stream } = await import("openai/streaming");
-  const controller = new AbortController();
-  const stream =
-    Stream.fromSSEResponse<OpenAI.Chat.Completions.ChatCompletionChunk>(
-      response,
-      controller,
-    );
   let result = "";
-  for await (const chunk of stream) {
-    signal?.throwIfAborted();
-    const delta = chunk.choices?.[0]?.delta?.content;
-    if (typeof delta === "string") {
-      result += delta;
-      onDelta?.(delta);
+  for await (const { body } of modelEvents(response, signal)) {
+    const delta = firstChoice(body)?.delta;
+    if (isRecord(delta) && typeof delta.content === "string") {
+      result += delta.content;
+      onDelta?.(delta.content);
     }
   }
-  signal?.throwIfAborted();
   if (!result.trim())
     throw new LocalizedError({
       key: "models.theModelServiceReturnedEmptyContent",
@@ -155,53 +78,144 @@ export async function readChatStream(
   return result;
 }
 
-export async function chat(
+function responsesText(body: unknown): string {
+  if (!isRecord(body)) return "";
+  if (typeof body.output_text === "string") return body.output_text;
+  if (!Array.isArray(body.output)) return "";
+  const output: unknown[] = body.output;
+  return output
+    .filter(isRecord)
+    .flatMap((item): unknown[] =>
+      item.type === "message" && Array.isArray(item.content)
+        ? item.content
+        : [],
+    )
+    .filter(isRecord)
+    .map((part) =>
+      part.type === "output_text" && typeof part.text === "string"
+        ? part.text
+        : "",
+    )
+    .join("");
+}
+
+function requestChat(
   messages: ChatMessage[],
-  options: ChatOptions = {},
+  connection: LanguageConnection,
+  {
+    capability = "text",
+    signal,
+    onDelta,
+    json,
+  }: Omit<ChatOptions, "connection">,
+  timeout?: number,
 ): Promise<string> {
-  const capability = options.capability || "text";
-  const connection = options.connection || connectionFor(capability);
   return modelRequest(
     capability,
     connection,
-    options.signal,
-    async (client, signal) => {
-      const response = await client.chat.completions
-        .create(
-          {
-            model: connection.model.trim(),
-            messages:
-              messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-            stream: !!options.onDelta,
-            ...(options.json
-              ? { response_format: { type: "json_object" } }
-              : {}),
-          },
-          { signal },
+    signal,
+    async (request, requestSignal) => {
+      const model = connection.model.trim();
+      const stream = Boolean(onDelta);
+      const responses = connection.protocol === "responses";
+      const response = responses
+        ? await request("responses", {
+            model,
+            input: messages.map(({ role, content }) => ({
+              role,
+              content:
+                typeof content === "string"
+                  ? content
+                  : content.map((part) =>
+                      part.type === "text"
+                        ? { type: "input_text", text: part.text }
+                        : {
+                            type: "input_image",
+                            image_url: part.image_url.url,
+                          },
+                    ),
+            })),
+            stream,
+            store: false,
+            ...(json && { text: { format: { type: "json_object" } } }),
+          })
+        : await request("chat/completions", {
+            model,
+            messages,
+            stream,
+            ...(json && { response_format: { type: "json_object" } }),
+          });
+      if (isEventStream(response)) {
+        if (!responses) return readChatStream(response, onDelta, requestSignal);
+        let result = "";
+        for await (const { name, body } of modelEvents(
+          response,
+          requestSignal,
+        )) {
+          const type = typeof body.type === "string" ? body.type : name;
+          if (
+            type === "response.output_text.delta" &&
+            typeof body.delta === "string"
+          ) {
+            result += body.delta;
+            onDelta?.(body.delta);
+          }
+          if (type === "response.completed") {
+            const output = responsesText(body.response) || result;
+            if (!output.trim()) break;
+            if (!result) onDelta?.(output);
+            return output;
+          }
+          if (
+            type === "error" ||
+            type === "response.failed" ||
+            type === "response.incomplete"
+          )
+            break;
+        }
+        throw invalidModelResponse(capability);
+      }
+      const body: unknown = await response.json();
+      let text = "";
+      if (responses) {
+        if (
+          !isRecord(body) ||
+          (body.status !== undefined && body.status !== "completed")
         )
-        .asResponse();
-      if (
-        (response.headers.get("content-type") || "").includes(
-          "text/event-stream",
-        )
-      )
-        return readChatStream(response, options.onDelta, signal);
-      const data = await response.json();
-      const content = data?.choices?.[0]?.message?.content;
-      const text =
-        typeof content === "string"
-          ? content
-          : Array.isArray(content)
-            ? content.map((part) => part.text || "").join("")
-            : "";
+          throw invalidModelResponse(capability);
+        text = responsesText(body);
+      } else {
+        const message = firstChoice(body)?.message;
+        const content = isRecord(message) ? message.content : undefined;
+        if (typeof content === "string") text = content;
+        if (Array.isArray(content)) {
+          const parts: unknown[] = content;
+          text = parts
+            .filter(isRecord)
+            .map((part) => (typeof part.text === "string" ? part.text : ""))
+            .join("");
+        }
+      }
       if (!text.trim())
         throw new ModelConnectionError(capability, {
           key: "models.theModelServiceReturnedEmptyContent",
         });
-      options.onDelta?.(text);
+      onDelta?.(text);
       return text;
     },
+    timeout,
   );
+}
+
+export async function chat(
+  messages: ChatMessage[],
+  options: ChatOptions = {},
+): Promise<string> {
+  const capability = options.capability ?? "text";
+  const connection = options.connection ?? requireConnection(capability);
+  const text = await requestChat(messages, connection, options);
+  if (capability === "text") recordSuccessfulCheck("text", connection);
+  return text;
 }
 
 export function parseModelJSON<T = Record<string, unknown>>(text: string): T {
@@ -216,296 +230,399 @@ export function parseModelJSON<T = Record<string, unknown>>(text: string): T {
   }
 }
 
+function requestImage(
+  prompt: string,
+  size: string,
+  images: Blob[],
+  connection: ImageConnection,
+  signal?: AbortSignal,
+) {
+  return modelRequest(
+    "image",
+    connection,
+    signal,
+    async (request, requestSignal) => {
+      const model = connection.model.trim();
+      let response: Response;
+      if (connection.provider === "seedream") {
+        const references = await Promise.all(
+          images.map((image) => blobDataUrl(image, image.type || "image/png")),
+        );
+        response = await request("images/generations", {
+          model,
+          prompt,
+          ...(size !== "auto" && { size }),
+          ...(references.length && {
+            image: references.length === 1 ? references[0] : references,
+          }),
+          response_format: "b64_json",
+        });
+      } else {
+        let requestSize = size;
+        const dimensions = /^(\d+)x(\d+)$/.exec(size);
+        if (
+          /^gpt-image-(?:1|1-mini|1\.5)(?:-\d{4}-\d{2}-\d{2})?$/.test(model) &&
+          dimensions
+        ) {
+          const width = Number(dimensions[1]);
+          const height = Number(dimensions[2]);
+          requestSize =
+            width === height
+              ? "1024x1024"
+              : width > height
+                ? "1536x1024"
+                : "1024x1536";
+        }
+        if (images.length) {
+          const form = new FormData();
+          form.set("model", model);
+          form.set("prompt", prompt);
+          form.set("n", "1");
+          form.set("size", requestSize);
+          images.forEach((image, index) => {
+            const extension =
+              image.type === "image/jpeg"
+                ? "jpg"
+                : image.type === "image/webp"
+                  ? "webp"
+                  : "png";
+            form.append(
+              images.length === 1 ? "image" : "image[]",
+              image,
+              "image-" + index + "." + extension,
+            );
+          });
+          response = await request("images/edits", form);
+        } else {
+          response = await request("images/generations", {
+            model,
+            prompt,
+            n: 1,
+            size: requestSize,
+          });
+        }
+      }
+      const body: unknown = await response.json();
+      const image: unknown =
+        isRecord(body) && Array.isArray(body.data) ? body.data[0] : undefined;
+      const { b64_json: base64, url: imageUrl } = isRecord(image) ? image : {};
+      let bytes: Uint8Array<ArrayBuffer>;
+      if (typeof base64 === "string" && base64) {
+        bytes = decodeBase64(base64);
+      } else if (typeof imageUrl === "string" && imageUrl) {
+        const url = URL.canParse(imageUrl) ? new URL(imageUrl) : undefined;
+        if (!url || !["http:", "https:"].includes(url.protocol))
+          throw new ModelConnectionError("image", {
+            key: "models.theModelReturnedAnInvalidImageUrl",
+          });
+        const imageResponse = await fetch(url, {
+          signal: requestSignal,
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!imageResponse.ok)
+          throw new ModelConnectionError("image", {
+            key: "models.cannotLoadTheGeneratedImage",
+          });
+        bytes = new Uint8Array(await imageResponse.arrayBuffer());
+      } else {
+        throw new ModelConnectionError("image", {
+          key: "models.theModelReturnedNoImage",
+        });
+      }
+      const type = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every(
+        (value, index) => bytes[index] === value,
+      )
+        ? "image/png"
+        : bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+          ? "image/jpeg"
+          : String.fromCharCode(...bytes.subarray(0, 4)) === "RIFF" &&
+              String.fromCharCode(...bytes.subarray(8, 12)) === "WEBP"
+            ? "image/webp"
+            : undefined;
+      if (!type) throw invalidModelResponse("image");
+      const blob = new Blob([bytes], { type });
+      if (typeof createImageBitmap === "function") {
+        const bitmap = await createImageBitmap(blob).catch(() => {
+          throw invalidModelResponse("image");
+        });
+        bitmap.close();
+      }
+      return blob;
+    },
+    IMAGE_TIMEOUT,
+  );
+}
+
 export async function generateImage(
   prompt: string,
   size: string,
   images: Blob[] = [],
   signal?: AbortSignal,
+  connection = requireConnection("image"),
 ): Promise<Blob> {
-  const connection = connectionFor("image");
-  return modelRequest(
-    "image",
-    connection,
-    signal,
-    async (client, requestSignal) => {
-      const model = connection.model.trim();
-      const dimensions = /^(\d+)x(\d+)$/.exec(size);
-      let requestSize = size;
-      // Fixed-size GPT Image models accept one resolution per aspect ratio.
-      if (
-        /^gpt-image-(?:1|1-mini|1\.5)(?:-\d{4}-\d{2}-\d{2})?$/.test(model) &&
-        dimensions
-      ) {
-        const width = Number(dimensions[1]);
-        const height = Number(dimensions[2]);
-        requestSize =
-          width === height
-            ? "1024x1024"
-            : width > height
-              ? "1536x1024"
-              : "1024x1536";
-      }
-      const files = images.map(
-        (image, index) =>
-          new File([image], `image-${index}.png`, {
-            type: image.type || "image/png",
-          }),
-      );
-      const params = {
-        model,
-        prompt,
-        n: 1,
-        size: requestSize as OpenAI.Images.ImageGenerateParams["size"],
-      };
-      const data = images.length
-        ? await client.images.edit(
-            {
-              ...params,
-              image: files.length === 1 ? files[0] : files,
-            },
-            { signal: requestSignal },
-          )
-        : await client.images.generate(params, { signal: requestSignal });
-      const value = data?.data?.[0];
-      if (value?.b64_json)
-        return (await fetch(`data:image/png;base64,${value.b64_json}`)).blob();
-      if (value?.url) {
-        const url = new URL(value.url);
-        if (!["http:", "https:"].includes(url.protocol))
-          throw new ModelConnectionError("image", {
-            key: "models.theModelReturnedAnInvalidImageUrl",
-          });
-        const image = await fetch(url, {
-          signal: requestSignal,
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-        });
-        if (!image.ok)
-          throw new ModelConnectionError("image", {
-            key: "models.cannotLoadTheGeneratedImage",
-          });
-        return image.blob();
-      }
-      throw new ModelConnectionError("image", {
-        key: "models.theModelReturnedNoImage",
-      });
-    },
-    300_000,
-  );
+  const output = await requestImage(prompt, size, images, connection, signal);
+  recordSuccessfulCheck(images.length ? "image-edit" : "image", connection);
+  return output;
 }
 
 export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
+  connection: SpeechConnection = requireConnection("speech"),
 ): Promise<Blob> {
-  const connection = connectionFor("speech");
-  return modelRequest(
-    "speech",
-    connection,
-    signal,
-    async (client, requestSignal) => {
-      const response = await client.audio.speech.create(
-        {
-          model: connection.model.trim(),
-          input: text,
-          voice: connection.voice || "alloy",
-          response_format: "mp3",
-        },
-        { signal: requestSignal },
-      );
-      if ((response.headers.get("content-type") || "").includes("json"))
-        throw new ModelConnectionError("speech", {
-          key: "models.connection.invalidResponse",
-          values: {
-            capability: { key: CAPABILITY_MESSAGE_KEYS.speech },
-          },
-        });
-      return response.blob();
-    },
-  );
-}
-
-export interface SpeechSegment {
-  start: number;
-  end: number;
-  text: string;
-  speaker?: string;
-}
-export interface Transcription {
-  text: string;
-  segments: SpeechSegment[];
+  const output = await requestSpeech(text, connection, signal);
+  recordSuccessfulCheck("speech", connection);
+  return output;
 }
 
 export async function transcribeDetailed(
   file: Blob,
   name = "audio.webm",
   signal?: AbortSignal,
+  connection: TranscriptionConnection = requireConnection("transcription"),
 ): Promise<Transcription> {
-  const connection = connectionFor("transcription");
-  return modelRequest(
-    "transcription",
-    connection,
-    signal,
-    async (client, requestSignal) => {
-      const data = await client.audio.transcriptions.create(
-        {
-          file: new File([file], name, { type: file.type || "audio/webm" }),
-          model: connection.model.trim(),
-          response_format: connection.transcriptionFormat || "verbose_json",
-        },
-        { signal: requestSignal },
-      );
-      if (typeof data?.text !== "string")
-        throw new ModelConnectionError("transcription", {
-          key: "models.theModelReturnedNoTranscript",
-        });
-      const segments =
-        "segments" in data && Array.isArray(data.segments)
-          ? data.segments
-              .filter(
-                (segment) =>
-                  Number.isFinite(segment.start) &&
-                  Number.isFinite(segment.end) &&
-                  typeof segment.text === "string",
-              )
-              .map((segment) => ({
-                start: Math.max(0, segment.start),
-                end: Math.max(segment.start, segment.end),
-                text: segment.text,
-                ...(typeof segment.speaker === "string"
-                  ? { speaker: segment.speaker }
-                  : {}),
-              }))
-          : [];
-      return { text: data.text, segments };
-    },
-  );
+  const output = await requestTranscription(file, name, connection, signal);
+  if (output.text.trim() && output.segments.length)
+    recordSuccessfulCheck("transcription", connection);
+  return output;
 }
 
 export async function transcribe(
   file: Blob,
   name = "audio.webm",
   signal?: AbortSignal,
+  connection?: TranscriptionConnection,
 ): Promise<string> {
-  return (await transcribeDetailed(file, name, signal)).text;
+  return (await transcribeDetailed(file, name, signal, connection)).text;
+}
+
+function requestSearch(
+  query: string,
+  connection: SearchConnection,
+  signal?: AbortSignal,
+  timeout = 30_000,
+) {
+  return modelRequest(
+    "search",
+    connection,
+    signal,
+    async (request) => {
+      const maxResults = 6;
+      const response = await request("search", {
+        query,
+        max_results: maxResults,
+        search_depth: "basic",
+      });
+      const body: unknown = await response.json();
+      if (!isRecord(body) || !Array.isArray(body.results))
+        throw invalidModelResponse("search");
+      const results: unknown[] = body.results.slice(0, maxResults);
+      return results
+        .map((item) => {
+          if (
+            !isRecord(item) ||
+            typeof item.title !== "string" ||
+            typeof item.url !== "string" ||
+            !/^https?:\/\//.test(item.url) ||
+            typeof item.content !== "string"
+          )
+            throw invalidModelResponse("search");
+          return [item.title, item.url, item.content].join("\n");
+        })
+        .join("\n\n");
+    },
+    timeout,
+  );
 }
 
 export async function searchWeb(
   query: string,
   signal?: AbortSignal,
-  connection = connectionFor("search"),
+  connection: SearchConnection = requireConnection("search"),
 ): Promise<string> {
+  const results = await requestSearch(query, connection, signal);
+  recordSuccessfulCheck("search", connection);
+  return results;
+}
+
+export function listLanguageModels(
+  connection: LanguageConnection,
+  signal?: AbortSignal,
+): Promise<string[]> {
   return modelRequest(
-    "search",
-    connection,
+    "text",
+    { ...connection, model: connection.model.trim() || "models" },
     signal,
-    async (client, requestSignal) => {
-      const apiKey = connection.apiKey.trim();
-      if (connection.provider === "brave") {
-        const data = await client.get<{
-          web?: {
-            results?: { title: string; url: string; description: string }[];
-          };
-        }>("/res/v1/web/search", {
-          query: { q: query },
-          headers: { "X-Subscription-Token": apiKey },
-          signal: requestSignal,
+    async (request) => {
+      const response = await request("models");
+      const body: unknown = await response.json();
+      if (!isRecord(body) || !Array.isArray(body.data))
+        throw new ModelConnectionError("text", {
+          key: "models.theServiceReturnedNoModelList",
         });
-        return (data.web?.results || [])
-          .slice(0, 6)
-          .map((value) => `${value.title}\n${value.url}\n${value.description}`)
-          .join("\n\n");
-      }
-      const officialTavily =
-        new URL(client.baseURL).origin === TAVILY_API_ORIGIN;
-      const data = await client.post<{
-        results?: { title: string; url: string; content: string }[];
-      }>("/search", {
-        headers: officialTavily
-          ? { Authorization: `Bearer ${apiKey}` }
-          : undefined,
-        // Custom gateways may still expect the legacy request field.
-        body: {
-          query,
-          max_results: 6,
-          ...(!officialTavily && { api_key: apiKey }),
-        },
-        signal: requestSignal,
-      });
-      return (data.results || [])
-        .map((value) => `${value.title}\n${value.url}\n${value.content}`)
-        .join("\n\n");
+      const data: unknown[] = body.data;
+      return [
+        ...new Set(
+          data
+            .filter(isRecord)
+            .map((item) => (typeof item.id === "string" ? item.id.trim() : ""))
+            .filter(Boolean),
+        ),
+      ].sort();
     },
-    30_000,
+    PROBE_TIMEOUT,
   );
 }
 
-export async function testConnection(
-  capability: Capability,
+function sampleImage(digits: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 320;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) throw invalidModelResponse("vision");
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#111";
+  context.font = "bold 84px sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(digits, canvas.width / 2, canvas.height / 2);
+  return canvas;
+}
+
+export async function testModelOperation(
+  operation: ModelCheck,
   connection: Connection,
   signal?: AbortSignal,
-): Promise<{ status: "success" | "warning"; message: ErrorTranslation }> {
-  return modelRequest<{
-    status: "success" | "warning";
-    message: ErrorTranslation;
-  }>(
-    capability,
-    connection,
-    signal,
-    async (client, requestSignal) => {
-      if (capability === "search") {
-        await searchWeb("Huayu", requestSignal, connection);
-        return {
-          status: "success",
-          message: { key: "models.connection.searchTestPassed" },
-        };
-      }
-      if (capability === "text" || capability === "vision") {
-        await chat([{ role: "user", content: "Reply with OK." }], {
-          connection,
-          signal: requestSignal,
-          capability,
-        });
-        return capability === "text"
-          ? { status: "success", message: { key: "models.connected" } }
-          : {
-              status: "warning",
-              message: { key: "models.connection.visionTestLimited" },
-            };
-      }
-      let data: OpenAI.Models.ModelsPage;
-      try {
-        data = await client.models.list({ signal: requestSignal });
-      } catch (error) {
-        if (
-          error instanceof APIError &&
-          [404, 405, 501].includes(error.status || 0)
-        )
-          return {
-            status: "warning",
-            message: { key: "models.connection.modelListUnsupported" },
-          };
-        throw error;
-      }
-      if (!Array.isArray(data.data))
-        throw new ModelConnectionError(capability, {
-          key: "models.theServiceReturnedNoModelList",
-        });
-      if (!data.data.some((model) => model.id === connection.model.trim()))
-        return {
-          status: "warning",
-          message: { key: "models.serviceConnectedButThisModelWasntInTheList" },
-        };
-      return {
-        status: "warning",
-        message: {
-          key: "models.connection.capabilityTestLimited",
-          values: {
-            capability: { key: CAPABILITY_MESSAGE_KEYS[capability] },
+  locale: Locale = getLocale(),
+): Promise<CheckResult & { preview?: Blob }> {
+  signal?.throwIfAborted();
+  const capability = operation === "image-edit" ? "image" : operation;
+  const verified = { status: "verified" } as const;
+  function unexpectedOutput() {
+    return new ModelConnectionError(capability, {
+      key: "models.connection.unexpectedTestOutput",
+    });
+  }
+  switch (operation) {
+    case "text": {
+      if (connection.provider !== "language") break;
+      const reply = await requestChat(
+        [{ role: "user", content: "Reply with OK." }],
+        connection,
+        { signal },
+        PROBE_TIMEOUT,
+      );
+      if (!/^ok[.!。]?$/i.test(reply.trim())) throw unexpectedOutput();
+      return verified;
+    }
+    case "vision": {
+      if (connection.provider !== "language") break;
+      const digits = String(
+        1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000),
+      );
+      const testImage = sampleImage(digits).toDataURL("image/png");
+      const reply = await requestChat(
+        [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Reply with only the four digits shown in the image.",
+              },
+              { type: "image_url", image_url: { url: testImage } },
+            ],
           },
-        },
-      };
-    },
-    15_000,
-  );
+        ],
+        connection,
+        { capability: "vision", signal },
+        PROBE_TIMEOUT,
+      ).catch((error: unknown) => {
+        if (error instanceof UnsupportedVisionError) return null;
+        throw error;
+      });
+      if (reply === null) return { status: "unsupported" };
+      if (reply.trim() !== digits) throw unexpectedOutput();
+      return verified;
+    }
+    case "image":
+    case "image-edit": {
+      if (
+        connection.provider !== "gpt-image" &&
+        connection.provider !== "seedream"
+      )
+        break;
+      const images: Blob[] = [];
+      if (operation === "image-edit") {
+        const image = await new Promise<Blob>((resolve, reject) => {
+          sampleImage("1234").toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(invalidModelResponse("image"));
+          }, "image/png");
+        });
+        images.push(image);
+      }
+      await requestImage(
+        operation === "image"
+          ? "A simple blue circle on a white background."
+          : "Replace the black digits with a blue circle on the same white background.",
+        connection.provider === "seedream" ? "2048x2048" : "1024x1024",
+        images,
+        connection,
+        signal,
+      );
+      return verified;
+    }
+    case "speech": {
+      if (connection.provider !== "aliyun-tts") break;
+      const preview = await requestSpeech(
+        locale === "zh-CN"
+          ? "你好，欢迎使用画语。"
+          : "Hello, welcome to Huayu.",
+        connection,
+        signal,
+        30_000,
+      );
+      if (typeof OfflineAudioContext === "function") {
+        const context = new OfflineAudioContext(1, 1, 16_000);
+        await context.decodeAudioData(await preview.arrayBuffer()).catch(() => {
+          throw unexpectedOutput();
+        });
+      }
+      signal?.throwIfAborted();
+      return { ...verified, preview };
+    }
+    case "transcription": {
+      if (connection.provider !== "aliyun-asr") break;
+      const { default: sampleUrl } = await import("./model-check.wav?url");
+      const sample = await fetch(sampleUrl, { signal });
+      if (!sample.ok) throw unexpectedOutput();
+      const result = await requestTranscription(
+        await sample.blob(),
+        "model-check.wav",
+        connection,
+        signal,
+        30_000,
+      );
+      const text = result.text
+        .toLowerCase()
+        .replace(/[^a-z]+/g, " ")
+        .trim();
+      if (
+        !text.includes("this is a test") ||
+        !text.includes("the sky is blue") ||
+        !result.segments.length
+      )
+        throw unexpectedOutput();
+      return verified;
+    }
+    case "search": {
+      if (connection.provider !== "tavily") break;
+      await requestSearch("Huayu", connection, signal, PROBE_TIMEOUT);
+      return verified;
+    }
+  }
+  throw invalidModelResponse(capability);
 }

@@ -29,7 +29,7 @@
 | 12 | [整图执行](../apps/web/src/workflow/execute.ts) | 已调整 | 运行持有 `running / cancelling` 和 AbortController；取消先发布阶段再中止请求，finally 按运行身份释放节点。 |
 | 13 | [节点执行与占用](../apps/web/src/workflow/execute.ts) | 已调整 | 保留节点的 queued、running、success、error、cancelled 状态；增加统一 `nodeIsBusy` / `useNodeBusy`，成功节点在整个计划结束前仍受占用保护。 |
 | 14 | [结果新鲜度](../apps/web/src/workflow/freshness.ts)、[编辑守卫](../apps/web/src/workflow/results.ts) | 已调整 | 新鲜度继续由输入指纹派生；结果编辑、素材附加和上传提交统一使用运行占用与锁定约束。 |
-| 15 | [模型连接测试](../apps/web/src/components/ModelSettings.tsx) | 已调整 | `idle / testing / complete`；仅完成状态携带结果。修改配置会取消旧测试，结果只由当前请求提交。 |
+| 15 | [模型能力测试](../apps/web/src/features/model-settings/ConnectionChecks.tsx) | 已调整 | 测试绑定当前连接的输入和取消信号。完成后把验证结果写入草稿。保存时核对请求对应的配置，再写入浏览器。 |
 | 16 | [模型请求与流](../apps/web/src/ai/provider.ts) | 保留 | 请求以 AbortSignal 和异步迭代的终止、异常表示生命周期，SDK 重试配置与取消边界已有测试；不额外复制 SDK 状态。 |
 | 17 | [Agent 流解析与画布写入](../apps/web/src/features/canvas/agent-sse.ts) | 已调整 | JSON 扫描采用 `object / string / escape`，避免 quoted 与 escaped 组合；画布事务及执行身份边界沿用既有实现。 |
 | 18 | [结果草稿](../apps/web/src/features/results/ResultWorkbench.tsx) | 已调整 | `clean / dirty / conflict` 从 base、content、live 推导；外部更新和本地未提交编辑的冲突保持可见。 |

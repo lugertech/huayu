@@ -343,7 +343,7 @@ export const en = {
     "Connect materials, describe the task, then run it. Supports text, images, audio and files.",
   "canvas.components.instruction.placeholder":
     "Write instructions and connect materials for more context…",
-  "canvas.components.run": "Run",
+  "canvas.components.startPoint": "Start point",
   "canvas.components.runConnectedCreativeStepsFromHere":
     "Run connected creative steps from here",
   "canvas.components.speech": "Speech",
@@ -1119,11 +1119,61 @@ export const en = {
   "settings.appearance.light": "Light",
   "settings.appearance.system": "System",
   "settings.categoriesLabel": "Settings categories",
-  "settings.description": "Choose your appearance and model connections.",
+  "settings.description": "Configure general settings, models and tools.",
   "settings.general": "General",
   "settings.language.description": "Choose your interface language.",
   "settings.language.label": "Language",
   "settings.language.system": "Browser default",
+  "settings.models.addModel": "Add model",
+  "settings.models.aliyun": "Alibaba Cloud Model Studio",
+  "settings.models.applyCatalogSelection": "Update list",
+  "settings.models.availableModels": "Choose models",
+  "settings.models.beijing": "Beijing",
+  "settings.models.cancelAddModel": "Cancel adding model",
+  "settings.models.catalogDescription":
+    "Search and select the models you want to use.",
+  "settings.models.clearCatalogSelection": "Deselect all",
+  "settings.models.configure": "Configure",
+  "settings.models.default": "Default",
+  "settings.models.disabled": "Off",
+  "settings.models.displayName": "Display name (optional)",
+  "settings.models.emptyModelList":
+    "No models found. Enter a model ID manually.",
+  "settings.models.enableConnection": "Enable {name}",
+  "settings.models.enableModel": "Enable model",
+  "settings.models.fetchModels": "Fetch available models",
+  "settings.models.language": "Language models",
+  "settings.models.modelId": "Model ID",
+  "settings.models.modelListFailed":
+    "Could not fetch models. Enter a model ID manually.",
+  "settings.models.modelOrEndpointId": "Model ID or endpoint ID",
+  "settings.models.noModels": "No models added",
+  "settings.models.pendingVerification": "To verify",
+  "settings.models.previewVoice": "Preview voice",
+  "settings.models.protocol": "API protocol",
+  "settings.models.referenceImage": "Generate from reference",
+  "settings.models.region": "Region",
+  "settings.models.removeModel": "Remove model",
+  "settings.models.selectCatalogModels": "Select all",
+  "settings.models.selectModel": "Select a model to edit",
+  "settings.models.setDefault": "Set as default",
+  "settings.models.setDefaultFor": "Set as default for {capability}",
+  "settings.models.singapore": "Singapore",
+  "settings.models.testImageGeneration": "Test generation",
+  "settings.models.testImageUnderstanding": "Test image input",
+  "settings.models.testReferenceImage": "Test reference image",
+  "settings.models.testSearch": "Test search",
+  "settings.models.testText": "Test text",
+  "settings.models.testTranscription": "Test transcription",
+  "settings.models.testing": "Testing",
+  "settings.models.text": "Text",
+  "settings.models.unsupported": "Unsupported",
+  "settings.models.untitledModel": "Unnamed model",
+  "settings.models.useSpeechConnection": "Use speech synthesis connection",
+  "settings.models.useTranscriptionConnection": "Use transcription connection",
+  "settings.models.verificationFailed": "Verification failed",
+  "settings.models.verified": "Verified",
+  "settings.models.workspaceId": "Workspace ID",
   "settings.models.allChangesSaved": "All changes saved",
   "settings.models.apiKey": "API key",
   "settings.models.apiKeyHint":
@@ -1139,12 +1189,11 @@ export const en = {
   "settings.models.reuseServiceQuestion":
     "Using the same service for several models?",
   "settings.models.reuseTextService": "Use the text generation service",
-  "settings.models.saved": "Model settings saved",
   "settings.models.saveFailed": "Couldn’t save settings",
   "settings.models.saveSettings": "Save settings",
   "settings.models.searchProvider": "Search provider",
   "settings.models.searchUrlHint": "Enter your search provider’s API URL.",
-  "settings.models.serviceUrl": "Service URL",
+  "settings.models.serviceUrl": "API URL",
   "settings.models.serviceUrlHint":
     "Connect an OpenAI-compatible API or a local model service.",
   "settings.models.setupDescription":
@@ -1154,7 +1203,7 @@ export const en = {
   "settings.models.testConnection": "Test connection",
   "settings.models.textOnly": "Text only",
   "settings.models.textWithTimestamps": "Text with timestamps",
-  "settings.models.title": "Model connections",
+  "settings.models.title": "Models and tools",
   "settings.models.transcriptionFormatHint":
     "Choose a format your model supports. Timestamps let you jump to the right moment in a recording.",
   "settings.models.transcriptionOutput": "Transcription output",
@@ -1246,12 +1295,26 @@ export const en = {
   "workflow.viewRunDetails": "View run details",
   "workflow.writeInstructionsOrConnectMaterials":
     "Write instructions or connect materials",
-  "models.connection.missingUrl":
-    "{capability} is not configured. Add its service URL in Settings → Model connections.",
-  "models.connection.missingModel":
-    "{capability} needs a model name. Add it in Settings → Model connections.",
-  "models.connection.missingKey":
-    "{capability} needs an API key. Add it in Settings → Model connections.",
+  "canvas.models.trigger": "Models",
+  "canvas.models.choose": "Choose a model",
+  "canvas.models.search": "Search models",
+  "canvas.models.noMatches": "No matching models",
+  "canvas.models.empty": "No models available",
+  "canvas.models.volcengine": "Volcengine Ark",
+  "canvas.models.run": "Run",
+  "models.connection.missingUrl": "Enter the service URL for {capability}.",
+  "models.connection.missingBaseUrl": "Enter an API URL.",
+  "models.connection.missingModel": "Enter the model ID for {capability}.",
+  "models.connection.missingKey": "Enter the API key for {capability}.",
+  "models.connection.configureCapability":
+    "Configure and enable {capability} in Settings → Models and tools.",
+  "models.connection.workspaceRequired":
+    "Enter a valid Model Studio workspace ID.",
+  "models.connection.voiceRequired": "Enter a voice.",
+  "models.connection.visionRequired":
+    "Choose a model that passed the image test, or test your current model in Settings.",
+  "models.connection.unexpectedTestOutput":
+    "The test returned an unexpected result.",
   "models.connection.timeout":
     "{capability} timed out. Try again later or check that the model service is running.",
   "models.connection.unauthorized":
@@ -1271,7 +1334,7 @@ export const en = {
   "models.connection.network":
     "Cannot reach the {capability} service. Check its URL and your network. Direct browser requests also require CORS support.",
   "models.connection.invalidResponse":
-    "The response from {capability} could not be read. Check that the service supports an OpenAI-compatible API and try again.",
+    "The {capability} service returned an unreadable response. Check the service and model you selected, then try again.",
   "models.connection.searchTestPassed": "Web search test passed.",
   "models.connection.visionTestLimited":
     "The text request passed. Image understanding still needs to be verified with an image.",
@@ -1279,7 +1342,7 @@ export const en = {
     "This service does not provide a model list, so this model could not be verified. Check its name before generating.",
   "models.connection.capabilityTestLimited":
     "The service is reachable and the model was found. {capability} still needs a real generation to confirm support.",
-  "models.connection.openSettings": "Open model settings",
+  "models.connection.openSettings": "Open settings",
   "settings.models.optionalDescription":
     "Configure only what you need. The canvas, asset library, recording and playback work without AI connections.",
   "settings.models.notConfigured": "Not configured",

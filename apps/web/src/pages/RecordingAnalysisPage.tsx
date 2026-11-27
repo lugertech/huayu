@@ -83,7 +83,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { openModelSettings } from "@/lib/settings-event";
 import {
-  CAPABILITY_LABELS,
+  CAPABILITY_MESSAGE_KEYS,
   connectionIssue,
   useModelSettings,
 } from "@/ai/settings";
@@ -148,7 +148,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
   const modelSettings = useModelSettings();
   const missingCapabilities = recording
     ? recordingCapabilities(recording).filter((capability) =>
-        connectionIssue(capability, modelSettings.connections[capability]),
+        connectionIssue(capability, modelSettings),
       )
     : [];
   const { showToast } = useToast();
@@ -617,7 +617,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
               <p>
                 {t("recordings.analysis.missingConnections", {
                   capabilities: missingCapabilities
-                    .map((capability) => CAPABILITY_LABELS[capability])
+                    .map((capability) => t(CAPABILITY_MESSAGE_KEYS[capability]))
                     .join(" / "),
                 })}
               </p>

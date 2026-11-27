@@ -64,7 +64,7 @@ Workflows check reachable cycles before execution. Independent nodes at the same
 
 ## Data boundaries
 
-Browser model requests and SSE decoding use the official `openai` TypeScript SDK (Apache-2.0), still targeting the user's OpenAI-compatible service. Each operation checks its required capability; default remote URLs and model names do not count as configured. Keyless services receive no placeholder authorization header. SDK diagnostic headers are removed for services that only allow standard CORS headers. Tests time out after 15 seconds; ordinary generation after 180 seconds and images after 300 seconds, including response reading. User cancellation is preserved and automatic retries are disabled. Localized errors avoid displaying raw provider bodies or credentials.
+The browser calls Chat Completions or Responses according to the selected protocol. GPT Image, Volcengine Ark, Alibaba Cloud Model Studio, and Tavily use provider-specific adapters. Streaming responses use the SSE decoder from the official `openai` TypeScript SDK. Each workflow and recording analysis captures the browser settings when it starts. Steps require their respective capabilities. Deadlines cover response reading, and users can cancel requests. Adapters translate provider errors into localizable application errors.
 
 - Browser-only model settings have no backend type or persistence endpoint.
 - Generated pages use iframes without same-origin permission, with the same isolation in larger previews.

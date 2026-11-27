@@ -1,6 +1,11 @@
-import { LocalizedError } from "@/i18n/errors";
+import { errorText, LocalizedError } from "@/i18n/errors";
 import { t, getLocale, type MessageKey, type Values } from "@/i18n";
-import { requireConnection, type Capability } from "@/ai/settings";
+import {
+  getSettings,
+  requireConnection,
+  type LanguageConnection,
+  type TranscriptionConnection,
+} from "@/ai/settings";
 import { ModelConnectionError } from "@/ai/errors";
 import { api, APIError, type Recording } from "@/api/client";
 import { blobForSource } from "@/api/backend";
@@ -155,9 +160,9 @@ function groundedReport(
 export function recordingCapabilities(
   recording: Recording,
   options: { forceTranscription?: boolean; transcriptionOnly?: boolean } = {},
-): Capability[] {
+): ("text" | "transcription")[] {
   const transcript = readTranscript(recording.transcript);
-  const capabilities: Capability[] = [];
+  const capabilities: ("text" | "transcription")[] = [];
   if (
     options.forceTranscription ||
     !transcript.text.trim() ||
@@ -180,15 +185,21 @@ export async function analyzeRecording(
     throw new LocalizedError({
       key: "recordings.analysis.thisRecordingIsAlreadyBeingAnalyzed",
     });
+  const settings = getSettings();
+  let transcriptionConnection: TranscriptionConnection | undefined;
+  let languageConnection: LanguageConnection | undefined;
   try {
-    for (const capability of recordingCapabilities(initial, options))
-      requireConnection(capability);
+    for (const capability of recordingCapabilities(initial, options)) {
+      if (capability === "transcription")
+        transcriptionConnection = requireConnection(capability, settings);
+      else languageConnection = requireConnection(capability, settings);
+    }
   } catch (error) {
     if (error instanceof ModelConnectionError)
       updateAnalysisTask(initial.id, {
         phase: "failed",
         progress: "",
-        error: error.message,
+        error: error.translation ? "" : errorText(error),
         errorTranslation: error.translation,
         modelCapability: error.capability,
         recording: initial,
@@ -294,6 +305,7 @@ export async function analyzeRecording(
           chunk.blob,
           "recording.wav",
           signal,
+          transcriptionConnection,
         );
         if (result.text.trim()) texts.push(result.text.trim());
         const timed = result.segments.length
@@ -379,7 +391,7 @@ export async function analyzeRecording(
             },
             { role: "user", content: JSON.stringify(batches[index]) },
           ],
-          { signal },
+          { signal, connection: languageConnection },
         ),
       );
       const report = normalizeReport(raw);
@@ -407,7 +419,7 @@ export async function analyzeRecording(
             content: parts.map((part) => part.summary).join("\n\n"),
           },
         ],
-        { signal },
+        { signal, connection: languageConnection },
       );
     }
     const seen = new Set<string>();

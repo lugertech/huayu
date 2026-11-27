@@ -12,6 +12,7 @@ function normalizeShapeId(id?: string): ShapeId {
 import { chat, parseModelJSON } from "../../ai/provider";
 import { blobForSource, blobAsDataURL } from "../../api/backend";
 import { modelPrompts } from "@/ai/prompts";
+import { getSettings, requireConnection } from "@/ai/settings";
 import { executeLayoutEvent } from "./agent-layout";
 import { plainText } from "@/features/canvas/editor";
 
@@ -96,7 +97,10 @@ export async function callAgentSSE(
   request: AgentAPIRequest,
   onProgress?: (events: AgentEvent[]) => void,
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<AgentEvent[]> {
+  const capability = request.snapshot ? "vision" : "text";
+  const connection = requireConnection(capability, settings);
   const content: import("../../ai/provider").ChatPart[] = [
     {
       type: "text",
@@ -124,7 +128,8 @@ export async function callAgentSSE(
       { role: "user", content },
     ],
     {
-      capability: request.snapshot ? "vision" : "text",
+      capability,
+      connection,
       signal,
       onDelta: request.stream
         ? (delta) => {

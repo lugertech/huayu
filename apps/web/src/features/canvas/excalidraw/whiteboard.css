@@ -1,10 +1,9 @@
-.huayu-board,
-.board-run-controls {
+.huayu-board {
   --board-glass-background: color-mix(in srgb, var(--popover) 82%, transparent);
   --board-glass-shadow:
     0 2px 5px #00000008, 0 6px 20px #00000008, inset 0 1px 0 #ffffffb3;
 }
-.dark :is(.huayu-board, .board-run-controls) {
+.dark .huayu-board {
   --board-glass-shadow:
     0 2px 5px #00000026, 0 6px 20px #00000026, inset 0 1px 0 #ffffff14;
 }
@@ -24,6 +23,7 @@
 .board-toolbar-project,
 .board-toolbar-utilities,
 .board-toolbar .board-toolbar-invite,
+.board-toolbar .board-toolbar-model,
 .board-stage[data-styles-panel-mode="mobile"] .App-bottom-bar > .Island,
 .huayu-board .excalidraw :is(.zoom-actions, .undo-redo-buttons) {
   background: var(--board-glass-background);
@@ -983,7 +983,9 @@
   border-color: var(--border);
 }
 .board-toolbar .board-toolbar-invite:hover,
-.board-toolbar .board-toolbar-invite[aria-expanded="true"] {
+.board-toolbar .board-toolbar-invite[aria-expanded="true"],
+.board-toolbar .board-toolbar-model:hover,
+.board-toolbar .board-toolbar-model[aria-expanded="true"] {
   background: var(--muted);
 }
 .board-toolbar .board-toolbar-members {
@@ -1032,6 +1034,14 @@
     width: 32px;
     min-width: 32px;
     padding: 0;
+  }
+  .board-toolbar .board-toolbar-model,
+  .board-toolbar .board-toolbar-run {
+    width: 32px;
+    padding: 0;
+  }
+  .board-toolbar :is(.board-toolbar-model-label, .board-toolbar-run-label) {
+    display: none;
   }
   .board-toolbar-collaboration {
     gap: 6px;
@@ -1153,19 +1163,6 @@
 }
 .board-execution-overlay {
   z-index: 1;
-}
-.board-run-controls {
-  position: fixed;
-  z-index: 30;
-  top: 10px;
-  left: 50%;
-  width: max-content;
-  transform: translateX(-50%);
-}
-@media (width < 64rem) {
-  .board-run-controls {
-    top: 54px;
-  }
 }
 .board-native-feedback {
   z-index: 3;

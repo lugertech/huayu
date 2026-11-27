@@ -14,7 +14,7 @@ vp run build
 vp run start
 ```
 
-Open <http://127.0.0.1:5858> and try a built-in example. You can draw, edit, and export without a model connection. For AI generation or transcription, add a service in **Settings → Model connections**.
+Open <http://127.0.0.1:5858> and try a built-in example. You can draw, edit, and export without a model connection. For AI generation or transcription, add a service in **Settings → Models and tools**.
 
 To import PDFs, DOCX files or workbooks, [install the document parsing dependencies](./docs/en/DEPLOYMENT.md#document-parsing) on the machine running Huayu.
 

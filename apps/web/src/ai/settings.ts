@@ -1,129 +1,73 @@
-import {
-  LocalizedError,
-  errorText,
-  type ErrorTranslation,
-} from "@/i18n/errors";
-import { t } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "./errors";
+import {
+  CAPABILITIES,
+  CAPABILITY_MESSAGE_KEYS,
+  IMAGE_PROVIDERS,
+  configurationIssue,
+  connectionBaseUrl,
+  connectionRequestKey,
+  defaultSettings,
+  modelChecks,
+  parseSettings,
+  type Capability,
+  type CapabilityConnections,
+  type ConfigurationIssue,
+  type Connection,
+  type ImageConnection,
+  type ModelCheck,
+  type ModelSettings,
+} from "./model-config";
 
-declare const __HUAYU_DEV_API_ORIGIN__: string;
+export {
+  ALIYUN_ASR_MODEL,
+  ALIYUN_TTS_MODEL,
+  CAPABILITIES,
+  CAPABILITY_MESSAGE_KEYS,
+  IMAGE_PROVIDERS,
+  OPENAI_API_BASE_URL,
+  TAVILY_API_ORIGIN,
+  configurationIssue,
+  connectionBaseUrl,
+  defaultSettings,
+  modelCheckStatus,
+  modelEndpoint,
+  newLanguageConnection,
+  parseSettings,
+  updateConnection,
+  type AliyunRegion,
+  type Capability,
+  type CheckResult,
+  type Connection,
+  type ImageConnection,
+  type ImageProvider,
+  type LanguageConnection,
+  type ModelCheck,
+  type ModelProtocol,
+  type ModelSettings,
+  type SearchConnection,
+  type SpeechConnection,
+  type TranscriptionConnection,
+} from "./model-config";
 
-export const CAPABILITIES = [
-  "text",
-  "vision",
-  "image",
-  "speech",
-  "transcription",
-  "search",
-] as const;
-export type Capability = (typeof CAPABILITIES)[number];
-export interface Connection {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-  voice: string;
-  provider: "openai" | "tavily" | "brave";
-  transcriptionFormat?: "json" | "verbose_json";
-}
-export interface ModelSettings {
-  version: 1;
-  connections: Record<Capability, Connection>;
-}
-export type ConnectionEdits = Partial<Record<Capability, Partial<Connection>>>;
-export const MODEL_STORAGE_KEY = "huayu:model-settings:v1";
+export const MODEL_STORAGE_KEY = "huayu:model-settings:v2";
+export const LEGACY_MODEL_STORAGE_KEY = "huayu:model-settings:v1";
 const MODEL_SETUP_DISMISSED_KEY = "huayu:model-setup-dismissed";
-export const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
-export const TAVILY_API_ORIGIN = "https://api.tavily.com";
-export const CAPABILITY_MESSAGE_KEYS = {
-  text: "models.textGeneration",
-  vision: "models.imageUnderstanding",
-  image: "models.imageGeneration",
-  speech: "models.textToSpeech",
-  transcription: "api.transcription",
-  search: "models.webSearch",
-} as const;
-export const CAPABILITY_LABELS: Record<Capability, string> = {
-  get text() {
-    return t(CAPABILITY_MESSAGE_KEYS.text);
-  },
-  get vision() {
-    return t(CAPABILITY_MESSAGE_KEYS.vision);
-  },
-  get image() {
-    return t(CAPABILITY_MESSAGE_KEYS.image);
-  },
-  get speech() {
-    return t(CAPABILITY_MESSAGE_KEYS.speech);
-  },
-  get transcription() {
-    return t(CAPABILITY_MESSAGE_KEYS.transcription);
-  },
-  get search() {
-    return t(CAPABILITY_MESSAGE_KEYS.search);
-  },
-};
-
-export function defaultSettings(): ModelSettings {
-  const models = {
-    text: "gpt-6-luna",
-    vision: "gpt-6-luna",
-    image: "gpt-image-2.6-flare",
-    speech: "tts-1",
-    transcription: "whisper-1",
-    search: "",
-  };
-  return {
-    version: 1,
-    connections: Object.fromEntries(
-      CAPABILITIES.map((capability) => [
-        capability,
-        {
-          baseUrl:
-            capability === "search" ? TAVILY_API_ORIGIN : OPENAI_API_BASE_URL,
-          apiKey: "",
-          model: models[capability],
-          voice: "alloy",
-          transcriptionFormat: "verbose_json",
-          provider: capability === "search" ? "tavily" : "openai",
-        },
-      ]),
-    ) as Record<Capability, Connection>,
-  };
-}
-
-export function parseSettings(raw: string | null): ModelSettings {
-  const defaults = defaultSettings();
-  if (!raw) return defaults;
-  try {
-    const value = JSON.parse(raw);
-    if (value.version !== 1 || !value.connections) return defaults;
-    for (const capability of CAPABILITIES) {
-      const connection = value.connections[capability];
-      if (!connection || typeof connection !== "object") continue;
-      for (const key of ["baseUrl", "apiKey", "model", "voice"] as const) {
-        if (typeof connection[key] === "string")
-          defaults.connections[capability][key] = connection[key];
-      }
-      if (["openai", "tavily", "brave"].includes(connection.provider))
-        defaults.connections[capability].provider = connection.provider;
-      if (["json", "verbose_json"].includes(connection.transcriptionFormat))
-        defaults.connections[capability].transcriptionFormat =
-          connection.transcriptionFormat;
-    }
-  } catch {
-    /* An invalid local value does not trigger any network request. */
-  }
-  return defaults;
-}
 
 const listeners = new Set<() => void>();
 let cached: ModelSettings | undefined;
 
+function readSavedSettings(): ModelSettings {
+  return parseSettings(
+    localStorage.getItem(MODEL_STORAGE_KEY) ??
+      localStorage.getItem(LEGACY_MODEL_STORAGE_KEY),
+  );
+}
+
 export function getSettings(): ModelSettings {
   if (!cached) {
     try {
-      cached = parseSettings(localStorage.getItem(MODEL_STORAGE_KEY));
+      cached = readSavedSettings();
     } catch {
       cached = defaultSettings();
     }
@@ -132,52 +76,126 @@ export function getSettings(): ModelSettings {
 }
 
 export function saveSettings(value: ModelSettings) {
-  const normalized = parseSettings(JSON.stringify(value));
-  localStorage.setItem(MODEL_STORAGE_KEY, JSON.stringify(normalized));
-  cached = normalized;
+  localStorage.setItem(MODEL_STORAGE_KEY, JSON.stringify(value));
+  cached = value;
   listeners.forEach((listener) => listener());
 }
 
-export function changedConnectionFields(
-  saved: Connection,
-  next: Connection,
-): Partial<Connection> {
-  const fields: Partial<Connection> = Object.fromEntries(
-    Object.entries(next).filter(
-      ([key, value]) => saved[key as keyof Connection] !== value,
-    ),
-  );
-  // A credential belongs to the provider and address the user was editing.
-  if ("provider" in fields || "baseUrl" in fields || "apiKey" in fields) {
-    fields.provider = next.provider;
-    fields.baseUrl = next.baseUrl;
-    fields.apiKey = next.apiKey;
+function mergeConnection<C extends Connection>(
+  latest: C,
+  original: C,
+  draft: C,
+): C {
+  const merged = { ...latest };
+  const credentialsChanged =
+    original.apiKey !== draft.apiKey ||
+    connectionBaseUrl(original) !== connectionBaseUrl(draft);
+  const fields = Object.keys(draft) as Array<keyof C>;
+  for (const key of fields) {
+    if (key === "checks") continue;
+    const credentialField =
+      key === "apiKey" ||
+      key === "baseUrl" ||
+      key === "workspaceId" ||
+      key === "region";
+    if (original[key] !== draft[key] || (credentialsChanged && credentialField))
+      merged[key] = draft[key];
   }
-  return fields;
+
+  const target = connectionRequestKey(merged);
+  merged.checks =
+    connectionRequestKey(latest) === target ? { ...latest.checks } : {};
+  if (connectionRequestKey(draft) === target) {
+    const originalTarget = connectionRequestKey(original) === target;
+    for (const operation of modelChecks) {
+      const result = draft.checks[operation];
+      if (
+        originalTarget
+          ? JSON.stringify(result) ===
+            JSON.stringify(original.checks[operation])
+          : !result
+      )
+        continue;
+      if (result) merged.checks[operation] = result;
+      else delete merged.checks[operation];
+    }
+  }
+  const matchesDraft = fields.every((key) =>
+    key === "checks"
+      ? modelChecks.every(
+          (operation) =>
+            JSON.stringify(merged.checks[operation]) ===
+            JSON.stringify(draft.checks[operation]),
+        )
+      : merged[key] === draft[key],
+  );
+  return matchesDraft ? draft : merged;
 }
 
-export function saveConnectionEdits(edits: ConnectionEdits) {
-  const latest = parseSettings(localStorage.getItem(MODEL_STORAGE_KEY));
-  for (const capability of CAPABILITIES)
-    Object.assign(latest.connections[capability], edits[capability]);
+export function saveSettingsEdits(
+  original: ModelSettings,
+  draft: ModelSettings,
+) {
+  const latest = readSavedSettings();
+  const previous = new Map(original.language.map((entry) => [entry.id, entry]));
+  const edited = new Map(draft.language.map((entry) => [entry.id, entry]));
+  latest.language = latest.language.flatMap((entry) => {
+    const before = previous.get(entry.id);
+    const after = edited.get(entry.id);
+    if (!before) return [entry];
+    return after ? [mergeConnection(entry, before, after)] : [];
+  });
+  latest.language.push(
+    ...draft.language.filter(
+      (entry) =>
+        !previous.has(entry.id) &&
+        !latest.language.some((saved) => saved.id === entry.id),
+    ),
+  );
+  for (const provider of IMAGE_PROVIDERS)
+    latest.images[provider] = mergeConnection(
+      latest.images[provider],
+      original.images[provider],
+      draft.images[provider],
+    );
+  latest.speech = mergeConnection(latest.speech, original.speech, draft.speech);
+  latest.transcription = mergeConnection(
+    latest.transcription,
+    original.transcription,
+    draft.transcription,
+  );
+  latest.search = mergeConnection(latest.search, original.search, draft.search);
+  for (const key of ["image", "defaultImage"] as const)
+    if (original.selection[key] !== draft.selection[key])
+      latest.selection[key] = draft.selection[key];
+  for (const key of ["text", "vision"] as const) {
+    if (original.selection[key] !== draft.selection[key])
+      latest.selection[key] = draft.selection[key];
+    if (!latest.language.some((model) => model.id === latest.selection[key]))
+      latest.selection[key] = null;
+  }
   saveSettings(latest);
 }
 
 if (typeof window !== "undefined")
   window.addEventListener("storage", (event) => {
-    if (event.key === MODEL_STORAGE_KEY || event.key === null) {
+    if (
+      event.key === MODEL_STORAGE_KEY ||
+      event.key === LEGACY_MODEL_STORAGE_KEY ||
+      event.key === null
+    ) {
       cached = undefined;
       listeners.forEach((listener) => listener());
     }
   });
 
 export function useModelSettings() {
-  return useSyncExternalStore((listener) => {
-    listeners.add(listener);
-    return () => {
-      listeners.delete(listener);
-    };
-  }, getSettings);
+  return useSyncExternalStore(subscribe, getSettings);
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 export function shouldOfferModelSetup() {
@@ -187,11 +205,10 @@ export function shouldOfferModelSetup() {
   } catch {
     // Offer setup when the browser cannot read the preference.
   }
-  const { connections } = getSettings();
+  const settings = getSettings();
   return !CAPABILITIES.some(
     (capability) =>
-      capability !== "search" &&
-      !connectionIssue(capability, connections[capability]),
+      capability !== "search" && connectionFor(capability, settings),
   );
 }
 
@@ -199,93 +216,157 @@ export function dismissModelSetup() {
   try {
     localStorage.setItem(MODEL_SETUP_DISMISSED_KEY, "true");
   } catch {
-    // The user can continue in this session without saving the preference.
+    // Browser storage can be unavailable.
   }
 }
 
-export function connectionFor(capability: Capability): Connection {
-  const settings = getSettings();
-  return settings.connections[capability];
+function enabledConnection<C extends Connection>(
+  capability: Capability,
+  connection: C,
+): C | undefined {
+  return connection.enabled && !configurationIssue(capability, connection)
+    ? connection
+    : undefined;
+}
+
+export function defaultImageConnection(
+  settings: ModelSettings,
+): ImageConnection | undefined {
+  const preferred = settings.selection.defaultImage;
+  if (preferred) {
+    const connection = enabledConnection("image", settings.images[preferred]);
+    if (connection) return connection;
+  }
+  return IMAGE_PROVIDERS.map((provider) => settings.images[provider]).find(
+    (connection) => enabledConnection("image", connection),
+  );
+}
+
+export function connectionFor<C extends Capability>(
+  capability: C,
+  settings = getSettings(),
+): CapabilityConnections[C] | undefined {
+  function language(id: string | null) {
+    return settings.language.find(
+      (entry) => entry.id === id && enabledConnection("text", entry),
+    );
+  }
+  function textConnection() {
+    return (
+      language(settings.selection.text) ??
+      settings.language.find((entry) => enabledConnection("text", entry))
+    );
+  }
+  const candidates: {
+    [K in Capability]: () => CapabilityConnections[K] | undefined;
+  } = {
+    text: textConnection,
+    vision: () => language(settings.selection.vision) ?? textConnection(),
+    image: () => {
+      const selected = settings.selection.image;
+      return (
+        (selected
+          ? enabledConnection("image", settings.images[selected])
+          : undefined) ?? defaultImageConnection(settings)
+      );
+    },
+    speech: () => enabledConnection("speech", settings.speech),
+    transcription: () =>
+      enabledConnection("transcription", settings.transcription),
+    search: () => enabledConnection("search", settings.search),
+  };
+  return candidates[capability]();
+}
+
+function resolveConnection<C extends Capability>(
+  capability: C,
+  settings: ModelSettings,
+):
+  | { connection: CapabilityConnections[C]; issue?: never }
+  | { issue: ConfigurationIssue; connection?: never } {
+  const connection = connectionFor(capability, settings);
+  if (!connection) {
+    return {
+      issue: {
+        field: "apiKey",
+        error: new ModelConnectionError(
+          capability,
+          {
+            key: "models.connection.configureCapability",
+            values: {
+              capability: { key: CAPABILITY_MESSAGE_KEYS[capability] },
+            },
+          },
+          "configuration",
+        ),
+      },
+    };
+  }
+  if (
+    capability === "vision" &&
+    connection.checks.vision?.status !== "verified"
+  ) {
+    return {
+      issue: {
+        field: "model",
+        error: new ModelConnectionError(
+          capability,
+          { key: "models.connection.visionRequired" },
+          "configuration",
+        ),
+      },
+    };
+  }
+  return { connection };
 }
 
 export function connectionIssue(
   capability: Capability,
-  connection = connectionFor(capability),
+  settings = getSettings(),
 ) {
-  const values = { capability: { key: CAPABILITY_MESSAGE_KEYS[capability] } };
-  function issue(
-    field: "baseUrl" | "model" | "apiKey",
-    message: string | ErrorTranslation,
-  ) {
-    const error = new ModelConnectionError(
-      capability,
-      message,
-      "configuration",
-    );
-    return {
-      field,
-      error,
-      get message() {
-        return errorText(error);
-      },
-    };
-  }
-  if (!connection.baseUrl.trim())
-    return issue("baseUrl", { key: "models.connection.missingUrl", values });
-  let endpoint: URL;
-  try {
-    endpoint = new URL(modelEndpoint(connection, ""));
-  } catch (error) {
-    return issue(
-      "baseUrl",
-      error instanceof LocalizedError
-        ? error.translation || error.message
-        : { key: "models.invalidModelServiceUrl" },
-    );
-  }
-  if (capability !== "search" && !connection.model.trim())
-    return issue("model", { key: "models.connection.missingModel", values });
-  if (
-    !connection.apiKey.trim() &&
-    (capability === "search" || endpoint.hostname === "api.openai.com")
-  )
-    return issue("apiKey", { key: "models.connection.missingKey", values });
+  return resolveConnection(capability, settings).issue;
 }
 
-export function requireConnection(
-  capability: Capability,
-  connection = connectionFor(capability),
-) {
-  const issue = connectionIssue(capability, connection);
-  if (issue) throw issue.error;
-  return connection;
+export function requireConnection<C extends Capability>(
+  capability: C,
+  settings = getSettings(),
+): CapabilityConnections[C] {
+  const result = resolveConnection(capability, settings);
+  if (result.issue) throw result.issue.error;
+  return result.connection;
 }
 
-export function modelEndpoint(connection: Connection, path: string): string {
-  let url: URL;
+export function recordSuccessfulCheck(operation: ModelCheck, used: Connection) {
   try {
-    url = new URL(
-      connection.baseUrl.trim().replace(/\/+$/, "") +
-        "/" +
-        path.replace(/^\/+/, ""),
-    );
+    const settings = readSavedSettings();
+    let saved: Connection | undefined;
+    switch (used.provider) {
+      case "language":
+        saved = settings.language.find((entry) => entry.id === used.id);
+        break;
+      case "gpt-image":
+      case "seedream":
+        saved = settings.images[used.provider];
+        break;
+      case "aliyun-tts":
+        saved = settings.speech;
+        break;
+      case "aliyun-asr":
+        saved = settings.transcription;
+        break;
+      case "tavily":
+        saved = settings.search;
+    }
+    if (
+      !saved ||
+      !saved.enabled ||
+      connectionRequestKey(saved) !== connectionRequestKey(used) ||
+      saved.checks[operation]?.status === "verified"
+    )
+      return;
+    saved.checks = { ...saved.checks, [operation]: { status: "verified" } };
+    saveSettings(settings);
   } catch {
-    throw new LocalizedError({ key: "models.invalidModelServiceUrl" });
+    // An unavailable local store does not invalidate a completed request.
   }
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new LocalizedError({ key: "models.serviceUrl.invalid" });
-  }
-  if (
-    [window.location.origin, __HUAYU_DEV_API_ORIGIN__].includes(url.origin) &&
-    /^\/api(?:\/|$)/.test(url.pathname)
-  ) {
-    throw new LocalizedError({ key: "models.enterTheUrlOfYourModelService" });
-  }
-  return url.toString();
 }

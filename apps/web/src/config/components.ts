@@ -13,7 +13,7 @@ import {
   ExternalLink,
   FileText,
   Brush,
-  Play,
+  Flag,
   Frame,
   ChartNetwork,
 } from "lucide-react";
@@ -142,9 +142,9 @@ function createComponentConfigs(
     start: {
       name: "Start",
       get displayName() {
-        return translate("canvas.components.run");
+        return translate("canvas.components.startPoint");
       },
-      icon: Play,
+      icon: Flag,
       defaultSize: { w: 80, h: 80 },
       showHelp: false,
       helpContent: "",

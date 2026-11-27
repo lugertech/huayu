@@ -1,7 +1,12 @@
 import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
 import { getLocale, t } from "@/i18n";
-import { requireConnection } from "@/ai/settings";
+import {
+  getSettings,
+  requireConnection,
+  type ModelSettings,
+} from "@/ai/settings";
+import { extractRecordingAudio } from "@/features/recording/audio";
 import { api, uploadAsset, type Asset } from "./client";
 import { canvasRequestHeaders } from "@/lib/canvas-access";
 import {
@@ -104,6 +109,7 @@ export async function messagesForInputs(
   query: string,
   inputs: AIAPIInput[],
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<{ messages: ChatMessage[]; hasImages: boolean }> {
   const parts: ChatPart[] = [{ type: "text", text: query }];
   let hasImages = false;
@@ -121,7 +127,7 @@ export async function messagesForInputs(
       parts.push({
         type: "text",
         text: t("api.audioTranscript", {
-          arg0: await transcribe(audio, input.name || "audio.webm", signal),
+          arg0: await transcribeInput(audio, settings, signal),
         }),
       });
     } else if (input.text || input.description) {
@@ -163,11 +169,15 @@ export async function instructionAPI(
   inputs: AIAPIInput[],
   useWebSearch = false,
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<AIAPIResponse> {
-  requireConnection("text");
-  if (inputs.some((input) => input.type === "image"))
-    requireConnection("vision");
-  if (useWebSearch) requireConnection("search");
+  const language = requireConnection("text", settings);
+  const vision = inputs.some((input) => input.type === "image" && input.src)
+    ? requireConnection("vision", settings)
+    : undefined;
+  const search = useWebSearch
+    ? requireConnection("search", settings)
+    : undefined;
   const prompts = modelPrompts();
   const plan = parseModelJSON(
     await chat(
@@ -175,12 +185,12 @@ export async function instructionAPI(
         { role: "system", content: prompts.procedure },
         { role: "user", content: query },
       ],
-      { signal },
+      { signal, connection: language },
     ),
   );
-  const research = useWebSearch
+  const research = search
     ? t("api.webSearchSourcesPreserveCitationsWhenUsingThem", {
-        arg0: await searchWeb(query, signal),
+        arg0: await searchWeb(query, signal, search),
       })
     : "";
   const { messages, hasImages } = await messagesForInputs(
@@ -188,16 +198,25 @@ export async function instructionAPI(
     `procedure: ${JSON.stringify(plan)}\n${research}`,
     inputs,
     signal,
+    settings,
   );
   const result = parseModelJSON(
-    await chat(messages, { capability: hasImages ? "vision" : "text", signal }),
+    await chat(messages, {
+      capability: hasImages ? "vision" : "text",
+      connection: vision ?? language,
+      signal,
+    }),
   );
   return success([generatedValue(result)]);
 }
 
 export async function imageAPI(
   inputs: AIAPIInput[],
-  options: { size?: string; signal?: AbortSignal; [key: string]: unknown } = {},
+  options: {
+    size?: string;
+    signal?: AbortSignal;
+    settings?: ModelSettings;
+  } = {},
 ): Promise<AIAPIResponse> {
   let prompt = inputs
     .filter((input) => input.type !== "image")
@@ -213,22 +232,26 @@ export async function imageAPI(
     throw new LocalizedError({
       key: "api.describeAnImageOrConnectAReferenceImage",
     });
-  requireConnection("image");
+  const imageConnection = requireConnection("image", options.settings);
   const references = await Promise.all(
     inputs
       .filter((input) => input.type === "image" && input.src)
       .map((input) => blobForSource(input.src, options.signal)),
   );
-  const asset = await uploadAsset(
-    await generateImage(
-      prompt,
-      options.size || "1024x1024",
-      references,
-      options.signal,
-    ),
-    "image.png",
+  const image = await generateImage(
+    prompt,
+    options.size || "1024x1024",
+    references,
     options.signal,
+    imageConnection,
   );
+  const extension =
+    image.type === "image/jpeg"
+      ? "jpg"
+      : image.type === "image/webp"
+        ? "webp"
+        : "png";
+  const asset = await uploadAsset(image, "image." + extension, options.signal);
   return success([
     {
       type: "image",
@@ -243,22 +266,24 @@ export async function imageAPI(
 export async function websiteAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<AIAPIResponse> {
-  requireConnection(
-    inputs.some((input) => input.type === "image" && input.src)
-      ? "vision"
-      : "text",
-  );
-  const { messages, hasImages } = await messagesForInputs(
+  const capability = inputs.some((input) => input.type === "image" && input.src)
+    ? "vision"
+    : "text";
+  const connection = requireConnection(capability, settings);
+  const { messages } = await messagesForInputs(
     modelPrompts().website + t("api.thePageMustBeEntirelySelfContained"),
     t("api.generateACompleteWebPageFromTheInput"),
     inputs,
     signal,
+    settings,
   );
   const value = generatedValue(
     parseModelJSON(
       await chat(messages, {
-        capability: hasImages ? "vision" : "text",
+        capability,
+        connection,
         signal,
       }),
     ),
@@ -270,6 +295,7 @@ export async function websiteAPI(
 export async function audioGenerateAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<AIAPIResponse> {
   const text = inputs
     .map((input) => input.text || input.description || "")
@@ -278,7 +304,7 @@ export async function audioGenerateAPI(
   if (!text.trim())
     throw new LocalizedError({ key: "api.enterTheTextToReadAloud" });
   const asset = await uploadAsset(
-    await synthesizeSpeech(text, signal),
+    await synthesizeSpeech(text, signal, requireConnection("speech", settings)),
     "speech.mp3",
     signal,
   );
@@ -293,18 +319,26 @@ export async function audioGenerateAPI(
   ]);
 }
 
+async function transcribeInput(
+  blob: Blob,
+  settings: ModelSettings,
+  signal?: AbortSignal,
+): Promise<string> {
+  const connection = requireConnection("transcription", settings);
+  const chunks = await extractRecordingAudio(blob, signal);
+  const text: string[] = [];
+  for (const chunk of chunks) {
+    signal?.throwIfAborted();
+    text.push(await transcribe(chunk.blob, "audio.wav", signal, connection));
+  }
+  return text.filter(Boolean).join("\n");
+}
+
 export async function audioRecognizeAPI(
   audioUrl: string,
 ): Promise<AudioRecognizeResponse> {
-  const blob = await blobForSource(audioUrl);
-  const extension = blob.type.includes("mpeg")
-    ? "mp3"
-    : blob.type.includes("wav")
-      ? "wav"
-      : blob.type.includes("mp4")
-        ? "m4a"
-        : "webm";
-  const text = await transcribe(blob, `audio.${extension}`);
+  const settings = getSettings();
+  const text = await transcribeInput(await blobForSource(audioUrl), settings);
   return {
     status: "success",
     code: 200,
@@ -339,15 +373,19 @@ export async function documentUploadAPI(file: File): Promise<AIAPIResponse> {
 export async function documentGenerateAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
+  settings = getSettings(),
 ): Promise<AIAPIResponse> {
   const { messages, hasImages } = await messagesForInputs(
     t("api.generateTheCompleteFileBodyFromTheInputAndRequirements"),
     t("api.generateTheRequestedFileContent"),
     inputs,
     signal,
+    settings,
   );
+  const capability = hasImages ? "vision" : "text";
   const text = await chat(messages, {
-    capability: hasImages ? "vision" : "text",
+    capability,
+    connection: requireConnection(capability, settings),
     signal,
   });
   const nameData = parseModelJSON<{
@@ -366,7 +404,7 @@ export async function documentGenerateAPI(
             .slice(0, 6000),
         },
       ],
-      { signal },
+      { signal, connection: requireConnection("text", settings) },
     ),
   );
   const rawName =

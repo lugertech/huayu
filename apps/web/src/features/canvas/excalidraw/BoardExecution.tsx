@@ -1,46 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/i18n";
 import { useEditor } from "@/features/canvas/editor";
-import {
-  nodeExecution,
-  stopAllExecutions,
-  useWorkflowState,
-} from "@/workflow/execute";
+import { nodeExecution, useWorkflowState } from "@/workflow/execute";
 import { resultIsStale } from "@/workflow/freshness";
-import { createPortal } from "react-dom";
 
 /** Execution is a view layer, so progress never changes saved arrow colors or exports. */
 export function BoardExecution() {
-  const { t } = useTranslations();
   const editor = useEditor();
-  const { busy, stopping } = useWorkflowState(editor);
-  const stopLabel = t("canvas.node.stopRun");
-  const controls = busy && (
-    <div
-      className="board-run-controls flex items-center gap-2 px-2.5 py-[3px] text-popover-foreground"
-      data-canvas-ui
-    >
-      <span
-        className="min-w-12 text-xs font-medium whitespace-nowrap"
-        role="status"
-      >
-        {t(stopping ? "workflow.status.stopping" : "canvas.node.running")}
-      </span>
-      <Button
-        size="icon-sm"
-        variant="ghost"
-        className="text-red-600 hover:text-red-600 disabled:text-muted-foreground disabled:transition-none"
-        disabled={stopping}
-        aria-label={stopLabel}
-        title={stopLabel}
-        onClick={() => stopAllExecutions(editor)}
-      >
-        <span aria-hidden="true" className="size-3.5 bg-current" />
-      </Button>
-    </div>
-  );
+  useWorkflowState(editor);
   const camera = editor.session.camera;
-  const wires = (
+  return (
     <svg className="board-execution-overlay" aria-hidden="true">
       <g
         transform={`translate(${camera.x * camera.z} ${camera.y * camera.z}) scale(${camera.z})`}
@@ -119,11 +86,5 @@ export function BoardExecution() {
           })}
       </g>
     </svg>
-  );
-  return (
-    <>
-      {controls && createPortal(controls, document.body)}
-      {wires}
-    </>
   );
 }

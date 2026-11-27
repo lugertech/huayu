@@ -15,6 +15,8 @@ const fontsRoot = resolve(
   "node_modules/@excalidraw/excalidraw/dist/prod/fonts",
 );
 const noticesRoot = resolve(root, "../../licenses");
+const shellPanelModules =
+  /[\\/]src[\\/](?:components[\\/](?:QuickSearch|SettingsDialog)\.tsx$|features[\\/]model-settings[\\/])/;
 export function whiteboardAssets(): Plugin {
   return {
     name: "local-whiteboard-fonts",
@@ -120,7 +122,7 @@ const config = defineConfig({
         /[\\/]node_modules[\\/](?:@excalidraw[\\/]excalidraw|@pdf-lib[\\/]fontkit|pdf-lib|docx|mermaid|@mermaid-js[\\/]parser)[\\/]/,
         /[\\/]node_modules[\\/]react-dom[\\/](?:server|static|cjs[\\/]react-dom-(?:server|static))/,
         /[\\/]src[\\/]components[\\/]ui[\\/]tooltip\.tsx$/,
-        /[\\/]src[\\/]components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
+        shellPanelModules,
       ],
       deferredEntries: [/^\0huayu:font-worker$/],
     }),
@@ -176,7 +178,7 @@ const config = defineConfig({
             },
             {
               name: "shell-panels",
-              test: /[\\/]src[\\/]components[\\/](?:QuickSearch|SettingsDialog|ModelSettings)\.tsx$/,
+              test: shellPanelModules,
               priority: 10,
               entriesAware: true,
               includeDependenciesRecursively: false,

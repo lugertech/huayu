@@ -7,6 +7,7 @@ import {
 } from "@/features/canvas/editor";
 import { connectShapes } from "@/features/canvas/connection-parser";
 import { setLanguage } from "@/i18n";
+import { getSettings, saveSettings } from "@/ai/settings";
 const mocks = vi.hoisted(() => ({
   instruction: vi.fn(),
   image: vi.fn(),
@@ -549,6 +550,34 @@ describe("workflow execution parity", () => {
       await inputForShape(editor, editor.getShape("shape:source"), new Set()),
     ).toEqual([]);
   });
+  it("keeps the image selection made when the workflow started", async () => {
+    const editor = board();
+    node(editor, "shape:task", "instruction", "写图片提示词");
+    node(editor, "shape:image", "ai-image");
+    connectShapes(editor, "shape:task", "shape:image");
+
+    const previous = getSettings();
+    const selection = (image: "gpt-image" | "seedream") => ({
+      ...previous,
+      selection: { ...previous.selection, image },
+    });
+    vi.stubGlobal("localStorage", { setItem: vi.fn() });
+    try {
+      saveSettings(selection("gpt-image"));
+      mocks.instruction.mockImplementationOnce(() => {
+        saveSettings(selection("seedream"));
+        return Promise.resolve(value("松林"));
+      });
+      await runWorkflow(editor, "shape:task");
+      expect(mocks.image.mock.calls[0][1].settings.selection.image).toBe(
+        "gpt-image",
+      );
+    } finally {
+      saveSettings(previous);
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("keeps a locked edited image unchanged when running the rest of its workflow", async () => {
     const editor = board();
     node(editor, "shape:original", "ai-image");

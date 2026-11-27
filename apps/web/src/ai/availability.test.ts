@@ -1,4 +1,3 @@
-import { translatedErrorMessage } from "@/i18n/errors";
 import {
   afterEach,
   beforeEach,
@@ -32,39 +31,24 @@ const json = (data: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
-async function configured(
-  capability: import("./settings").Capability = "text",
-) {
+const PNG =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=";
+
+async function configured() {
   const settings = await import("./settings");
   const value = settings.defaultSettings();
-  value.connections[capability] = {
-    ...value.connections[capability],
+  const connection = {
+    ...settings.newLanguageConnection(),
     baseUrl: "http://localhost:11434/v1",
     model: "local-model",
   };
+  value.language.push(connection);
+  value.selection.text = connection.id;
   settings.saveSettings(value);
-  return value.connections[capability];
+  return connection;
 }
 
 describe("capability availability", () => {
-  it("distinguishes defaults from configured capabilities and allows keyless local models", async () => {
-    const { CAPABILITIES, connectionIssue } = await import("./settings");
-    for (const capability of CAPABILITIES)
-      expect(connectionIssue(capability)?.field).toBe("apiKey");
-    const connection = await configured();
-    expect(connectionIssue("text", connection)).toBeUndefined();
-    expect(connectionIssue("image")?.field).toBe("apiKey");
-    expect(connectionIssue("text", { ...connection, baseUrl: "" })?.field).toBe(
-      "baseUrl",
-    );
-    expect(connectionIssue("text", { ...connection, model: "" })?.field).toBe(
-      "model",
-    );
-    expect(
-      connectionIssue("text", { ...connection, baseUrl: "file:///secret" })
-        ?.field,
-    ).toBe("baseUrl");
-  });
   it("does not make model requests when any of the six requested capabilities is unconfigured", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -145,45 +129,61 @@ describe("image request sizes", () => {
     ["gpt-image-1.5", "auto", "auto", false],
     ["gpt-image-2", "2496x1664", "2496x1664", false],
     ["gpt-image-2.6-flare", "3024x1296", "3024x1296", true],
-    ["local-model", "2048x2048", "2048x2048", true],
+    ["gpt-image-2.6-sunburst", "2048x2048", "2048x2048", true],
   ])(
     "sends %s size %s as %s (editing=%s)",
     async (model, size, expected, editing) => {
-      const settings = await import("./settings");
-      const value = settings.defaultSettings();
-      value.connections.image = {
-        ...value.connections.image,
-        baseUrl: "http://localhost:11434/v1",
-        model,
-      };
-      settings.saveSettings(value);
-      const fetchMock = vi.fn(async (url, _options) =>
-        String(url).startsWith("data:")
-          ? new Response(new Blob(["image"], { type: "image/png" }))
-          : json({ data: [{ b64_json: "aW1hZ2U=" }] }),
+      const { defaultSettings, saveSettings } = await import("./settings");
+      const value = defaultSettings();
+      const connection = value.images["gpt-image"];
+      connection.model = model;
+      connection.apiKey = "test-only";
+      connection.enabled = true;
+      saveSettings(value);
+      const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+        json({ data: [{ b64_json: PNG }] }),
       );
       vi.stubGlobal("fetch", fetchMock);
       const { generateImage } = await import("./provider");
       await generateImage(
         "draw",
         size,
-        editing ? [new Blob(["reference"], { type: "image/png" })] : [],
+        editing
+          ? [
+              new Blob(
+                [
+                  Uint8Array.from(atob(PNG), (character) =>
+                    character.charCodeAt(0),
+                  ),
+                ],
+                { type: "image/png" },
+              ),
+            ]
+          : [],
       );
-      const [url, request] = fetchMock.mock.calls.find(([url]) =>
-        String(url).includes("/images/"),
-      )!;
+      const [url, request] = fetchMock.mock.calls[0];
       expect(url).toBe(
-        `http://localhost:11434/v1/images/${editing ? "edits" : "generations"}`,
+        editing
+          ? "https://api.openai.com/v1/images/edits"
+          : "https://api.openai.com/v1/images/generations",
       );
+      const { getSettings } = await import("./settings");
+      expect(
+        getSettings().images["gpt-image"].checks[
+          editing ? "image-edit" : "image"
+        ],
+      ).toEqual({ status: "verified" });
       const body = request.body;
       expect(
-        body instanceof FormData ? body.get("size") : JSON.parse(body).size,
+        body instanceof FormData
+          ? body.get("size")
+          : JSON.parse(String(body)).size,
       ).toBe(expected);
     },
   );
 });
 
-describe("SDK transport errors and bounded tests", () => {
+describe("Model transport errors and bounded tests", () => {
   it.each([
     [401, "invalid_api_key", "密钥"],
     [403, "permission_denied", "权限"],
@@ -247,9 +247,9 @@ describe("SDK transport errors and bounded tests", () => {
         }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const { testConnection } = await import("./provider");
+    const { testModelOperation } = await import("./provider");
     vi.useFakeTimers();
-    const pending = testConnection("text", connection);
+    const pending = testModelOperation("text", connection);
     const assertion = expect(pending).rejects.toThrow("超时");
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(15_000);
@@ -257,106 +257,281 @@ describe("SDK transport errors and bounded tests", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
   });
-  it("does not report a model-list check as proven image-generation support", async () => {
-    const connection = await configured("image");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(json({ data: [{ id: "local-model" }] })),
-    );
-    const { testConnection } = await import("./provider");
-    const result = await testConnection("image", connection);
-    expect(result.status).toBe("warning");
-    expect(translatedErrorMessage(result.message)).toContain("仍需实际生成");
-  });
-  it("tests the unsaved Tavily connection with bearer authentication", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json({ results: [] }));
-    vi.stubGlobal("fetch", fetchMock);
+  it("does not report a model list or invalid bytes as successful image generation", async () => {
     const { defaultSettings } = await import("./settings");
     const connection = {
-      ...defaultSettings().connections.search,
+      ...defaultSettings().images["gpt-image"],
+      apiKey: "test-only",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json({ data: [{ id: "local-model" }] }))
+      .mockResolvedValueOnce(
+        json({ data: [{ b64_json: btoa("not an image") }] }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const { testModelOperation } = await import("./provider");
+    await expect(testModelOperation("image", connection)).rejects.toMatchObject(
+      {
+        translation: { key: "models.theModelReturnedNoImage" },
+      },
+    );
+    await expect(testModelOperation("image", connection)).rejects.toMatchObject(
+      {
+        translation: { key: "models.connection.invalidResponse" },
+      },
+    );
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "https://api.openai.com/v1/images/generations",
+      "https://api.openai.com/v1/images/generations",
+    ]);
+  });
+
+  it("tests draft Tavily credentials without saving them or transferring them in the search body", async () => {
+    const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+      json({
+        results: [
+          {
+            title: "Huayu",
+            url: "https://example.test/article",
+            content: "description",
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { defaultSettings, getSettings } = await import("./settings");
+    const connection = {
+      ...defaultSettings().search,
       apiKey: "test-search-key",
     };
-    const { testConnection } = await import("./provider");
-    expect((await testConnection("search", connection)).status).toBe("success");
+    const { testModelOperation } = await import("./provider");
+    expect(await testModelOperation("search", connection)).toEqual({
+      status: "verified",
+    });
+    expect(getSettings().search).toEqual(defaultSettings().search);
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe("https://api.tavily.com/search");
-    expect(JSON.parse(request.body)).toEqual({
+    expect(JSON.parse(String(request.body))).toEqual({
       query: "Huayu",
       max_results: 6,
+      search_depth: "basic",
     });
-    expect(request.headers.get("Authorization")).toBe("Bearer test-search-key");
+    expect(new Headers(request.headers).get("Authorization")).toBe(
+      "Bearer test-search-key",
+    );
   });
-  it("preserves the legacy authentication format for a custom Tavily gateway", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json({ results: [] }));
-    vi.stubGlobal("fetch", fetchMock);
+
+  it("uses Ark's documented base64 image inputs and output", async () => {
     const { defaultSettings } = await import("./settings");
     const connection = {
-      ...defaultSettings().connections.search,
-      baseUrl: "http://localhost:8800",
-      apiKey: "test-search-key",
+      ...defaultSettings().images.seedream,
+      apiKey: "test-only",
     };
-    const { searchWeb } = await import("./provider");
-    await searchWeb("Huayu", undefined, connection);
-    const [url, request] = fetchMock.mock.calls[0];
-    expect(url).toBe("http://localhost:8800/search");
-    expect(JSON.parse(request.body)).toEqual({
-      query: "Huayu",
-      max_results: 6,
-      api_key: "test-search-key",
-    });
-    expect(request.headers.get("Authorization")).toBeNull();
-  });
-  it("preserves multipart image editing, speech and timestamped transcription through the SDK", async () => {
-    const settings = await import("./settings");
-    const value = settings.defaultSettings();
-    for (const capability of ["image", "speech", "transcription"] as const)
-      value.connections[capability] = {
-        ...value.connections[capability],
-        baseUrl: "http://localhost:11434/v1",
-        model: "local-model",
-      };
-    settings.saveSettings(value);
-    const fetchMock = vi.fn(async (url, _options) => {
-      if (String(url).includes("/images/edits"))
-        return json({ data: [{ b64_json: "aW1hZ2U=" }] });
-      if (String(url).startsWith("data:"))
-        return new Response(new Blob(["image"], { type: "image/png" }));
-      if (String(url).includes("/audio/speech"))
-        return new Response(new Blob(["audio"], { type: "audio/mpeg" }));
-      return json({
-        text: "转写",
-        segments: [{ start: 1, end: 2, text: "转写", speaker: "发言人" }],
-      });
-    });
+    const reference = new Blob(
+      [Uint8Array.from(atob(PNG), (character) => character.charCodeAt(0))],
+      {
+        type: "image/png",
+      },
+    );
+    const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+      json({ data: [{ b64_json: PNG }] }),
+    );
     vi.stubGlobal("fetch", fetchMock);
-    const provider = await import("./provider");
-    expect(
-      (
-        await provider.generateImage("edit", "1024x1024", [
-          new Blob(["reference"], { type: "image/png" }),
-        ])
-      ).type,
-    ).toBe("image/png");
-    const edit = fetchMock.mock.calls.find(([url]) =>
-      String(url).includes("/images/edits"),
-    )![1];
-    expect(edit.body).toBeInstanceOf(FormData);
-    expect(edit.body.get("image").name).toBe("image-0.png");
-    expect((await provider.synthesizeSpeech("read")).type).toBe("audio/mpeg");
-    expect(
-      await provider.transcribeDetailed(
-        new Blob(["audio"], { type: "audio/wav" }),
-        "recording.wav",
-      ),
-    ).toEqual({
-      text: "转写",
-      segments: [{ start: 1, end: 2, text: "转写", speaker: "发言人" }],
+    const { generateImage } = await import("./provider");
+    const output = await generateImage(
+      "Draw",
+      "2048x2048",
+      [reference],
+      undefined,
+      connection,
+    );
+    expect(output.type).toBe("image/png");
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+    );
+    expect(JSON.parse(String(request.body))).toEqual({
+      model: connection.model,
+      prompt: "Draw",
+      size: "2048x2048",
+      response_format: "b64_json",
+      image: "data:image/png;base64," + PNG,
     });
-    const transcription = fetchMock.mock.calls.find(([url]) =>
-      String(url).includes("/audio/transcriptions"),
-    )![1];
-    expect(transcription.body.get("file").name).toBe("recording.wav");
-    expect(transcription.body.get("response_format")).toBe("verbose_json");
+    expect(new Headers(request.headers).get("Authorization")).toBe(
+      "Bearer test-only",
+    );
+  });
+
+  it("preserves multipart image editing and accepts multiple reference files", async () => {
+    const { defaultSettings } = await import("./settings");
+    const connection = {
+      ...defaultSettings().images["gpt-image"],
+      apiKey: "test-only",
+    };
+    const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+      json({ data: [{ b64_json: PNG }] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { generateImage } = await import("./provider");
+    const reference = new Blob(
+      [Uint8Array.from(atob(PNG), (character) => character.charCodeAt(0))],
+      {
+        type: "image/png",
+      },
+    );
+    await generateImage(
+      "edit",
+      "1024x1024",
+      [reference, reference],
+      undefined,
+      connection,
+    );
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.openai.com/v1/images/edits");
+    expect(request.body).toBeInstanceOf(FormData);
+    if (!(request.body instanceof FormData)) throw new Error("Missing form");
+    expect(request.body.getAll("image[]")).toMatchObject([
+      { name: "image-0.png" },
+      { name: "image-1.png" },
+    ]);
+  });
+
+  it("collects DashScope synthesis bytes in wire order and requires a completed stream", async () => {
+    const { defaultSettings, ALIYUN_TTS_MODEL } = await import("./settings");
+    const connection = {
+      ...defaultSettings().speech,
+      workspaceId: "llm-example",
+      apiKey: "test-only",
+    };
+    const stream = (finished: boolean) => {
+      const outputs: unknown[] = [
+        { type: "sentence-begin" },
+        { type: "sentence-synthesis", audio: { data: btoa("ID3-first") } },
+        { type: "sentence-synthesis", audio: { data: btoa("-second") } },
+      ];
+      if (finished)
+        outputs.push({ finish_reason: "stop", audio: { data: "" } });
+      return new Response(
+        outputs
+          .map(
+            (output) =>
+              "event:result\ndata:" + JSON.stringify({ output }) + "\n\n",
+          )
+          .join(""),
+        { headers: { "Content-Type": "text/event-stream" } },
+      );
+    };
+    const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+      stream(true),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { synthesizeSpeech } = await import("./provider");
+    const output = await synthesizeSpeech("Read aloud", undefined, connection);
+    expect(output.type).toBe("audio/mpeg");
+    expect(await output.text()).toBe("ID3-first-second");
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      "https://llm-example.cn-beijing.maas.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+    );
+    const headers = new Headers(request.headers);
+    expect(headers.get("Authorization")).toBe("Bearer test-only");
+    expect(headers.get("X-DashScope-SSE")).toBe("enable");
+    expect(JSON.parse(String(request.body))).toEqual({
+      model: ALIYUN_TTS_MODEL,
+      input: { text: "Read aloud", voice: connection.voice, format: "mp3" },
+    });
+    fetchMock.mockResolvedValueOnce(stream(false));
+    await expect(
+      synthesizeSpeech("Read aloud", undefined, connection),
+    ).rejects.toMatchObject({
+      translation: { key: "models.connection.invalidResponse" },
+    });
+  });
+
+  it("keeps final DashScope sentences and converts millisecond offsets exactly once", async () => {
+    const { defaultSettings, ALIYUN_ASR_MODEL } = await import("./settings");
+    const connection = {
+      ...defaultSettings().transcription,
+      workspaceId: "llm-example",
+      apiKey: "test-only",
+    };
+    const first = {
+      sentence_id: 1,
+      sentence_end: true,
+      text: "Hello",
+      begin_time: 100,
+      end_time: 950,
+    };
+    const second = {
+      sentence_id: 2,
+      sentence_end: true,
+      text: "World",
+      begin_time: 1050,
+      end_time: 2150,
+      speaker_id: 1,
+    };
+    const outputs = [
+      { text: "Hel", sentence: { ...first, sentence_end: false } },
+      { text: "Hello", sentence: first },
+      { text: "Hello wor", sentence: { ...second, sentence_end: false } },
+      { text: "Hello World", sentences: [first, second] },
+    ];
+    const stream = (values: unknown[]) =>
+      new Response(
+        values
+          .map(
+            (output) =>
+              "event:result\ndata:" + JSON.stringify({ output }) + "\n\n",
+          )
+          .join(""),
+        { headers: { "Content-Type": "text/event-stream" } },
+      );
+    const fetchMock = vi.fn(async (_url: string, _request: RequestInit) =>
+      stream(outputs),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { transcribeDetailed } = await import("./provider");
+    const audio = new Blob(["test audio bytes"], { type: "audio/wav" });
+    await expect(
+      transcribeDetailed(audio, "recording.wav", undefined, connection),
+    ).resolves.toEqual({
+      text: "Hello World",
+      segments: [
+        { text: "Hello", start: 0.1, end: 0.95 },
+        { text: "World", start: 1.05, end: 2.15, speaker: "1" },
+      ],
+    });
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      "https://llm-example.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+    );
+    expect(new Headers(request.headers).get("X-DashScope-SSE")).toBe("enable");
+    expect(JSON.parse(String(request.body))).toEqual({
+      model: ALIYUN_ASR_MODEL,
+      input: {
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_audio",
+                input_audio: {
+                  data: "data:audio/wav;base64," + btoa("test audio bytes"),
+                },
+              },
+            ],
+          },
+        ],
+      },
+      parameters: { format: "wav" },
+    });
+    fetchMock.mockResolvedValueOnce(stream(outputs.slice(0, 3)));
+    await expect(
+      transcribeDetailed(audio, "recording.wav", undefined, connection),
+    ).rejects.toMatchObject({
+      translation: { key: "models.connection.invalidResponse" },
+    });
   });
   it("accepts compatible services that return JSON even when streaming was requested", async () => {
     await configured();

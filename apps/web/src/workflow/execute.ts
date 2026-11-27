@@ -6,7 +6,11 @@ import {
 import { t, type Locale, type MessageKey } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "@/ai/errors";
-import type { Capability } from "@/ai/settings";
+import {
+  getSettings,
+  type Capability,
+  type ModelSettings,
+} from "@/ai/settings";
 import {
   Editor,
   plainText,
@@ -370,7 +374,12 @@ export async function inputsForNode(
   return inputs;
 }
 
-async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
+async function executeNode(
+  editor: Editor,
+  id: ShapeId,
+  signal: AbortSignal,
+  settings: ModelSettings,
+) {
   signal.throwIfAborted();
   const shape = editor.getShape(id);
   if (!shape) throw new LocalizedError({ key: "workflow.thisStepWasDeleted" });
@@ -430,6 +439,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
         inputs,
         props.useWebSearch,
         signal,
+        settings,
       ),
     );
     updates = {
@@ -455,7 +465,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       "21:9": "3024x1296",
     };
     const value = extractAPIData(
-      await imageAPI(inputs, { size: sizes[size] || size, signal }),
+      await imageAPI(inputs, { size: sizes[size] || size, signal, settings }),
     );
     updates = {
       src: value.src,
@@ -470,7 +480,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = extractAPIData(await audioGenerateAPI(inputs, signal));
+    const value = extractAPIData(
+      await audioGenerateAPI(inputs, signal, settings),
+    );
     updates = {
       src: value.src,
       result: value.text,
@@ -481,7 +493,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
   } else if (shape.type === "website") {
     if (!inputs.length)
       throw new LocalizedError({ key: "workflow.connectWebsiteInput" });
-    const value = extractAPIData(await websiteAPI(inputs, signal));
+    const value = extractAPIData(await websiteAPI(inputs, signal, settings));
     updates = {
       htmlContent: value.text,
       result: value.text,
@@ -494,7 +506,9 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = extractAPIData(await documentGenerateAPI(inputs, signal));
+    const value = extractAPIData(
+      await documentGenerateAPI(inputs, signal, settings),
+    );
     updates = {
       src: value.src,
       result: value.text,
@@ -519,6 +533,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
       type: props.chartType === "flowchart" ? "flowchart" : "mindmap",
       inputs: [{ type: "text", text }],
       signal,
+      settings,
     });
     updates = {
       text,
@@ -572,6 +587,7 @@ async function executeNode(editor: Editor, id: ShapeId, signal: AbortSignal) {
           updateExecution(editor, id, { message: message.slice(0, 160) });
       },
       signal,
+      settings,
     );
     signal.throwIfAborted();
     const contextUnchanged = generationFingerprint(editor, id) === fingerprint;
@@ -647,6 +663,7 @@ export async function runStaleWorkflow(editor: Editor): Promise<void> {
 }
 
 async function runPlan(editor: Editor, roots: string[]) {
+  const settings = getSettings();
   const edges: GraphEdge[] = [];
   for (const shape of editor.getCurrentPageShapes()) {
     if (
@@ -689,7 +706,7 @@ async function runPlan(editor: Editor, roots: string[]) {
             messageKey: "workflow.status.processing",
           });
           try {
-            await executeNode(editor, id, controller.signal);
+            await executeNode(editor, id, controller.signal, settings);
             controller.signal.throwIfAborted();
             updateExecution(editor, id, {
               status: "success",

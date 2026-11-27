@@ -1,5 +1,10 @@
 import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
+import {
+  getSettings,
+  requireConnection,
+  type ModelSettings,
+} from "@/ai/settings";
 import { t } from "@/i18n";
 import { chat, parseModelJSON } from "../ai/provider";
 import { messagesForInputs, type AIAPIInput } from "./backend";
@@ -26,17 +31,22 @@ export async function generateChart(params: {
   inputs: AIAPIInput[];
   type: ChartType;
   signal?: AbortSignal;
+  settings?: ModelSettings;
 }): Promise<ChartData> {
+  const settings = params.settings ?? getSettings();
   const prompts = modelPrompts();
   const { messages, hasImages } = await messagesForInputs(
     params.type === "mindmap" ? prompts.mindmap : prompts.flowchart,
     t("api.generateTheRequestedChart"),
     params.inputs,
     params.signal,
+    settings,
   );
+  const capability = hasImages ? "vision" : "text";
   const value = parseModelJSON<Record<string, unknown>>(
     await chat(messages, {
-      capability: hasImages ? "vision" : "text",
+      capability,
+      connection: requireConnection(capability, settings),
       signal: params.signal,
     }),
   );

@@ -135,7 +135,7 @@ Two browsers or tabs on one computer can try this locally. Other computers canno
 - Each person's zoom, pan and selection remain independent. Colored anonymous collaborator cursors and selection outlines show their activity without changing your selection or adding their edits to your undo history. Cursors hide when the pointer leaves the canvas or the window loses focus; collaborator indicators are removed when they leave or disconnect.
 - Live previews and autosave run independently. Seeing another person's drawing does not mean it has been saved yet. Changes are submitted automatically in the background. Resolve any connection or saving warning before leaving. Cursor positions, selections and presence are not written into projects, templates or exports.
 - A connection warning means unsubmitted changes remain in this browser. Huayu retries after recovery; you can also use **Retry** in the connection message. Wait for the warning to clear before leaving. Do not clear site data or switch browsers while those changes remain unsaved.
-- Model URLs, keys and selections are not shared through the link. Anyone running AI steps configures the required capabilities in **Settings → Model connections** in their own browser. Others can edit and view saved results without a key. Have one person run a workflow to avoid duplicate generation.
+- Model URLs, keys and selections are not shared through the link. Anyone running AI steps configures the required capabilities in **Settings → Models and tools** in their own browser. Others can edit and view saved results without a key. Have one person run a workflow to avoid duplicate generation.
 
 ### Collaborator interface and permissions
 

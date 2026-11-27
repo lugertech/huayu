@@ -20,7 +20,7 @@ import {
   useBoardLanguage,
   type BoardLanguage,
 } from "@/features/canvas/excalidraw/board-language";
-import { UserRoundPlus, ArrowLeft, Settings2 } from "lucide-react";
+import { UserRoundPlus, ArrowLeft, Play, Square } from "lucide-react";
 import { MainMenu } from "@excalidraw/excalidraw";
 import { ShellSidebarTrigger } from "@/components/Shell";
 import { CanvasToolbarTooltip } from "@/features/canvas/components/CanvasToolbarTooltip";
@@ -50,11 +50,14 @@ import {
 } from "@/features/canvas/thumbnail";
 import { exportProject } from "@/features/canvas/transfer";
 import { useTheme } from "@/lib/theme";
-import { stopAllExecutions } from "@/workflow/execute";
+import {
+  runProjectWorkflow,
+  stopAllExecutions,
+  useWorkflowState,
+} from "@/workflow/execute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { rememberOpenedProject } from "@/lib/recent-project";
-import { openModelSettings } from "@/lib/settings-event";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -66,6 +69,51 @@ import {
 } from "@/components/ui/dialog";
 
 import { CollaborationNotice } from "./components/CollaborationNotice";
+import { CanvasModelPicker } from "./components/CanvasModelPicker";
+import { canvasErrorToast } from "./components/CanvasErrorToast";
+
+function CanvasRunControl({ editor }: { editor: Editor }) {
+  const { t } = useTranslations();
+  const { showToast } = useToast();
+  const { busy, stopping } = useWorkflowState(editor);
+  if (busy) {
+    return (
+      <div className="board-run-controls flex h-8 items-center gap-1 px-1">
+        <span
+          className="board-toolbar-run-label pl-1.5 text-xs whitespace-nowrap"
+          role="status"
+        >
+          {t(stopping ? "workflow.status.stopping" : "canvas.node.running")}
+        </span>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          className="text-destructive"
+          disabled={stopping}
+          aria-label={t("canvas.node.stopRun")}
+          onClick={() => stopAllExecutions(editor)}
+        >
+          <Square className="size-3.5 fill-current" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Button
+      size="sm"
+      className="board-toolbar-button board-toolbar-run"
+      aria-label={t("workflow.runWorkflow")}
+      onClick={() =>
+        void runProjectWorkflow(editor).catch((error: unknown) =>
+          showToast(canvasErrorToast(editor, error)),
+        )
+      }
+    >
+      <Play />
+      <span className="board-toolbar-run-label">{t("canvas.models.run")}</span>
+    </Button>
+  );
+}
 
 export interface DrawingCanvasProps {
   project: Project;
@@ -543,7 +591,7 @@ function DrawingCanvasContent({
                   )}
                 </div>
                 <div className="board-toolbar-utilities">
-                  {shareToken === null ? (
+                  {shareToken === null && (
                     <RecorderButton
                       toolbar
                       renderTrigger={(trigger, label) => (
@@ -552,26 +600,15 @@ function DrawingCanvasContent({
                         </CanvasToolbarTooltip>
                       )}
                     />
-                  ) : (
-                    <CanvasToolbarTooltip label={t("settings.models.title")}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="board-toolbar-button"
-                        aria-label={t("settings.models.title")}
-                        onClick={() => openModelSettings()}
-                      >
-                        <Settings2 />
-                        <span className="board-toolbar-utility-label">
-                          {t("settings.models.title")}
-                        </span>
-                      </Button>
-                    </CanvasToolbarTooltip>
                   )}
                   <span
                     className="board-toolbar-native-menu-slot"
                     aria-hidden="true"
                   />
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <CanvasModelPicker editor={editor} />
+                  <CanvasRunControl editor={editor} />
                 </div>
               </div>
             )}
