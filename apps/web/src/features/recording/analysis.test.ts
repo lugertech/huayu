@@ -29,7 +29,7 @@ import { readCheckpoint, readTranscript, readAnalysis } from "./report";
 import { getAnalysisTask } from "./analysis-task";
 import { ModelConnectionError } from "@/ai/errors";
 import type { Recording } from "@/api/client";
-import { setLanguage } from "@/i18n";
+import { getTranslator, setLanguage } from "@/i18n";
 import { translatedErrorMessage } from "@/i18n/errors";
 let saved: Recording;
 const report = (summary: string) =>
@@ -100,6 +100,14 @@ describe("recording analysis recovery", () => {
       phase: "cancelling",
       busy: true,
     });
+    for (const locale of ["en", "zh-CN"] as const) {
+      setLanguage(locale);
+      expect(getAnalysisTask(saved.id).progress).toBe(
+        getTranslator(locale)(
+          "recordings.analysis.organizingNotesChaptersAndQA",
+        ),
+      );
+    }
     finish(report("已完成的片段"));
     await expect(running).rejects.toThrow();
     expect(getAnalysisTask(saved.id)).toMatchObject({

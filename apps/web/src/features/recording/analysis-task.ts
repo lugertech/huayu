@@ -17,18 +17,15 @@ export type AnalysisPhase =
   | "cancelled";
 interface AnalysisTask {
   phase: AnalysisPhase;
-  progress: string;
-  progressKey?: MessageKey;
-  progressValues?: Values;
-  error: string;
-  errorTranslation?: ErrorTranslation;
+  progress?: { key: MessageKey; values?: Values };
+  error?: string | ErrorTranslation;
   modelCapability?: Capability;
   recording?: Recording;
   completed?: number;
   total?: number;
 }
 
-const idle: AnalysisTask = { phase: "idle", progress: "", error: "" };
+const idle: AnalysisTask = { phase: "idle" };
 const tasks = new Map<string, AnalysisTask>();
 const listeners = new Set<() => void>();
 
@@ -41,17 +38,18 @@ function taskFor(id?: string) {
   return id ? tasks.get(id) || idle : idle;
 }
 
+export function setAnalysisPhase(id: string, phase: "cancelling" | "saving") {
+  updateAnalysisTask(id, { ...taskFor(id), phase });
+}
+
 export function getAnalysisTask(id?: string) {
-  const task = taskFor(id);
+  const { error, progress, ...task } = taskFor(id);
   return {
     ...task,
     busy: !["idle", "completed", "failed", "cancelled"].includes(task.phase),
-    error: task.errorTranslation
-      ? translatedErrorMessage(task.errorTranslation)
-      : task.error,
-    progress: task.progressKey
-      ? t(task.progressKey, task.progressValues)
-      : task.progress,
+    error:
+      typeof error === "object" ? translatedErrorMessage(error) : (error ?? ""),
+    progress: progress ? t(progress.key, progress.values) : "",
   };
 }
 

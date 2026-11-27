@@ -1,4 +1,4 @@
-import { errorText, LocalizedError } from "@/i18n/errors";
+import { LocalizedError } from "@/i18n/errors";
 import { t, getLocale, type MessageKey, type Values } from "@/i18n";
 import type {
   LanguageConnection,
@@ -16,7 +16,7 @@ import {
 } from "@/ai/provider";
 import { extractRecordingAudio, type AudioChunk } from "./audio";
 import {
-  getAnalysisTask,
+  setAnalysisPhase,
   updateAnalysisTask,
   type AnalysisPhase,
 } from "./analysis-task";
@@ -35,7 +35,7 @@ const controllers = new Map<string, AbortController>();
 export function cancelAnalysis(id: string) {
   const controller = controllers.get(id);
   if (!controller) return;
-  updateAnalysisTask(id, { ...getAnalysisTask(id), phase: "cancelling" });
+  setAnalysisPhase(id, "cancelling");
   controller.abort();
 }
 
@@ -202,9 +202,7 @@ export async function analyzeRecording(
     if (error instanceof ModelConnectionError)
       updateAnalysisTask(initial.id, {
         phase: "failed",
-        progress: "",
-        error: error.translation ? "" : errorText(error),
-        errorTranslation: error.translation,
+        error: error.translation ?? error.message,
         modelCapability: error.capability,
         recording: initial,
       });
@@ -236,14 +234,10 @@ export async function analyzeRecording(
     completed?: number,
     total?: number,
   ) {
-    const description = t(message.key, message.values);
-    checkpoint.phase = description;
+    checkpoint.phase = t(message.key, message.values);
     updateAnalysisTask(initial.id, {
       phase: signal.aborted ? "cancelling" : phase,
-      progress: description,
-      progressKey: message.key,
-      progressValues: message.values,
-      error: "",
+      progress: message,
       recording,
       completed,
       total,
@@ -352,8 +346,6 @@ export async function analyzeRecording(
     if (options.transcriptionOnly) {
       updateAnalysisTask(recording.id, {
         phase: "completed",
-        progress: "",
-        error: "",
         recording,
       });
       window.dispatchEvent(new Event("huayu:recordings-changed"));
@@ -440,18 +432,13 @@ export async function analyzeRecording(
         }),
     };
     signal.throwIfAborted();
-    updateAnalysisTask(recording.id, {
-      ...getAnalysisTask(recording.id),
-      phase: "saving",
-    });
+    setAnalysisPhase(recording.id, "saving");
     recording = await api<Recording>(`/api/recordings/${recording.id}`, {
       method: "PATCH",
       body: JSON.stringify({ analysis: JSON.stringify(report) }),
     });
     updateAnalysisTask(recording.id, {
       phase: "completed",
-      progress: "",
-      error: "",
       recording,
     });
     window.dispatchEvent(new Event("huayu:recordings-changed"));
@@ -482,9 +469,8 @@ export async function analyzeRecording(
     }
     updateAnalysisTask(initial.id, {
       phase: cancelled ? "cancelled" : "failed",
-      progress: "",
-      error: checkpoint.error || t("recordings.analysis.analysisFailed"),
-      errorTranslation: checkpoint.errorTranslation,
+      error: checkpoint.errorTranslation ||
+        checkpoint.error || { key: "recordings.analysis.analysisFailed" },
       modelCapability:
         error instanceof ModelConnectionError ? error.capability : undefined,
       recording,
