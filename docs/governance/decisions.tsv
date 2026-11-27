@@ -30,3 +30,5 @@ ts	phase	decision	why	evidence	result
 2026-11-27T22:48:14Z	workflow-runs	运行模块独占编辑器节点与取消信号	资产编辑和画布状态显示无需载入全部生成操作	13f8794	跨编辑器同名节点、取消与迟到结果测试通过
 2026-11-27T22:48:14Z	notices	生成许可汇总时按仓库规则输出换行	干净 checkout 与本地生成包含不同的换行序列	168bb2a	既有锁文件对应的 384 个生产包通过许可检查
 2026-11-27T22:48:14Z	rust-deps	接入 Cargo 解析后的直接依赖检查	Cargo 会拒绝 crate 循环，分层仍需要约束外部框架	6f22e7a	三条违规边在临时项目中都被拒绝
+2026-11-27T22:49:57Z	dependencies	删除无实际使用的直接前端依赖	图表由自有 SVG 组件绘制，旧 CSS 的选择器未匹配实际图表	d9ee711, docs/DEPENDENCY_LICENSES.md	生产许可清单 384 到 380，两类图表浏览器验证通过
+2026-11-27T22:49:57Z	close	结束本轮可验证的治理批次	已核实的可实施项已迁移，素材插图产品边界仍待确认	d9ee711, docs/governance/PROGRESS.md	全仓检查、450 个 Web 测试、17 个 Node 测试和 45 个 Rust 测试通过
