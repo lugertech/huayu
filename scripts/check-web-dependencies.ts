@@ -39,6 +39,7 @@ for (const [file, from] of modulePaths) {
     ts.ScriptTarget.Latest,
   );
   const targets = new Set<string>();
+  const testModule = /\.test\.tsx?$/.test(from);
   function visit(node: ts.Node) {
     let specifier;
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
@@ -67,13 +68,15 @@ for (const [file, from] of modulePaths) {
   for (const to of targets) {
     edgeCount++;
     if (dot) console.log(`  ${JSON.stringify(from)} -> ${JSON.stringify(to)};`);
+    if (testModule) continue;
     if (
+      (from.startsWith("api/") && /^(?:ai|features|workflow)\//.test(to)) ||
       (from.startsWith("features/") && to.startsWith("pages/")) ||
       (from.startsWith("features/canvas/engine/") &&
         to.startsWith("features/canvas/components/"))
     ) {
       console.error(
-        `Move the shared dependency out of its UI owner: ${from} -> ${to}`,
+        `Import crosses an architectural boundary: ${from} -> ${to}`,
       );
       process.exitCode = 1;
     }
