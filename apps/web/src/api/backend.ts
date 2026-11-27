@@ -25,51 +25,12 @@ export interface AIAPIInput {
   name?: string;
   description?: string;
 }
-export interface AIAPIValue {
-  type: string;
+interface GeneratedContent {
   name: string;
   description: string;
   text: string;
   src?: string;
 }
-export interface AIAPIResponse {
-  status: "success" | "fail";
-  code: number;
-  message: string;
-  data: { ok: boolean; value: AIAPIValue | AIAPIValue[] };
-  error: Record<string, unknown>;
-}
-export interface FileUploadResponse {
-  status: string;
-  code: number;
-  message: string;
-  data: {
-    original_file_name: string;
-    save_file_name: string;
-    file_extension: string;
-    file_size: number;
-    file_path: string;
-  };
-  error: Record<string, unknown>;
-}
-export interface AudioRecognizeResponse {
-  status: string;
-  code: number;
-  message: string;
-  data: AIAPIValue;
-  error: Record<string, unknown>;
-}
-
-function success(value: AIAPIValue | AIAPIValue[]): AIAPIResponse {
-  return {
-    status: "success",
-    code: 200,
-    message: "",
-    data: { ok: true, value },
-    error: {},
-  };
-}
-
 export async function messagesForInputs(
   system: string,
   query: string,
@@ -112,21 +73,26 @@ export async function messagesForInputs(
   };
 }
 
-function generatedValue(value: unknown, type = "text"): AIAPIValue {
+function generatedValue(value: unknown): GeneratedContent {
   if (
     !value ||
     typeof value !== "object" ||
-    typeof (value as AIAPIValue).text !== "string"
+    !("text" in value) ||
+    typeof value.text !== "string"
   )
     throw new LocalizedError({
       key: "api.theModelResponseIsMissingTheContentField",
     });
-  const item = value as AIAPIValue;
   return {
-    type,
-    name: typeof item.name === "string" ? item.name : t("api.generatedContent"),
-    description: typeof item.description === "string" ? item.description : "",
-    text: item.text,
+    name:
+      "name" in value && typeof value.name === "string"
+        ? value.name
+        : t("api.generatedContent"),
+    description:
+      "description" in value && typeof value.description === "string"
+        ? value.description
+        : "",
+    text: value.text,
   };
 }
 
@@ -136,7 +102,7 @@ export async function instructionAPI(
   useWebSearch = false,
   signal?: AbortSignal,
   settings = getSettings(),
-): Promise<AIAPIResponse> {
+): Promise<GeneratedContent> {
   const language = requireConnection("text", settings);
   const vision = inputs.some((input) => input.type === "image" && input.src)
     ? requireConnection("vision", settings)
@@ -173,7 +139,7 @@ export async function instructionAPI(
       signal,
     }),
   );
-  return success([generatedValue(result)]);
+  return generatedValue(result);
 }
 
 export async function imageAPI(
@@ -183,7 +149,7 @@ export async function imageAPI(
     signal?: AbortSignal;
     settings?: ModelSettings;
   } = {},
-): Promise<AIAPIResponse> {
+): Promise<GeneratedContent> {
   let prompt = inputs
     .filter((input) => input.type !== "image")
     .map((input) => input.text || input.description || "")
@@ -218,22 +184,19 @@ export async function imageAPI(
         ? "webp"
         : "png";
   const asset = await uploadAsset(image, "image." + extension, options.signal);
-  return success([
-    {
-      type: "image",
-      name: t("api.generatedImage"),
-      description: prompt,
-      text: prompt,
-      src: asset.url,
-    },
-  ]);
+  return {
+    name: t("api.generatedImage"),
+    description: prompt,
+    text: prompt,
+    src: asset.url,
+  };
 }
 
 export async function websiteAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
   settings = getSettings(),
-): Promise<AIAPIResponse> {
+): Promise<GeneratedContent> {
   const capability = inputs.some((input) => input.type === "image" && input.src)
     ? "vision"
     : "text";
@@ -245,7 +208,7 @@ export async function websiteAPI(
     signal,
     settings,
   );
-  const value = generatedValue(
+  return generatedValue(
     parseModelJSON(
       await chat(messages, {
         capability,
@@ -253,16 +216,14 @@ export async function websiteAPI(
         signal,
       }),
     ),
-    "website",
   );
-  return success([value]);
 }
 
 export async function audioGenerateAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
   settings = getSettings(),
-): Promise<AIAPIResponse> {
+): Promise<GeneratedContent> {
   const text = inputs
     .map((input) => input.text || input.description || "")
     .filter(Boolean)
@@ -274,15 +235,12 @@ export async function audioGenerateAPI(
     "speech.mp3",
     signal,
   );
-  return success([
-    {
-      type: "speech",
-      name: t("api.generatedSpeech"),
-      description: text.slice(0, 120),
-      text,
-      src: asset.url,
-    },
-  ]);
+  return {
+    name: t("api.generatedSpeech"),
+    description: text.slice(0, 120),
+    text,
+    src: asset.url,
+  };
 }
 
 async function transcribeInput(
@@ -302,45 +260,37 @@ async function transcribeInput(
 
 export async function audioRecognizeAPI(
   audioUrl: string,
-): Promise<AudioRecognizeResponse> {
+): Promise<GeneratedContent> {
   const settings = getSettings();
   const text = await transcribeInput(await blobForSource(audioUrl), settings);
   return {
-    status: "success",
-    code: 200,
-    message: "",
-    data: {
-      type: "speech",
-      name: t("api.transcription"),
-      description: "",
-      text,
-      src: audioUrl,
-    },
-    error: {},
+    name: t("api.transcription"),
+    description: "",
+    text,
+    src: audioUrl,
   };
 }
 
-export async function documentUploadAPI(file: File): Promise<AIAPIResponse> {
+export async function documentUploadAPI(file: File): Promise<GeneratedContent> {
   const body = new FormData();
   body.append("file", file);
   const data = await api<{ asset: Asset; text: string }>(
     "/api/documents/parse",
     { method: "POST", body },
   );
-  return success({
-    type: "file",
+  return {
     name: file.name,
     description: t("api.documentContent"),
     text: data.text,
     src: data.asset.url,
-  });
+  };
 }
 
 export async function documentGenerateAPI(
   inputs: AIAPIInput[],
   signal?: AbortSignal,
   settings = getSettings(),
-): Promise<AIAPIResponse> {
+): Promise<GeneratedContent> {
   const { messages, hasImages } = await messagesForInputs(
     t("api.generateTheCompleteFileBodyFromTheInputAndRequirements"),
     t("api.generateTheRequestedFileContent"),
@@ -392,45 +342,10 @@ export async function documentGenerateAPI(
     fileName,
     signal,
   );
-  return success({
-    type: "file",
+  return {
     name: fileName,
     description: t("api.generatedDocument"),
     text,
     src: asset.url,
-  });
-}
-
-export async function uploadFileAPI(
-  file: File,
-  _path?: string,
-): Promise<FileUploadResponse> {
-  const asset = await uploadAsset(file);
-  return {
-    status: "success",
-    code: 200,
-    message: "",
-    error: {},
-    data: {
-      original_file_name: file.name,
-      save_file_name: asset.id,
-      file_extension: file.name.split(".").pop() || "",
-      file_size: asset.size,
-      file_path: asset.url,
-    },
   };
-}
-export const isAPISuccess = (response: { status: string; code: number }) =>
-  response.status === "success" && response.code === 200;
-export function extractAPIData(response: AIAPIResponse): AIAPIValue {
-  if (!isAPISuccess(response) || !response.data.ok)
-    throw new LocalizedError(
-      response.message || { key: "api.generationFailed" },
-    );
-  const value = Array.isArray(response.data.value)
-    ? response.data.value[0]
-    : response.data.value;
-  if (!value)
-    throw new LocalizedError({ key: "api.noGeneratedContentWasReturned" });
-  return value;
 }

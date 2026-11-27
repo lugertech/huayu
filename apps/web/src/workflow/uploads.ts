@@ -1,10 +1,6 @@
 import { LocalizedError } from "@/i18n/errors";
-import {
-  audioRecognizeAPI,
-  documentUploadAPI,
-  extractAPIData,
-  uploadFileAPI,
-} from "@/api/backend";
+import { audioRecognizeAPI, documentUploadAPI } from "@/api/backend";
+import { uploadAsset } from "@/api/client";
 import { validateFile } from "@/api/canvas-components";
 import type { NodeData } from "./execute";
 import { nodeIsBusy } from "./execute";
@@ -34,7 +30,7 @@ export async function uploadComponentFile(
   const validation = validateFile(file);
   if (validation.valid === false) throw validation.error;
   if (type === "file") {
-    const value = extractAPIData(await documentUploadAPI(file));
+    const value = await documentUploadAPI(file);
     return {
       src: value.src,
       text: value.text,
@@ -56,13 +52,11 @@ export async function uploadComponentFile(
     !file.type.startsWith("video/")
   )
     throw new LocalizedError({ key: "canvas.chooseAnAudioFile" });
-  const value = await uploadFileAPI(file);
+  const asset = await uploadAsset(file);
   const transcript =
-    type === "speech"
-      ? (await audioRecognizeAPI(value.data.file_path)).data
-      : undefined;
+    type === "speech" ? await audioRecognizeAPI(asset.url) : undefined;
   return {
-    src: value.data.file_path,
+    src: asset.url,
     text: "",
     name: transcript?.name || file.name,
     description: transcript?.description || file.name,

@@ -33,7 +33,6 @@ import {
   audioGenerateAPI,
   websiteAPI,
   documentGenerateAPI,
-  extractAPIData,
   type AIAPIInput,
 } from "../api/backend";
 import { blobAsDataURL } from "@/api/resources";
@@ -430,14 +429,12 @@ async function executeNode(
       throw new LocalizedError({
         key: "workflow.writeInstructionsOrConnectMaterials",
       });
-    const value = extractAPIData(
-      await instructionAPI(
-        prompt || t("workflow.prompts.organizeMaterials"),
-        inputs,
-        props.useWebSearch,
-        signal,
-        settings,
-      ),
+    const value = await instructionAPI(
+      prompt || t("workflow.prompts.organizeMaterials"),
+      inputs,
+      props.useWebSearch,
+      signal,
+      settings,
     );
     updates = {
       result: value.text,
@@ -461,9 +458,11 @@ async function executeNode(
       "9:16": "1440x2560",
       "21:9": "3024x1296",
     };
-    const value = extractAPIData(
-      await imageAPI(inputs, { size: sizes[size] || size, signal, settings }),
-    );
+    const value = await imageAPI(inputs, {
+      size: sizes[size] || size,
+      signal,
+      settings,
+    });
     updates = {
       src: value.src,
       isUploaded: false,
@@ -477,9 +476,7 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = extractAPIData(
-      await audioGenerateAPI(inputs, signal, settings),
-    );
+    const value = await audioGenerateAPI(inputs, signal, settings);
     updates = {
       src: value.src,
       result: value.text,
@@ -490,7 +487,7 @@ async function executeNode(
   } else if (shape.type === "website") {
     if (!inputs.length)
       throw new LocalizedError({ key: "workflow.connectWebsiteInput" });
-    const value = extractAPIData(await websiteAPI(inputs, signal, settings));
+    const value = await websiteAPI(inputs, signal, settings);
     updates = {
       htmlContent: value.text,
       result: value.text,
@@ -503,9 +500,7 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = extractAPIData(
-      await documentGenerateAPI(inputs, signal, settings),
-    );
+    const value = await documentGenerateAPI(inputs, signal, settings);
     updates = {
       src: value.src,
       result: value.text,

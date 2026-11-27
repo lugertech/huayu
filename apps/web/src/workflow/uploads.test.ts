@@ -5,10 +5,12 @@ const mocks = vi.hoisted(() => ({
   document: vi.fn(),
 }));
 vi.mock("@/api/backend", () => ({
-  uploadFileAPI: mocks.upload,
   audioRecognizeAPI: mocks.recognize,
   documentUploadAPI: mocks.document,
-  extractAPIData: (response: unknown) => response,
+}));
+vi.mock("@/api/client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/client")>()),
+  uploadAsset: mocks.upload,
 }));
 import { applyComponentUpload, uploadComponentFile } from "./uploads";
 import { Editor, createCanvasStore } from "@/features/canvas/editor";
@@ -16,10 +18,12 @@ import { Editor, createCanvasStore } from "@/features/canvas/editor";
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.upload.mockResolvedValue({
-    data: { file_path: "/api/assets/uploaded" },
+    url: "/api/assets/uploaded",
   });
   mocks.recognize.mockResolvedValue({
-    data: { text: "录音正文", name: "会议", description: "会议摘要" },
+    text: "录音正文",
+    name: "会议",
+    description: "会议摘要",
   });
   mocks.document.mockResolvedValue({
     src: "/api/assets/document",

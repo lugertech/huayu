@@ -100,6 +100,41 @@ describe("capability availability", () => {
       ),
     ).toBe(false);
   });
+  it("applies a model's generated content to the workflow node", async () => {
+    await configured();
+    const generated = {
+      name: "Outline",
+      text: "First step",
+      description: "Summary",
+    };
+    const completion = (content: string) =>
+      json({ choices: [{ message: { content } }] });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(completion("{}"))
+        .mockResolvedValueOnce(completion(JSON.stringify(generated))),
+    );
+    const { Editor, createCanvasStore } =
+      await import("@/features/canvas/editor");
+    const { runWorkflow } = await import("@/workflow/execute");
+    const editor = new Editor(createCanvasStore());
+    const id = "shape:instruction";
+    editor.createShape({
+      id,
+      type: "instruction",
+      props: { text: "Outline the plan" },
+    });
+
+    await runWorkflow(editor, id);
+
+    expect(editor.getShape(id)?.props).toMatchObject({
+      name: generated.name,
+      result: generated.text,
+      description: generated.description,
+    });
+  });
   it.each([true, false])(
     "checks optional search/image requirements before paying for instruction planning: search=%s",
     async (search) => {

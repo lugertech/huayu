@@ -23,7 +23,6 @@ vi.mock("@/api/backend", () => ({
   audioGenerateAPI: mocks.speech,
   websiteAPI: mocks.website,
   documentGenerateAPI: mocks.file,
-  extractAPIData: (response: any) => response,
 }));
 vi.mock("@/api/resources", () => ({
   blobAsDataURL: vi.fn(async () => "data:image/png;base64,local-context"),
