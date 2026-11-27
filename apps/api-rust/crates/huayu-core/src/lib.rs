@@ -7,7 +7,7 @@ use serde_json::Value;
 
 pub mod project_library;
 
-const MAX_DOCUMENT_RECORDS: usize = 50_000;
+pub const MAX_DOCUMENT_RECORDS: usize = 50_000;
 pub const MAX_NAME_CHARS: usize = 120;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
@@ -39,17 +39,46 @@ pub enum ValidationError {
     InvalidDocument,
 }
 
-/// Checks document records at the persistence boundary; session records are never stored.
-pub fn validate_record(record: &Value) -> Result<&str, ValidationError> {
+/// Record IDs are nonempty and occupy at most 255 UTF-8 bytes.
+pub fn valid_record_id(id: &str) -> bool {
+    !id.is_empty() && id.len() < 256
+}
+
+// Session records are never stored or relayed as document changes.
+fn validate_record(record: &Value) -> Result<&str, ValidationError> {
     let id = record.get("id").and_then(Value::as_str);
     let type_name = record.get("typeName").and_then(Value::as_str);
     match (id, type_name) {
         (Some(id), Some("shape" | "asset" | "binding" | "page" | "document"))
-            if !id.is_empty() && id.len() < 256 =>
+            if valid_record_id(id) =>
         {
             Ok(id)
         }
         _ => Err(ValidationError::InvalidDocument),
+    }
+}
+
+impl DocumentPatch {
+    fn validate_limits(&self) -> Result<(), ValidationError> {
+        if self.upsert.len() + self.remove.len() > MAX_DOCUMENT_RECORDS
+            || self.client_id.len() > 120
+        {
+            return Err(ValidationError::InvalidDocument);
+        }
+        Ok(())
+    }
+
+    /// Validates a live preview without a saved document. Only well-formed removal IDs
+    /// can be relayed to peers; durable patches may remove any existing key.
+    pub fn validate_preview(&self) -> Result<(), ValidationError> {
+        self.validate_limits()?;
+        for record in &self.upsert {
+            validate_record(record)?;
+        }
+        if self.remove.iter().any(|id| !valid_record_id(id)) {
+            return Err(ValidationError::InvalidDocument);
+        }
+        Ok(())
     }
 }
 
@@ -74,11 +103,7 @@ impl Document {
     /// Returns [`ValidationError::InvalidDocument`] for invalid records or exceeded limits,
     /// leaving all existing records and the schema unchanged.
     pub fn apply(&mut self, patch: &DocumentPatch) -> Result<bool, ValidationError> {
-        if patch.upsert.len() + patch.remove.len() > MAX_DOCUMENT_RECORDS
-            || patch.client_id.len() > 120
-        {
-            return Err(ValidationError::InvalidDocument);
-        }
+        patch.validate_limits()?;
         let mut updates: BTreeMap<&str, Option<&Value>> =
             patch.remove.iter().map(|id| (id.as_str(), None)).collect();
         for record in &patch.upsert {

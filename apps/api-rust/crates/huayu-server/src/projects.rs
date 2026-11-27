@@ -13,7 +13,9 @@ use axum::{
     response::Response,
 };
 use futures_util::{SinkExt, StreamExt};
-use huayu_core::{Document, DocumentPatch, Project, Template, validate_record};
+use huayu_core::{
+    Document, DocumentPatch, MAX_DOCUMENT_RECORDS, Project, Template, valid_record_id,
+};
 use serde::{Deserialize, Deserializer, Serialize};
 use tokio::sync::broadcast;
 use uuid::Uuid;
@@ -536,8 +538,8 @@ async fn stream_events(
                         }
                         let (target, patch) = match message {
                             ClientEvent::Presence { presence } => {
-                                if presence.selected_element_ids.len() > 50_000
-                                    || presence.selected_element_ids.keys().any(|key| key.is_empty() || key.len() >= 256)
+                                if presence.selected_element_ids.len() > MAX_DOCUMENT_RECORDS
+                                    || presence.selected_element_ids.keys().any(|key| !valid_record_id(key))
                                 {
                                     continue;
                                 }
@@ -557,11 +559,7 @@ async fn stream_events(
                             ClientEvent::SceneUpdate { patch } => (None, patch),
                             ClientEvent::SceneInit { target, patch } => (Some(target), patch),
                         };
-                        if patch.client_id.len() > 120
-                            || patch.upsert.len() + patch.remove.len() > 50_000
-                            || patch.upsert.iter().any(|record| validate_record(record).is_err())
-                            || patch.remove.iter().any(|key| key.is_empty() || key.len() >= 256)
-                        {
+                        if patch.validate_preview().is_err() {
                             continue;
                         }
                         let referenced = referenced_assets(patch.upsert.iter());

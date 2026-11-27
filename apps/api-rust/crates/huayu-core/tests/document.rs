@@ -85,3 +85,46 @@ fn exceeding_the_record_limit_leaves_the_document_unchanged() {
         "a rejected patch preserves every record and the schema"
     );
 }
+
+#[test]
+fn preview_and_durable_patches_share_byte_limits_and_record_rules() {
+    let valid_id = "图".repeat(85);
+    let valid = DocumentPatch {
+        client_id: "画".repeat(40),
+        upsert: vec![json!({"id": valid_id, "typeName": "shape"})],
+        ..Default::default()
+    };
+    assert!(valid.validate_preview().is_ok());
+    assert!(Document::default().apply(&valid).unwrap());
+    for invalid in [
+        DocumentPatch {
+            client_id: format!("{}a", valid.client_id),
+            ..valid.clone()
+        },
+        DocumentPatch {
+            upsert: vec![json!({"id": format!("{valid_id}a"), "typeName": "page"})],
+            ..valid.clone()
+        },
+        DocumentPatch {
+            upsert: vec![json!({"id": "state", "typeName": "instance"})],
+            ..valid.clone()
+        },
+        DocumentPatch {
+            remove: vec!["shape:old".into(); 50_000],
+            ..valid
+        },
+    ] {
+        assert!(invalid.validate_preview().is_err());
+        assert!(Document::default().apply(&invalid).is_err());
+    }
+}
+
+#[test]
+fn durable_removals_tolerate_unrecognized_keys_while_live_previews_require_record_ids() {
+    let patch = DocumentPatch {
+        remove: vec![String::new()],
+        ..Default::default()
+    };
+    assert!(!Document::default().apply(&patch).unwrap());
+    assert!(patch.validate_preview().is_err());
+}
