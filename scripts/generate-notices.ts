@@ -126,7 +126,7 @@ for (const [path, content] of [
       "",
     ].join("\n"),
   ],
-  ["licenses/npm-NOTICES.txt", notices.join("\n")],
+  ["licenses/npm-NOTICES.txt", notices.join("\n").replaceAll("\r\n", "\n")],
 ]) {
   if (process.argv.includes("--check")) {
     if ((await readFile(resolve(root, path), "utf8")) !== content)
