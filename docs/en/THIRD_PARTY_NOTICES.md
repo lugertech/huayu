@@ -8,6 +8,8 @@ The canvas uses [Excalidraw 0.18.1](https://github.com/excalidraw/excalidraw/tre
 
 A [local patch](../../patches/@excalidraw__excalidraw@0.18.1.patch) uses overlap for box selection and moves the editor's interaction reset from `unload` to `pagehide` while preserving the callback and listener cleanup. Both development and production builds apply the patch. When upgrading the dependency, verify partial-overlap selection and editing after leaving and returning to the page.
 
+The bitmap cache also checks which image source it rendered. This lets the canvas redraw a decoded PNG when a collaborative scene update arrives during decoding. When upgrading, run `vp run test:canvas-images` with Chrome installed to check the rendered pixels in both completion orders.
+
 Bundled fonts are served locally and remain unmodified. See [font notices](../../licenses/excalidraw-fonts-NOTICE.md) and adjacent OFL texts. Comic Shanns uses MIT; other bundled fonts use SIL OFL. Helvetica and Segoe UI Emoji are system fonts and are not distributed.
 
 ## Charts and drawing

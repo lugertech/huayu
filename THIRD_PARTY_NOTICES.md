@@ -8,6 +8,8 @@
 
 [本地补丁](./patches/@excalidraw__excalidraw@0.18.1.patch) 将拖框选择设为重叠选中，并将编辑器的交互状态重置事件由 `unload` 改为 `pagehide`，保留原回调及卸载清理逻辑。开发与生产构建均应用该补丁。升级依赖时需重新验证部分重叠的框选，以及离开并返回页面后的编辑行为。
 
+图片位图缓存也会检查绘制时使用的图像源。协作场景更新与 PNG 解码交错时，画布能在解码完成后重绘原图。升级依赖时，在已安装 Chrome 的环境运行 `vp run test:canvas-images`，验证两种完成顺序下的实际像素。
+
 随包字体保持原文件，全部从本机提供。各字体原版权与许可见 [excalidraw-fonts-NOTICE.md](./licenses/excalidraw-fonts-NOTICE.md) 及同目录 OFL 正文；Comic Shanns 使用 MIT，其余随包字体使用 SIL Open Font License。Helvetica 与 Segoe UI Emoji 仅使用系统字体，不分发对应商业字体文件。
 
 ## 图表与笔迹

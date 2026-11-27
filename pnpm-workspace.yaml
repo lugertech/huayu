@@ -33,7 +33,7 @@ minimumReleaseAgeExclude:
   - "@voidzero-dev/vite-plus-win32-x64-msvc@1.6.0"
   - vite-plus@1.6.0
 patchedDependencies:
-  # Use overlap for box selection and reset interactions on pagehide for the back/forward cache.
+  # See THIRD_PARTY_NOTICES.md for the canvas patches and upgrade checks.
   "@excalidraw/excalidraw@0.18.1": patches/@excalidraw__excalidraw@0.18.1.patch
   # Contain tab keys until Excalidraw stops treating them as canvas shortcuts.
   "@radix-ui/react-tabs@1.2.1": patches/@radix-ui__react-tabs@1.2.1.patch

@@ -46,6 +46,9 @@ jobs:
       - run: vp run test
         env:
           HUAYU_DOCUMENT_PYTHON: python
+      - name: Native canvas image rendering in Chrome
+        if: runner.os == 'Linux'
+        run: vp run test:canvas-images
       - name: Rust formatting
         run: cargo fmt --manifest-path apps/api-rust/Cargo.toml --all -- --check
       - name: Rust lint

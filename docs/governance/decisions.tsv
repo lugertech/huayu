@@ -33,3 +33,4 @@ ts	phase	decision	why	evidence	result
 2026-11-27T22:49:57Z	dependencies	删除无实际使用的直接前端依赖	图表由自有 SVG 组件绘制，旧 CSS 的选择器未匹配实际图表	d9ee711, docs/DEPENDENCY_LICENSES.md	生产许可清单 384 到 380，两类图表浏览器验证通过
 2026-11-27T22:49:57Z	close	结束本轮可验证的治理批次	已核实的可实施项已迁移，素材插图产品边界仍待确认	d9ee711, docs/governance/PROGRESS.md	全仓检查、450 个 Web 测试、17 个 Node 测试和 45 个 Rust 测试通过
 2026-11-27T22:59:42Z	assets	素材库独立于画布，退役未接入的插图选择器	产品确认只保留独立页面和库内拖动；清理前唯一的生产调用页面未传入插图回调	apps/web/src/pages/AssetsPage.tsx, apps/web/src/features/asset-library/AssetBrowser.tsx, scripts/check-web-dependencies.ts	素材库和画布的双向生产导入反例均被拒绝；测试模块仍可组合两者
+2026-11-27T23:12:00Z	canvas	以实际绘制的图像源判定 Excalidraw 位图缓存能否复用	协作快照可在 PNG 解码前替换元素，旧缓存只识别元素身份，可能复用占位图	patches/@excalidraw__excalidraw@0.18.1.patch, apps/web/src/features/canvas/excalidraw/image-cache.browser.test.tsx	两种顺序的真实像素断言通过，生产画布 25 次正常重载均显示原图

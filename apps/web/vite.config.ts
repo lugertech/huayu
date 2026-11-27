@@ -1,4 +1,9 @@
-import { defineConfig, type Plugin, lazyPlugins } from "vite-plus";
+import {
+  configDefaults,
+  defineConfig,
+  type Plugin,
+  lazyPlugins,
+} from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
@@ -87,6 +92,7 @@ const config = defineConfig({
   root,
   test: {
     name: "web",
+    exclude: [...configDefaults.exclude, "**/*.browser.test.tsx"],
     setupFiles: ["src/i18n/test-setup.ts"],
   },
   envDir: resolve(root, "../.."),

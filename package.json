@@ -16,6 +16,7 @@
     "generate:quick-start-covers": "vp run @huayu/web#generate:quick-start-covers",
     "check:release": "node scripts/check-release.ts",
     "package:source": "node scripts/package-source.ts",
+    "test:canvas-images": "vp test --config apps/web/vite.browser.config.ts",
     "test:release": "node --test scripts/release.test.ts scripts/dev-api-config.test.ts",
     "licenses:generate": "node scripts/generate-notices.ts",
     "licenses:check": "node scripts/generate-notices.ts --check",
