@@ -104,8 +104,6 @@
 | @types/unist | 3.0.3 | MIT |
 | @ungap/structured-clone | 1.4.0 | ISC |
 | @upsetjs/venn.js | 2.0.0 | MIT |
-| @xyflow/react | 12.12.0 | MIT |
-| @xyflow/system | 0.0.83 | MIT |
 | anymatch | 3.1.3 | ISC |
 | aria-hidden | 1.2.6 | MIT |
 | bail | 2.0.2 | MIT |
@@ -122,7 +120,6 @@
 | chevrotain-allstar | 0.3.1 | MIT |
 | chokidar | 3.6.0 | MIT |
 | class-variance-authority | 0.7.1 | Apache-2.0 |
-| classcat | 5.0.5 | MIT |
 | clsx | 1.1.1 | MIT |
 | clsx | 2.1.1 | MIT |
 | comma-separated-tokens | 2.0.3 | MIT |
@@ -190,7 +187,6 @@
 | estree-util-is-identifier-name | 3.0.0 | MIT |
 | extend | 3.0.2 | MIT |
 | fastdom | 1.0.12 | MIT |
-| fflate | 0.8.3 | MIT |
 | fill-range | 7.1.1 | MIT |
 | fractional-indexing | 3.2.0 | CC0-1.0 |
 | fsevents | 2.3.3 | MIT |

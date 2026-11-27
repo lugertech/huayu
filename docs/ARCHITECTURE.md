@@ -6,7 +6,7 @@
 
 ```text
 apps/
-  web/                  React、Vite、shadcn/ui（Base UI）、Excalidraw、React Flow
+  web/                  React、Vite、shadcn/ui（Base UI）、Excalidraw
     src/ai/             浏览器模型连接、调用与提示词
     src/pages/          路由页面入口、页面级请求与状态
     src/features/       按业务组织组件、状态、纯计算与测试
@@ -38,7 +38,7 @@ Rust API 参考 timetable `apps/api-rust` 的 workspace、薄二进制入口、�
 
 项目列表只加载 `templates/index.json` 中的元数据与本地封面地址；流程封面由目录预先生成，完整素材、指令与作品随画布模块按需加载。原创 SVG 保存在 `templates/art/`，同包的 PNG 用于画布图片与模型参考输入。修改目录后运行 `node scripts/generate-template-index.ts` 更新模板索引与流程封面，再运行格式化；Web 构建会检查生成物是否一致。
 
-Excalidraw 管理画布几何、选择、拖动、缩放、绑定和历史操作。React 负责 AI 卡片及其连线端口，React Flow 负责图表编辑。场景适配层双向转换原生图形、箭头绑定、分组、页面和图片，保留兼容旧项目所需的记录格式及原生扩展字段、压感和路径数据。`workflow` 统一规划和执行工作流。提示词和模型编排在浏览器中运行，Rust 负责本地接口与持久化。
+Excalidraw 管理画布几何、选择、拖动、缩放、绑定和历史操作。React 负责 AI 卡片及其连线端口。卡片内的流程图和思维导图由应用的 SVG 组件编辑。场景适配层双向转换原生图形、箭头绑定、分组、页面和图片，保留兼容旧项目所需的记录格式及原生扩展字段、压感和路径数据。`workflow` 统一规划和执行工作流。提示词和模型编排在浏览器中运行，Rust 负责本地接口与持久化。
 
 | 原模块 | 新实现 |
 | --- | --- |
@@ -80,9 +80,9 @@ Excalidraw 管理画布几何、选择、拖动、缩放、绑定和历史操作
 
 `CanvasStore` 维护完整文档记录，批量操作在成功后统一发出修改事件；失败的命令回滚。所有操作在单一画布内完成，远端更新不加入本机撤销栈。应用记录历史用于命令的原子执行和回滚。相机与选择仅进入本机 IndexedDB。历史页面记录继续兼容读取，打开多页项目时会保留内容和相对布局，将材料整理到同一画布，并通过普通文档补丁保存；生成结果的新鲜度随布局迁移更新，已有过期状态继续保留。
 
-Excalidraw 提供原生绘图、视口、选择、拖拽、调整大小、箭头绑定、分组和撤销重做。AI 卡片使用同一坐标与变换，输入框直接编辑，卡片标题可拖动。左侧组件栏支持点击与拖拽创建，卡片中的修改键滚轮继续交给白板缩放。图表编辑器继续使用 React Flow。原生元素通过 Excalidraw 导出；AI 卡片先生成本地高清快照，再组合到 PNG、SVG 和原生文件中。图片与字体在本机打包，不依赖字体 CDN。完整项目和附件使用 `.huayu.json`，`.excalidraw` 保留画布、图片、卡片快照及可恢复内容。
+Excalidraw 提供原生绘图、视口、选择、拖拽、调整大小、箭头绑定、分组和撤销重做。AI 卡片使用同一坐标与变换，输入框直接编辑，卡片标题可拖动。左侧组件栏支持点击与拖拽创建，卡片中的修改键滚轮继续交给白板缩放。原生元素通过 Excalidraw 导出；AI 卡片先生成本地高清快照，再组合到 PNG、SVG 和原生文件中。图片与字体在本机打包，不依赖字体 CDN。完整项目和附件使用 `.huayu.json`，`.excalidraw` 保留画布、图片、卡片快照及可恢复内容。
 
-应用代码和自有画布层采用 MIT；Excalidraw 和 React Flow 均采用 MIT，无生产许可证密钥要求。仓库不包含 tldraw SDK、资产包、许可校验或试用服务。第三方字体和其他运行依赖继续遵守各自许可。许可清单见 [DEPENDENCY_LICENSES.md](./DEPENDENCY_LICENSES.md)。
+应用代码和自有画布层采用 MIT；Excalidraw 采用 MIT，无生产许可证密钥要求。仓库不包含 tldraw SDK、资产包、许可校验或试用服务。第三方字体和其他运行依赖继续遵守各自许可。许可清单见 [DEPENDENCY_LICENSES.md](./DEPENDENCY_LICENSES.md)。
 
 ## 录屏分析
 

@@ -6,7 +6,7 @@ The [maintainer map](../governance/MAP.md) identifies state owners and shows how
 
 ```text
 apps/
-  web/                     React, Vite, shadcn/Base UI, Excalidraw, React Flow
+  web/                     React, Vite, shadcn/Base UI, Excalidraw
     src/ai/                Browser model connections, clients and prompts
     src/pages/             Route entries, page requests and page state
     src/features/          Business components, state, pure logic and tests
@@ -38,7 +38,7 @@ Rust follows a workspace with a thin binary entry point, business modules, extra
 
 The project list loads metadata and local cover addresses from `templates/index.json`. Workflow covers are generated ahead of time; full materials, instructions and authored outputs load with the canvas module. Editable SVGs live in `templates/art/`, with bundled PNGs for canvas and model image inputs. After editing the catalog, run `node scripts/generate-template-index.ts`, then format the template files. The Web build checks the index and generated covers.
 
-Excalidraw manages canvas geometry, selection, movement, resizing, bindings and undo history. React renders AI cards and their ports, and React Flow handles chart editing. The scene adapter preserves native shapes, arrow bindings, groups, pages, images, pressure, paths and extension fields when converting records, including records from older projects. The `workflow` module plans and runs workflows. Prompts and model orchestration run in the browser, and Rust handles local APIs and persistence.
+Excalidraw manages canvas geometry, selection, movement, resizing, bindings and undo history. React renders AI cards and their ports. The application’s SVG components edit flowcharts and mind maps inside cards. The scene adapter preserves native shapes, arrow bindings, groups, pages, images, pressure, paths and extension fields when converting records, including records from older projects. The `workflow` module plans and runs workflows. Prompts and model orchestration run in the browser, and Rust handles local APIs and persistence.
 
 | Original capability | Local implementation |
 | --- | --- |
@@ -80,9 +80,9 @@ The browser calls Chat Completions or Responses according to the selected protoc
 
 CanvasStore batches document changes and rolls back failed commands. All interaction uses one canvas; remote updates do not enter local undo. Camera and selection remain in IndexedDB. Legacy multi-page documents are merged through ordinary document patches, retaining content, relative layout and connections. Completed results remain fresh after layout migration, while genuinely stale results stay stale.
 
-The left palette supports click and drag creation, and modifier-wheel gestures over cards are handled by the canvas. Native elements use Excalidraw export. AI cards become local high-resolution snapshots combined with PNG, SVG and native files. Fonts are local. `.huayu.json` retains the complete canvas and attachments; Excalidraw export includes images, card snapshots and recoverable content. React Flow remains the chart editor.
+The left palette supports click and drag creation, and modifier-wheel gestures over cards are handled by the canvas. Native elements use Excalidraw export. AI cards become local high-resolution snapshots combined with PNG, SVG and native files. Fonts are local. `.huayu.json` retains the complete canvas and attachments; Excalidraw export includes images, card snapshots and recoverable content.
 
-Own application code uses MIT. Excalidraw and React Flow use MIT without production license keys. No tldraw SDK, asset package, license check or trial service is shipped. Other dependencies retain their own licenses; see [Dependency licenses](./DEPENDENCY_LICENSES.md).
+Own application code uses MIT. Excalidraw uses MIT without production license keys. No tldraw SDK, asset package, license check or trial service is shipped. Other dependencies retain their own licenses; see [Dependency licenses](./DEPENDENCY_LICENSES.md).
 
 ## Recording analysis
 

@@ -10,9 +10,9 @@ A [local patch](../../patches/@excalidraw__excalidraw@0.18.1.patch) uses overlap
 
 Bundled fonts are served locally and remain unmodified. See [font notices](../../licenses/excalidraw-fonts-NOTICE.md) and adjacent OFL texts. Comic Shanns uses MIT; other bundled fonts use SIL OFL. Helvetica and Segoe UI Emoji are system fonts and are not distributed.
 
-## React Flow and drawing
+## Charts and drawing
 
-`@xyflow/react` 12.12.0 and `@xyflow/system` 0.0.83 use MIT; see [retained license](../../licenses/xyflow-MIT.txt) and [upstream](https://github.com/xyflow/xyflow). No React Flow Pro examples, paid templates or cloud services are used. React Flow edits charts; application integration is local.
+Earlier releases distributed the React Flow stylesheet. The [retained MIT notice](../../licenses/xyflow-MIT.txt) records its copyright. The application’s SVG renderer reads flowchart nodes and edges in the React Flow data format.
 
 Pressure-sensitive stroke outlines use `perfect-freehand` 1.2.3 under [MIT](../../licenses/perfect-freehand-MIT.txt). The application does not ship tldraw, its assets or dedicated dependencies. Legacy schema markers are input data and do not load the original SDK.
 

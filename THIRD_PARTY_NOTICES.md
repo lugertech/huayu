@@ -10,11 +10,11 @@
 
 随包字体保持原文件，全部从本机提供。各字体原版权与许可见 [excalidraw-fonts-NOTICE.md](./licenses/excalidraw-fonts-NOTICE.md) 及同目录 OFL 正文；Comic Shanns 使用 MIT，其余随包字体使用 SIL Open Font License。Helvetica 与 Segoe UI Emoji 仅使用系统字体，不分发对应商业字体文件。
 
-## React Flow / xyflow
+## 图表与笔迹
 
-本项目使用 `@xyflow/react` 12.12.0 和 `@xyflow/system` 0.0.83，采用 MIT 许可，允许免费商用。完整许可及原版权声明保存在 [xyflow-MIT.txt](./licenses/xyflow-MIT.txt)，上游源码与许可见 [xyflow](https://github.com/xyflow/xyflow)。
+早期版本分发过 React Flow 的样式，原版权与 MIT 许可见 [xyflow-MIT.txt](./licenses/xyflow-MIT.txt)。流程图使用与 React Flow 兼容的节点和边数据，由应用的 SVG 组件渲染。
 
-未使用 React Flow Pro 示例源码、付费模板或云服务。图表编辑器使用 React Flow；应用卡片、页面和历史记录兼容层由本项目接入。平滑及压感笔迹轮廓使用 `perfect-freehand` 1.2.3（MIT），完整原版权与许可见 [perfect-freehand-MIT.txt](./licenses/perfect-freehand-MIT.txt)。界面组件延续 shadcn/Base UI 样式。
+平滑及压感笔迹轮廓使用 `perfect-freehand` 1.2.3（MIT），完整原版权与许可见 [perfect-freehand-MIT.txt](./licenses/perfect-freehand-MIT.txt)。界面组件延续 shadcn/Base UI 样式。
 
 `tldraw`、`@tldraw/assets` 及其专用依赖已从项目依赖和构建产物移除。兼容历史文件的记录字段与 schema 标识属于输入数据，不加载或执行原 SDK。
 

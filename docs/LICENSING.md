@@ -16,7 +16,7 @@
 
 ## 依赖的不同许可
 
-Excalidraw、React、Base UI、React Flow 等保留原有许可。字体继续使用 OFL 或各自声明的许可。前端版本清单见 [DEPENDENCY_LICENSES.md](./DEPENDENCY_LICENSES.md)。
+Excalidraw、React、Base UI 等保留原有许可。字体继续使用 OFL 或各自声明的许可。前端版本清单见 [DEPENDENCY_LICENSES.md](./DEPENDENCY_LICENSES.md)。
 
 本机 `aarch64-apple-darwin` 的锁定 Rust workspace 解析结果包含 353 个包，涵盖构建、开发和间接依赖；这些包均带许可元数据。其中以下四项为 MPL-2.0，不应表述为整个依赖树均采用 MIT：
 

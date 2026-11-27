@@ -487,4 +487,4 @@ Node.js 辅助脚本统一为 TypeScript。安全扫描、发布结构检查和�
 
 录屏检查验证了真实编码与保存流程，但以合成 MediaStream 替代系统屏幕选择窗口；真实屏幕、系统音频及麦克风授权需要在日常浏览器中选择和允许。扫描 PDF 的 OCR 不在本地解析器范围内。
 
-最终白板使用 Excalidraw 0.18.1（MIT），React Flow 仅继续用于图表编辑器；原画布 SDK 和资产包不再进入依赖及构建。原版权和许可见 [excalidraw-MIT.txt](../licenses/excalidraw-MIT.txt)、[字体说明](../licenses/excalidraw-fonts-NOTICE.md) 与 [前端依赖清单](./DEPENDENCY_LICENSES.md)。
+此次验证的白板使用 Excalidraw 0.18.1（MIT）。当时的构建包含 React Flow 样式，图表由应用的 SVG 组件渲染。原画布 SDK 和资产包已移除。原版权和许可见 [excalidraw-MIT.txt](../licenses/excalidraw-MIT.txt)、[字体说明](../licenses/excalidraw-fonts-NOTICE.md) 与 [前端依赖清单](./DEPENDENCY_LICENSES.md)。

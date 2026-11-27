@@ -16,7 +16,7 @@ New contributions are normally supplied under MIT, unless explicitly agreed othe
 
 ## Dependencies
 
-Excalidraw, React, Base UI and React Flow retain their licenses. Fonts retain OFL or their stated terms. See [Dependency licenses](./DEPENDENCY_LICENSES.md).
+Excalidraw, React and Base UI retain their licenses. Fonts retain OFL or their stated terms. See [Dependency licenses](./DEPENDENCY_LICENSES.md).
 
 The checked local `aarch64-apple-darwin` Rust resolution includes 353 packages across build, development and indirect dependencies. These four use MPL-2.0:
 
