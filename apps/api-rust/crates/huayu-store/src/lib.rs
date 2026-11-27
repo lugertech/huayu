@@ -11,9 +11,11 @@ use std::collections::HashSet;
 use chrono::Utc;
 use huayu_core::{Asset, Document, DocumentPatch, Project, Recording, Template, ValidationError};
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectOptions, ConnectionTrait, Database,
-    DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder, SqlErr,
-    TransactionTrait, sea_query::LikeExpr,
+    ActiveModelTrait,
+    ActiveValue::{Set, Unchanged},
+    ColumnTrait, ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbErr, EntityTrait,
+    IntoActiveModel, QueryFilter, QueryOrder, SqlErr, TransactionTrait,
+    sea_query::LikeExpr,
 };
 use uuid::Uuid;
 
@@ -264,26 +266,7 @@ impl Store {
         document: Option<Document>,
         recipe: Option<String>,
     ) -> StoreResult<Project> {
-        let name = huayu_core::validate_name(name)?;
-        if let Some(document) = &document {
-            document.validate()?;
-        }
-        let now = timestamp();
-        let model = project::ActiveModel {
-            id: Set(Uuid::new_v4().to_string()),
-            name: Set(name.to_owned()),
-            cover: Set(None),
-            document: Set(document.map(serde_json::to_value).transpose()?),
-            recipe: Set(recipe),
-            revision: Set(0),
-            is_collaborative: Set(false),
-            share_token: Set(None),
-            created_at: Set(now.clone()),
-            updated_at: Set(now),
-        }
-        .insert(&self.db)
-        .await?;
-        project_from_row(model)
+        insert_project(&self.db, name, document, recipe).await
     }
 
     pub async fn update_project(
@@ -365,23 +348,23 @@ impl Store {
         rows.into_iter().map(template_from_row).collect()
     }
 
+    /// Creates the project and records the template use in one SQLite transaction.
     pub async fn fork_template(&self, id: &str) -> StoreResult<Project> {
+        let transaction = self.db.begin().await?;
         let row = template::Entity::find_by_id(id)
-            .one(&self.db)
+            .one(&transaction)
             .await?
             .ok_or(StoreError::NotFound)?;
-        let document = row
-            .document
-            .clone()
-            .map(serde_json::from_value)
-            .transpose()?;
-        let project = self
-            .create_project(&row.name, document, row.recipe.clone())
-            .await?;
-        let count = row.fork_count;
-        let mut active = row.into_active_model();
-        active.fork_count = Set(count + 1);
-        active.update(&self.db).await?;
+        let document = row.document.map(serde_json::from_value).transpose()?;
+        let project = insert_project(&transaction, &row.name, document, row.recipe).await?;
+        template::ActiveModel {
+            id: Unchanged(row.id),
+            fork_count: Set(row.fork_count + 1),
+            ..Default::default()
+        }
+        .update(&transaction)
+        .await?;
+        transaction.commit().await?;
         Ok(project)
     }
 
@@ -580,6 +563,34 @@ impl Store {
     }
 }
 
+async fn insert_project(
+    db: &impl ConnectionTrait,
+    name: &str,
+    document: Option<Document>,
+    recipe: Option<String>,
+) -> StoreResult<Project> {
+    let name = huayu_core::validate_name(name)?;
+    if let Some(document) = &document {
+        document.validate()?;
+    }
+    let now = timestamp();
+    let model = project::ActiveModel {
+        id: Set(Uuid::new_v4().to_string()),
+        name: Set(name.to_owned()),
+        cover: Set(None),
+        document: Set(document.map(serde_json::to_value).transpose()?),
+        recipe: Set(recipe),
+        revision: Set(0),
+        is_collaborative: Set(false),
+        share_token: Set(None),
+        created_at: Set(now.clone()),
+        updated_at: Set(now),
+    }
+    .insert(db)
+    .await?;
+    project_from_row(model)
+}
+
 fn timestamp() -> String {
     Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
 }
@@ -624,5 +635,46 @@ fn recording_from_row(row: recording::Model) -> Recording {
         transcript: row.transcript,
         analysis: row.analysis,
         created_at: row.created_at,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ConnectionTrait, Store, StoreError};
+
+    #[tokio::test]
+    async fn failed_fork_count_update_rolls_back_the_project_and_allows_retry() {
+        let store = Store::open("sqlite::memory:").await.unwrap();
+        let template_id = "builtin-writing";
+        store
+            .db
+            .execute_unprepared(
+                "CREATE TRIGGER reject_fork_count BEFORE UPDATE OF fork_count ON templates
+             BEGIN SELECT RAISE(ABORT, 'simulated update failure'); END",
+            )
+            .await
+            .unwrap();
+
+        assert!(matches!(
+            store.fork_template(template_id).await,
+            Err(StoreError::Database(_))
+        ));
+        assert!(store.projects(None).await.unwrap().is_empty());
+
+        store
+            .db
+            .execute_unprepared("DROP TRIGGER reject_fork_count")
+            .await
+            .unwrap();
+        let project = store.fork_template(template_id).await.unwrap();
+        let saved = store.projects(None).await.unwrap();
+        assert_eq!(saved.len(), 1);
+        assert_eq!(saved[0].id, project.id);
+        let templates = store.templates().await.unwrap();
+        let template = templates
+            .iter()
+            .find(|template| template.id == template_id)
+            .unwrap();
+        assert_eq!(template.fork_count, 1);
     }
 }
