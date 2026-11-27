@@ -21,9 +21,18 @@ for (const locale of ["zh-CN", "en"] as const) {
   for (const { recipe } of quickStartRecipes) {
     const editor = new Editor(createCanvasStore());
     applyRecipe(editor, recipe);
+    // The cover stacks shapes in recipe order, including when creation shares a timestamp.
+    const shapes = editor.getCurrentPageShapes();
+    const indexWidth = String(shapes.length).length;
+    editor.store.put(
+      shapes.map((shape, position) => ({
+        ...shape,
+        index: String(position).padStart(indexWidth, "0"),
+      })),
+    );
     const result = await exportSVG(
       editor,
-      Array.from(editor.getCurrentPageShapeIds()),
+      shapes.map((shape) => shape.id),
       {
         background: true,
         padding: 32,
