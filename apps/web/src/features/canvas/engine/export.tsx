@@ -12,7 +12,7 @@ import {
   type ComponentType,
 } from "@/config/components";
 import { FileText, ImageIcon, ImageOff } from "lucide-react";
-import { blobForSource, blobAsDataURL } from "@/api/backend";
+import { blobForSource, blobAsDataURL } from "@/api/resources";
 import { layoutMindmap } from "@/features/canvas/components/shapes/chart-shape/MindmapRenderer";
 import { layoutFlowchart } from "@/features/canvas/components/shapes/chart-shape/FlowchartRenderer";
 

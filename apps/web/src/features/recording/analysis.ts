@@ -8,7 +8,7 @@ import {
 } from "@/ai/settings";
 import { ModelConnectionError } from "@/ai/errors";
 import { api, APIError, type Recording } from "@/api/client";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import {
   chat,
   parseModelJSON,

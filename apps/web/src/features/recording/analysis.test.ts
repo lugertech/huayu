@@ -14,7 +14,7 @@ vi.mock("@/api/client", async () => ({
   ...(await vi.importActual("@/api/client")),
   api: mocks.api,
 }));
-vi.mock("@/api/backend", () => ({ blobForSource: mocks.blob }));
+vi.mock("@/api/resources", () => ({ blobForSource: mocks.blob }));
 vi.mock("@/ai/provider", () => ({
   chat: mocks.chat,
   transcribeDetailed: mocks.transcribe,

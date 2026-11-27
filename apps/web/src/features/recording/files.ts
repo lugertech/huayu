@@ -1,5 +1,5 @@
 import { mediaFileName } from "@/lib/file-name";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import { downloadBlob, type Recording } from "@/api/client";
 
 export function mediaDuration(blob: Blob): Promise<number> {

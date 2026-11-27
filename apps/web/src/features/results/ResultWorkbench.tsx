@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "@/components/common/Markdown";
 import { useToast } from "@/components/common/ToastProvider";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import { downloadBlob, uploadAsset } from "@/api/client";
 import {
   requestInspection,

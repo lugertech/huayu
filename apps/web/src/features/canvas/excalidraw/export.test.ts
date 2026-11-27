@@ -12,7 +12,7 @@ vi.mock("@excalidraw/excalidraw", () => ({
   exportToSvg: vi.fn(),
 }));
 vi.mock("@/features/canvas/engine/export", () => ({ exportPNG: vi.fn() }));
-vi.mock("@/api/backend", () => ({
+vi.mock("@/api/resources", () => ({
   blobAsDataURL: vi.fn(async () => "data:image/png;base64,c25hcHNob3Q="),
 }));
 

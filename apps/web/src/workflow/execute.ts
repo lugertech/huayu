@@ -37,9 +37,9 @@ import {
   websiteAPI,
   documentGenerateAPI,
   extractAPIData,
-  blobAsDataURL,
   type AIAPIInput,
 } from "../api/backend";
+import { blobAsDataURL } from "@/api/resources";
 import { generateChart } from "../api/canvas-components";
 import {
   callAgentSSE,

@@ -30,7 +30,7 @@ import { focusShapes } from "@/workflow/context";
 import { ComponentPanel } from "@/features/canvas/components/ComponentPanel";
 import { useToast } from "@/components/common/ToastProvider";
 import { RecorderButton } from "@/features/recording/RecorderButton";
-import { blobAsDataURL } from "@/api/backend";
+import { blobAsDataURL } from "@/api/resources";
 import {
   api,
   PROJECTS_CHANGED_EVENT,

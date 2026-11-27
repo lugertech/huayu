@@ -2,7 +2,7 @@ import { mediaFileName } from "@/lib/file-name";
 import { getTranslator, getLocale, type Locale } from "@/i18n";
 import type { Editor } from "@/features/canvas/editor";
 import { downloadBlob } from "@/api/client";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import { createDocumentBlob } from "@/ai/documents";
 import type { NodeData } from "@/workflow/execute";
 import { resultSource } from "@/workflow/results";

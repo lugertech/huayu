@@ -4,7 +4,7 @@ import { CanvasStore } from "./store";
 import { exportSVG } from "./export";
 import { COMPONENT_CONFIGS } from "@/config/components";
 
-vi.mock("@/api/backend", () => ({
+vi.mock("@/api/resources", () => ({
   blobForSource: vi.fn(async () => {
     throw new Error("missing local asset");
   }),

@@ -10,7 +10,7 @@ function normalizeShapeId(id?: string): ShapeId {
   return id?.startsWith("shape:") ? (id as ShapeId) : createShapeId(id);
 }
 import { chat, parseModelJSON } from "../../ai/provider";
-import { blobForSource, blobAsDataURL } from "../../api/backend";
+import { blobForSource, blobAsDataURL } from "../../api/resources";
 import { modelPrompts } from "@/ai/prompts";
 import { getSettings, requireConnection } from "@/ai/settings";
 import { executeLayoutEvent } from "./agent-layout";

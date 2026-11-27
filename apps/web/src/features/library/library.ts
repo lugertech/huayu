@@ -1,5 +1,5 @@
 import { api, downloadBlob } from "@/api/client";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import { createDocumentBlob } from "@/ai/documents";
 import { t } from "@/i18n";
 import { LocalizedError } from "@/i18n/errors";

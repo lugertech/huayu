@@ -19,7 +19,7 @@ import {
   type CanvasDocument,
   type Project,
 } from "@/api/client";
-import { blobAsDataURL, blobForSource } from "@/api/backend";
+import { blobAsDataURL, blobForSource } from "@/api/resources";
 import { sanitizedRecord } from "./sync";
 import {
   generationFingerprint,

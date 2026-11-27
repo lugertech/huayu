@@ -44,7 +44,7 @@ import {
   type NodeData,
 } from "@/workflow/execute";
 import type { AIComponentShape } from "@/types/components";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import { downloadBlob } from "@/api/client";
 import {
   MindmapRenderer,

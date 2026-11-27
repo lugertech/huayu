@@ -42,7 +42,7 @@ import type { CanvasSync } from "@/features/canvas/sync";
 import { memberColor, memberName } from "@/features/canvas/members";
 import { useToast } from "@/components/common/ToastProvider";
 import { useTheme } from "@/lib/theme";
-import { blobAsDataURL, blobForSource } from "@/api/backend";
+import { blobAsDataURL, blobForSource } from "@/api/resources";
 import { uploadAsset, downloadBlob } from "@/api/client";
 import {
   applyNativeScene,

@@ -18,7 +18,7 @@ import { useAssetTranslations, type AssetMessageKey } from "./messages";
 import { errorText } from "@/i18n/errors";
 import { assetUrl, ASSET_DRAG_TYPE, assetMasonryColumns } from "./assets";
 import { downloadBlob } from "@/api/client";
-import { blobForSource } from "@/api/backend";
+import { blobForSource } from "@/api/resources";
 import "./assets.css";
 import { AssetFolderFilter } from "./AssetFolderFilter";
 import {

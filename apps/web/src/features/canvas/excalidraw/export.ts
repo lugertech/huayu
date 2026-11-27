@@ -10,7 +10,7 @@ import type { Editor } from "@/features/canvas/editor";
 import { createCanvasStore } from "@/features/canvas/engine/store";
 import { Editor as SnapshotEditor } from "@/features/canvas/engine/editor";
 import { shapeIdForElement, isCustomElement } from "./scene";
-import { blobAsDataURL } from "@/api/backend";
+import { blobAsDataURL } from "@/api/resources";
 
 export async function exportScene(
   editor: Editor,
