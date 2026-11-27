@@ -145,7 +145,6 @@ export function ImageGenerationSettings({
                   </div>
                   <ConnectionChecks
                     connection={connection}
-                    operations={["image", "image-edit"]}
                     active={active}
                     onChange={onChange}
                     extra={(operation) =>

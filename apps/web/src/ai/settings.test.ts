@@ -103,6 +103,44 @@ describe("browser model settings", () => {
     expect(parsed.selection).toMatchObject({ text: null, vision: named.id });
   });
 
+  it("restores only the checks supported by each model connection", () => {
+    const checks = {
+      text: verified,
+      vision: { status: "unsupported" } as const,
+      image: verified,
+      "image-edit": verified,
+      speech: verified,
+      transcription: verified,
+      search: verified,
+    };
+    const saved = defaultSettings();
+    saved.language.push({
+      ...newLanguageConnection(),
+      model: "example",
+      checks,
+    });
+    for (const connection of [
+      ...Object.values(saved.images),
+      saved.speech,
+      saved.transcription,
+      saved.search,
+    ])
+      connection.checks = checks;
+    const restored = parseSettings(JSON.stringify(saved));
+    expect(restored.language[0].checks).toEqual({
+      text: verified,
+      vision: checks.vision,
+    });
+    for (const connection of Object.values(restored.images))
+      expect(connection.checks).toEqual({
+        image: verified,
+        "image-edit": verified,
+      });
+    expect(restored.speech.checks).toEqual({ speech: verified });
+    expect(restored.transcription.checks).toEqual({ transcription: verified });
+    expect(restored.search.checks).toEqual({ search: verified });
+  });
+
   it("migrates language selections separately and keeps v1 available for rollback", async () => {
     const {
       getSettings,

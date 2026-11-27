@@ -16,6 +16,7 @@ import {
 } from "@/i18n/errors";
 import {
   configurationIssue,
+  modelChecksByProvider,
   modelCheckStatus,
   type Capability,
   type CheckResult,
@@ -78,13 +79,11 @@ type CheckView<C extends Connection> = {
 
 export function ConnectionChecks<C extends Connection>({
   connection,
-  operations,
   active,
   onChange,
   extra,
 }: {
   connection: C;
-  operations: readonly ModelCheck[];
   active: boolean;
   onChange: (previous: C, next: C) => void;
   extra?: (operation: ModelCheck) => ReactNode;
@@ -168,7 +167,7 @@ export function ConnectionChecks<C extends Connection>({
 
   return (
     <div className="divide-y divide-border/70 border-t border-border/70">
-      {operations.map((operation) => {
+      {modelChecksByProvider[connection.provider].map((operation) => {
         const { Icon, label, action } = checks[operation];
         const currentCheck = result?.operation === operation ? result : null;
         const record = connection.checks[operation];

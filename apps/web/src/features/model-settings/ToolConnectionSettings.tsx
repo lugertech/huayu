@@ -3,6 +3,7 @@ import { Cloud, Globe, Link2 } from "lucide-react";
 import { useTranslations } from "@/i18n";
 import {
   CAPABILITY_MESSAGE_KEYS,
+  modelChecksByProvider,
   updateConnection,
   type ModelSettings,
   type SearchConnection,
@@ -27,12 +28,6 @@ type ToolConnection =
   | TranscriptionConnection
   | SearchConnection;
 
-const operations = {
-  "aliyun-tts": "speech",
-  "aliyun-asr": "transcription",
-  tavily: "search",
-} as const;
-
 export function ToolConnectionSettings({
   connection,
   draft,
@@ -46,7 +41,7 @@ export function ToolConnectionSettings({
 }) {
   const { t } = useTranslations();
   const regionId = useId();
-  const operation = operations[connection.provider];
+  const [operation] = modelChecksByProvider[connection.provider];
   const name = t(CAPABILITY_MESSAGE_KEYS[operation]);
   const isSearch = connection.provider === "tavily";
   const source =
@@ -168,7 +163,6 @@ export function ToolConnectionSettings({
       )}
       <ConnectionChecks
         connection={connection}
-        operations={[operation]}
         active={active}
         onChange={onChange}
       />

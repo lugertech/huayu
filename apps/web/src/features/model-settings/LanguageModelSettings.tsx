@@ -225,7 +225,6 @@ export function LanguageModelSettings({
               <div className="px-3">
                 <ConnectionChecks
                   connection={current}
-                  operations={["text", "vision"]}
                   active={active}
                   onChange={onChange}
                   extra={(operation) => {

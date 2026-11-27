@@ -86,6 +86,16 @@ export interface CapabilityConnections {
 
 export type Connection = CapabilityConnections[Capability];
 
+const imageChecks = ["image", "image-edit"] as const;
+export const modelChecksByProvider = {
+  language: ["text", "vision"],
+  "gpt-image": imageChecks,
+  seedream: imageChecks,
+  "aliyun-tts": ["speech"],
+  "aliyun-asr": ["transcription"],
+  tavily: ["search"],
+} as const satisfies Record<Connection["provider"], readonly ModelCheck[]>;
+
 export interface ModelSettings {
   version: 2;
   language: LanguageConnection[];
@@ -172,7 +182,7 @@ function imageProvider(value: unknown): ImageProvider | null {
 
 function readBase(
   value: Record<string, unknown>,
-  allowed: ModelCheck[],
+  allowed: readonly ModelCheck[],
 ): BaseConnection {
   const stored = record(value.checks);
   const results: Checks = {};
@@ -197,10 +207,10 @@ function readBase(
 
 function readAliyun(
   value: Record<string, unknown>,
-  operation: "speech" | "transcription",
+  provider: "aliyun-tts" | "aliyun-asr",
 ): AliyunConnection {
   return {
-    ...readBase(value, [operation]),
+    ...readBase(value, modelChecksByProvider[provider]),
     region: value.region === "ap-southeast-1" ? value.region : "cn-beijing",
     workspaceId: string(value.workspaceId),
   };
@@ -287,7 +297,7 @@ export function parseSettings(raw: string | null): ModelSettings {
       if (typeof entry.id !== "string" || !entry.id || ids.has(entry.id))
         continue;
       const connection: LanguageConnection = {
-        ...readBase(entry, ["text", "vision"]),
+        ...readBase(entry, modelChecksByProvider.language),
         provider: "language",
         id: entry.id,
         name: string(entry.name),
@@ -320,23 +330,23 @@ export function parseSettings(raw: string | null): ModelSettings {
   for (const provider of IMAGE_PROVIDERS) {
     const image = record(images[provider]);
     settings.images[provider] = {
-      ...readBase(image, ["image", "image-edit"]),
+      ...readBase(image, modelChecksByProvider[provider]),
       provider,
       model: string(image.model, settings.images[provider].model),
     };
   }
   const speech = record(value.speech);
   settings.speech = {
-    ...readAliyun(speech, "speech"),
+    ...readAliyun(speech, "aliyun-tts"),
     provider: "aliyun-tts",
     voice: string(speech.voice, settings.speech.voice),
   };
   settings.transcription = {
-    ...readAliyun(record(value.transcription), "transcription"),
+    ...readAliyun(record(value.transcription), "aliyun-asr"),
     provider: "aliyun-asr",
   };
   settings.search = {
-    ...readBase(record(value.search), ["search"]),
+    ...readBase(record(value.search), modelChecksByProvider.tavily),
     provider: "tavily",
   };
   const selection = record(value.selection);
