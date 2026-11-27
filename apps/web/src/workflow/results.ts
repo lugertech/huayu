@@ -3,7 +3,7 @@ import { t } from "@/i18n";
 import type { CanvasShape, Editor } from "@/features/canvas/editor";
 import { createConnectedComponent } from "@/features/canvas/connection-parser";
 import { imageRatio } from "./image-size";
-import { nodeIsBusy } from "./execute";
+import { nodeIsBusy, type NodeData } from "./execute";
 
 export type ResultKind = "text" | "image" | "website";
 export function resultKind(shape: CanvasShape): ResultKind | null {
@@ -42,6 +42,16 @@ function editable(editor: Editor, id: string) {
   if (nodeIsBusy(editor, id))
     throw new LocalizedError({ key: "workflow.thisWorkIsBeingGenerated" });
   return shape;
+}
+
+/** Recheck the target after the attachment finishes processing. */
+export function applyComponentUpload(
+  editor: Editor,
+  id: string,
+  props: Partial<NodeData>,
+) {
+  const shape = editable(editor, id);
+  editor.updateShape({ id, type: shape.type, props });
 }
 
 /** Edit the output field, keeping the request and all downstream links intact. */

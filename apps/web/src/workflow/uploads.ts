@@ -1,42 +1,29 @@
 import { LocalizedError } from "@/i18n/errors";
-import { audioRecognizeAPI, documentUploadAPI } from "@/api/backend";
-import { uploadAsset } from "@/api/client";
-import { validateFile } from "@/api/canvas-components";
+import { t } from "@/i18n";
+import { transcribeSource } from "./transcription";
+import { api, uploadAsset, type Asset } from "@/api/client";
 import type { NodeData } from "./execute";
-import { nodeIsBusy } from "./execute";
-import type { Editor } from "@/features/canvas/editor";
-
-/** The target may have been locked, removed, or started while its file was processing. */
-export function applyComponentUpload(
-  editor: Editor,
-  id: string,
-  props: Partial<NodeData>,
-) {
-  const shape = editor.getShape(id);
-  if (!shape || editor.pageOf(id) !== editor.getCurrentPageId())
-    throw new LocalizedError({ key: "workflow.thisWorkIsNoLongerOnTheCanvas" });
-  if (shape.isLocked || shape.props.isLocked)
-    throw new LocalizedError({ key: "workflow.unlockThisWorkBeforeEditing" });
-  if (nodeIsBusy(editor, id))
-    throw new LocalizedError({ key: "workflow.thisWorkIsBeingGenerated" });
-  editor.updateShape({ id, type: shape.type, props });
-}
 
 /** Return a complete upload result so failed parsing never replaces the current node. */
 export async function uploadComponentFile(
   type: "ai-image" | "speech" | "file",
   file: File,
 ): Promise<Partial<NodeData>> {
-  const validation = validateFile(file);
-  if (validation.valid === false) throw validation.error;
+  if (file.size > 10 * 1024 * 1024)
+    throw new LocalizedError({ key: "api.fileExceedsTheSizeLimit" });
   if (type === "file") {
-    const value = await documentUploadAPI(file);
+    const body = new FormData();
+    body.append("file", file);
+    const { asset, text } = await api<{ asset: Asset; text: string }>(
+      "/api/documents/parse",
+      { method: "POST", body },
+    );
     return {
-      src: value.src,
-      text: value.text,
-      result: value.text,
-      name: value.name,
-      description: value.description,
+      src: asset.url,
+      text,
+      result: text,
+      name: file.name,
+      description: t("api.documentContent"),
       fileName: file.name,
       fileExtension: file.name.split(".").pop()?.toLowerCase(),
       fileSize: file.size,
@@ -54,13 +41,13 @@ export async function uploadComponentFile(
     throw new LocalizedError({ key: "canvas.chooseAnAudioFile" });
   const asset = await uploadAsset(file);
   const transcript =
-    type === "speech" ? await audioRecognizeAPI(asset.url) : undefined;
+    type === "speech" ? await transcribeSource(asset.url) : undefined;
   return {
     src: asset.url,
     text: "",
-    name: transcript?.name || file.name,
-    description: transcript?.description || file.name,
-    result: transcript?.text ?? file.name,
+    name: type === "speech" ? t("api.transcription") : file.name,
+    description: file.name,
+    result: transcript ?? file.name,
     isUploaded: true,
     generation: undefined,
   };

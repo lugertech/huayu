@@ -17,7 +17,8 @@ apps/
       library/             Cross-project library browsing
       results/             Work previews and editing
     src/i18n/              Locale detection, preferences and English catalog
-    src/workflow/          Dependency planning and execution
+    src/api/               Local API requests, attachment reads and error contracts
+    src/workflow/          Dependency planning, browser model orchestration, node uploads and result writes
     src/components/        Application chrome and shared components
       ui/                  shadcn Base UI source components
   api-rust/

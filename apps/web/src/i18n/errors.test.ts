@@ -4,7 +4,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LocaleContext } from "./index";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import { validateFile } from "@/api/canvas-components";
 import { parseProjectFile } from "@/features/canvas/transfer";
 import { Editor, createCanvasStore } from "@/features/canvas/editor";
 import { linkWorkflow } from "@/workflow/connections";
@@ -17,15 +16,7 @@ import {
 } from "./errors";
 
 describe("localized application errors", () => {
-  it("retains language references through file validation, project import, and connection failures", () => {
-    const validation = validateFile(new File(["too large"], "file.txt"), {
-      maxSize: 1,
-    });
-    expect(validation.valid).toBe(false);
-    if (validation.valid === false)
-      expect(errorText(validation.error, "en")).toBe(
-        "File exceeds the size limit",
-      );
+  it("retains language references through project import and connection failures", () => {
     const editor = new Editor(createCanvasStore());
     editor.createShape({ id: "shape:task", type: "instruction" });
     for (const operation of [

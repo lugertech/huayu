@@ -32,9 +32,10 @@ import { ComponentHeader } from "./ComponentHeader";
 import { canvasErrorToast } from "./CanvasErrorToast";
 import { isSharedCanvas } from "@/lib/canvas-access";
 import { DEFAULT_IMAGE_RATIO, IMAGE_SIZE_PRESETS } from "@/workflow/image-size";
+import { applyComponentUpload } from "@/workflow/results";
 import { componentPlaceholder } from "@/config/components";
 import { formatDuration } from "@/features/recording/duration";
-import { applyComponentUpload, uploadComponentFile } from "@/workflow/uploads";
+import { uploadComponentFile } from "@/workflow/uploads";
 import { previewHTML } from "../../results/WebPreview";
 import { useToast } from "@/components/common/ToastProvider";
 import {

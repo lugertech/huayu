@@ -1,18 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
-  recognize: vi.fn(),
+  transcribe: vi.fn(),
   document: vi.fn(),
+  resource: vi.fn(),
 }));
-vi.mock("@/api/backend", () => ({
-  audioRecognizeAPI: mocks.recognize,
-  documentUploadAPI: mocks.document,
+vi.mock("@/ai/provider", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/ai/provider")>()),
+  transcribe: mocks.transcribe,
+}));
+vi.mock("@/ai/settings", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/ai/settings")>()),
+  requireConnection: vi.fn(() => ({})),
+}));
+vi.mock("@/api/resources", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/resources")>()),
+  blobForSource: mocks.resource,
+}));
+vi.mock("@/features/recording/audio", () => ({
+  extractRecordingAudio: async (blob: Blob) => [{ blob }],
 }));
 vi.mock("@/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/client")>()),
   uploadAsset: mocks.upload,
+  api: mocks.document,
 }));
-import { applyComponentUpload, uploadComponentFile } from "./uploads";
+import { errorText, LocalizedError } from "@/i18n/errors";
+import { t } from "@/i18n";
+import { uploadComponentFile } from "./uploads";
+import { applyComponentUpload } from "./results";
 import { Editor, createCanvasStore } from "@/features/canvas/editor";
 
 beforeEach(() => {
@@ -20,16 +36,11 @@ beforeEach(() => {
   mocks.upload.mockResolvedValue({
     url: "/api/assets/uploaded",
   });
-  mocks.recognize.mockResolvedValue({
-    text: "录音正文",
-    name: "会议",
-    description: "会议摘要",
-  });
+  mocks.resource.mockResolvedValue(new Blob(["audio"]));
+  mocks.transcribe.mockResolvedValue("录音正文");
   mocks.document.mockResolvedValue({
-    src: "/api/assets/document",
+    asset: { url: "/api/assets/document" },
     text: "文件正文",
-    name: "report.txt",
-    description: "文档内容",
   });
 });
 
@@ -64,15 +75,16 @@ describe("canvas component uploads", () => {
       src: "/api/assets/uploaded",
       result: "录音正文",
       text: "",
-      name: "会议",
-      description: "会议摘要",
+      name: t("api.transcription"),
+      description: file.name,
       isUploaded: true,
     });
     expect(mocks.upload).toHaveBeenCalledWith(file);
-    expect(mocks.recognize).toHaveBeenCalledWith("/api/assets/uploaded");
+    expect(mocks.resource.mock.calls[0][0]).toBe("/api/assets/uploaded");
+    expect(mocks.transcribe).toHaveBeenCalledOnce();
   });
   it("rejects failed transcription instead of returning a replacement with no transcript", async () => {
-    mocks.recognize.mockRejectedValue(new Error("识别失败"));
+    mocks.transcribe.mockRejectedValue(new Error("识别失败"));
     await expect(
       uploadComponentFile(
         "speech",
@@ -92,7 +104,10 @@ describe("canvas component uploads", () => {
       description: "文档内容",
       isUploaded: true,
     });
-    expect(mocks.document).toHaveBeenCalledWith(file);
+    const [path, request] = mocks.document.mock.calls[0];
+    expect(path).toBe("/api/documents/parse");
+    expect(request.method).toBe("POST");
+    expect(request.body.get("file")).toBe(file);
   });
   it("makes an uploaded image available as an image source and a text caption", async () => {
     const file = new File(["image"], "reference.png", { type: "image/png" });
@@ -102,7 +117,20 @@ describe("canvas component uploads", () => {
       name: "reference.png",
       isUploaded: true,
     });
-    expect(mocks.recognize).not.toHaveBeenCalled();
+    expect(mocks.transcribe).not.toHaveBeenCalled();
+  });
+  it("rejects oversized attachments before sending a request and retains their localized error", async () => {
+    const file = new File(
+      [new Uint8Array(10 * 1024 * 1024 + 1)],
+      "oversized.txt",
+    );
+    const error: unknown = await uploadComponentFile("file", file).catch(
+      (reason: unknown) => reason,
+    );
+    expect(error).toBeInstanceOf(LocalizedError);
+    expect(errorText(error, "en")).toBe("File exceeds the size limit");
+    expect(errorText(error, "zh-CN")).toBe("文件大小超过限制");
+    expect(mocks.document).not.toHaveBeenCalled();
   });
   it("rejects a non-image file before uploading it as an image", async () => {
     await expect(

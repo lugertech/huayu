@@ -17,7 +17,8 @@ apps/
       library/          跨项目资料浏览
       results/          作品预览与编辑
     src/i18n/           界面语言检测、浏览器偏好与英文文案
-    src/workflow/       工作流依赖规划与执行
+    src/api/            本地 API 请求、附件读取和错误契约
+    src/workflow/       依赖规划、浏览器模型编排、节点附件和结果写入
     src/components/     应用外壳与跨功能共享组件
       ui/               shadcn Base UI 组件源码
   api-rust/

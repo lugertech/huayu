@@ -29,15 +29,15 @@ import {
   type GenerationInfo,
 } from "./freshness";
 import {
-  instructionAPI,
-  imageAPI,
-  audioGenerateAPI,
-  websiteAPI,
-  documentGenerateAPI,
-  type AIAPIInput,
-} from "../api/backend";
+  generateChart,
+  runInstruction,
+  generateImageContent,
+  generateSpeechContent,
+  generateWebsite,
+  generateDocument,
+  type WorkflowInput,
+} from "./generation";
 import { blobAsDataURL } from "@/api/resources";
-import { generateChart } from "../api/canvas-components";
 import {
   callAgentSSE,
   buildAgentRequest,
@@ -190,12 +190,12 @@ export async function inputForShape(
   editor: Editor,
   shape: CanvasShape,
   seen: Set<string>,
-): Promise<AIAPIInput[]> {
+): Promise<WorkflowInput[]> {
   if (seen.has(shape.id)) return [];
   seen.add(shape.id);
   const props = shape.props as NodeData;
   if (shape.type === "start") {
-    const inputs: AIAPIInput[] = [];
+    const inputs: WorkflowInput[] = [];
     for (const previous of connectedShapes(editor, shape.id, "previous"))
       inputs.push(...(await inputForShape(editor, previous, seen)));
     return inputs;
@@ -261,8 +261,8 @@ export async function inputForShape(
 export async function inputsForShapes(
   editor: Editor,
   shapes: CanvasShape[],
-): Promise<AIAPIInput[]> {
-  const inputs: AIAPIInput[] = [];
+): Promise<WorkflowInput[]> {
+  const inputs: WorkflowInput[] = [];
   const seen = new Set<string>();
   const visual = shapes.some((shape) =>
     ["geo", "draw", "line", "arrow", "note", "frame"].includes(shape.type),
@@ -293,8 +293,8 @@ export async function inputsForNode(
   editor: Editor,
   type: string,
   sources: CanvasShape[],
-): Promise<AIAPIInput[]> {
-  const inputs: AIAPIInput[] = [];
+): Promise<WorkflowInput[]> {
+  const inputs: WorkflowInput[] = [];
   for (const source of sources) {
     const props = source.props as NodeData;
     const text =
@@ -430,7 +430,7 @@ async function executeNode(
       throw new LocalizedError({
         key: "workflow.writeInstructionsOrConnectMaterials",
       });
-    const value = await instructionAPI(
+    const value = await runInstruction(
       prompt || t("workflow.prompts.organizeMaterials"),
       inputs,
       props.useWebSearch,
@@ -448,7 +448,7 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = await imageAPI(inputs, {
+    const value = await generateImageContent(inputs, {
       size: imageRequestSize(props.imageSize),
       signal,
       settings,
@@ -466,7 +466,7 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = await audioGenerateAPI(inputs, signal, settings);
+    const value = await generateSpeechContent(inputs, signal, settings);
     updates = {
       src: value.src,
       result: value.text,
@@ -477,7 +477,7 @@ async function executeNode(
   } else if (shape.type === "website") {
     if (!inputs.length)
       throw new LocalizedError({ key: "workflow.connectWebsiteInput" });
-    const value = await websiteAPI(inputs, signal, settings);
+    const value = await generateWebsite(inputs, signal, settings);
     updates = {
       htmlContent: value.text,
       result: value.text,
@@ -490,7 +490,7 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const value = await documentGenerateAPI(inputs, signal, settings);
+    const value = await generateDocument(inputs, signal, settings);
     updates = {
       src: value.src,
       result: value.text,

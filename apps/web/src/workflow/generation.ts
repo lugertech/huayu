@@ -3,22 +3,21 @@ import { modelPrompts } from "@/ai/prompts";
 import { t } from "@/i18n";
 import type { ModelSettings } from "@/ai/model-config";
 import { getSettings, requireConnection } from "@/ai/settings";
-import { extractRecordingAudio } from "@/features/recording/audio";
-import { api, uploadAsset, type Asset } from "./client";
-import { blobAsDataURL, blobForSource } from "./resources";
+import { transcribeSource } from "./transcription";
+import { uploadAsset } from "@/api/client";
+import { blobAsDataURL, blobForSource } from "@/api/resources";
 import {
   chat,
   generateImage,
   parseModelJSON,
   searchWeb,
   synthesizeSpeech,
-  transcribe,
   type ChatMessage,
   type ChatPart,
-} from "../ai/provider";
-import { createDocumentBlob, FILE_EXTENSIONS } from "../ai/documents";
+} from "@/ai/provider";
+import { createDocumentBlob, FILE_EXTENSIONS } from "@/ai/documents";
 
-export interface AIAPIInput {
+export interface WorkflowInput {
   type: "text" | "image" | "speech" | "website" | "file";
   text?: string;
   src?: string;
@@ -31,10 +30,10 @@ interface GeneratedContent {
   text: string;
   src?: string;
 }
-export async function messagesForInputs(
+async function messagesForInputs(
   system: string,
   query: string,
-  inputs: AIAPIInput[],
+  inputs: WorkflowInput[],
   signal?: AbortSignal,
   settings = getSettings(),
 ): Promise<{ messages: ChatMessage[]; hasImages: boolean }> {
@@ -50,11 +49,10 @@ export async function messagesForInputs(
       if (input.text || input.description)
         parts.push({ type: "text", text: input.text || input.description });
     } else if (input.type === "speech" && input.src && !input.text) {
-      const audio = await blobForSource(input.src, signal);
       parts.push({
         type: "text",
         text: t("api.audioTranscript", {
-          arg0: await transcribeInput(audio, settings, signal),
+          arg0: await transcribeSource(input.src, settings, signal),
         }),
       });
     } else if (input.text || input.description) {
@@ -96,9 +94,9 @@ function generatedValue(value: unknown): GeneratedContent {
   };
 }
 
-export async function instructionAPI(
+export async function runInstruction(
   query: string,
-  inputs: AIAPIInput[],
+  inputs: WorkflowInput[],
   useWebSearch = false,
   signal?: AbortSignal,
   settings = getSettings(),
@@ -142,8 +140,8 @@ export async function instructionAPI(
   return generatedValue(result);
 }
 
-export async function imageAPI(
-  inputs: AIAPIInput[],
+export async function generateImageContent(
+  inputs: WorkflowInput[],
   options: {
     size?: string;
     signal?: AbortSignal;
@@ -192,8 +190,8 @@ export async function imageAPI(
   };
 }
 
-export async function websiteAPI(
-  inputs: AIAPIInput[],
+export async function generateWebsite(
+  inputs: WorkflowInput[],
   signal?: AbortSignal,
   settings = getSettings(),
 ): Promise<GeneratedContent> {
@@ -219,8 +217,8 @@ export async function websiteAPI(
   );
 }
 
-export async function audioGenerateAPI(
-  inputs: AIAPIInput[],
+export async function generateSpeechContent(
+  inputs: WorkflowInput[],
   signal?: AbortSignal,
   settings = getSettings(),
 ): Promise<GeneratedContent> {
@@ -243,51 +241,8 @@ export async function audioGenerateAPI(
   };
 }
 
-async function transcribeInput(
-  blob: Blob,
-  settings: ModelSettings,
-  signal?: AbortSignal,
-): Promise<string> {
-  const connection = requireConnection("transcription", settings);
-  const chunks = await extractRecordingAudio(blob, signal);
-  const text: string[] = [];
-  for (const chunk of chunks) {
-    signal?.throwIfAborted();
-    text.push(await transcribe(chunk.blob, "audio.wav", signal, connection));
-  }
-  return text.filter(Boolean).join("\n");
-}
-
-export async function audioRecognizeAPI(
-  audioUrl: string,
-): Promise<GeneratedContent> {
-  const settings = getSettings();
-  const text = await transcribeInput(await blobForSource(audioUrl), settings);
-  return {
-    name: t("api.transcription"),
-    description: "",
-    text,
-    src: audioUrl,
-  };
-}
-
-export async function documentUploadAPI(file: File): Promise<GeneratedContent> {
-  const body = new FormData();
-  body.append("file", file);
-  const data = await api<{ asset: Asset; text: string }>(
-    "/api/documents/parse",
-    { method: "POST", body },
-  );
-  return {
-    name: file.name,
-    description: t("api.documentContent"),
-    text: data.text,
-    src: data.asset.url,
-  };
-}
-
-export async function documentGenerateAPI(
-  inputs: AIAPIInput[],
+export async function generateDocument(
+  inputs: WorkflowInput[],
   signal?: AbortSignal,
   settings = getSettings(),
 ): Promise<GeneratedContent> {
@@ -348,4 +303,47 @@ export async function documentGenerateAPI(
     text,
     src: asset.url,
   };
+}
+
+interface GeneratedChart extends Record<string, unknown> {
+  name?: string;
+  description?: string;
+}
+export async function generateChart(params: {
+  inputs: WorkflowInput[];
+  type: "mindmap" | "flowchart";
+  signal?: AbortSignal;
+  settings?: ModelSettings;
+}) {
+  const settings = params.settings ?? getSettings();
+  const prompts = modelPrompts();
+  const { messages, hasImages } = await messagesForInputs(
+    params.type === "mindmap" ? prompts.mindmap : prompts.flowchart,
+    t("api.generateTheRequestedChart"),
+    params.inputs,
+    params.signal,
+    settings,
+  );
+  const capability = hasImages ? "vision" : "text";
+  const value = parseModelJSON<GeneratedChart & { data?: GeneratedChart }>(
+    await chat(messages, {
+      capability,
+      connection: requireConnection(capability, settings),
+      signal: params.signal,
+    }),
+  );
+  const data = value.data || value;
+  if (
+    params.type === "mindmap"
+      ? !("content" in data && Array.isArray(data.children))
+      : !(
+          "nodes" in data &&
+          Array.isArray(data.nodes) &&
+          Array.isArray(data.edges)
+        )
+  )
+    throw new LocalizedError({
+      key: "api.theModelReturnedAnInvalidChartFormat",
+    });
+  return data;
 }

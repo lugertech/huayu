@@ -17,17 +17,17 @@ const mocks = vi.hoisted(() => ({
   chart: vi.fn(),
   agent: vi.fn(),
 }));
-vi.mock("@/api/backend", () => ({
-  instructionAPI: mocks.instruction,
-  imageAPI: mocks.image,
-  audioGenerateAPI: mocks.speech,
-  websiteAPI: mocks.website,
-  documentGenerateAPI: mocks.file,
+vi.mock("./generation", () => ({
+  generateChart: mocks.chart,
+  runInstruction: mocks.instruction,
+  generateImageContent: mocks.image,
+  generateSpeechContent: mocks.speech,
+  generateWebsite: mocks.website,
+  generateDocument: mocks.file,
 }));
 vi.mock("@/api/resources", () => ({
   blobAsDataURL: vi.fn(async () => "data:image/png;base64,local-context"),
 }));
-vi.mock("@/api/canvas-components", () => ({ generateChart: mocks.chart }));
 vi.mock("@/features/canvas/agent-sse", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/canvas/agent-sse")>()),
   callAgentSSE: mocks.agent,

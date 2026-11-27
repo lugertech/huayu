@@ -141,9 +141,9 @@ describe("capability availability", () => {
       await configured();
       const fetchMock = vi.fn();
       vi.stubGlobal("fetch", fetchMock);
-      const { instructionAPI } = await import("@/api/backend");
+      const { runInstruction } = await import("@/workflow/generation");
       await expect(
-        instructionAPI(
+        runInstruction(
           "write",
           search
             ? []
