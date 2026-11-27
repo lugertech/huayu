@@ -50,7 +50,7 @@ sh scripts/cargo.sh tree --workspace --depth 1
 | 文档解析依赖与系统 FFmpeg | 服务端文档和媒体适配器 | 附件转换与音轨分段，浏览器管理后续模型请求 |
 | Git 提交树、项目文件清单 | `package-source.ts`、`check-release.ts`、`check-security.ts` | 源码归档、链接和文件检查 |
 
-Node 工具随环境通过 TypeScript 直接运行；封面生成脚本需使用前端的路径解析和 SSR 构建。生产构建继续验证索引的一致性。Rust 的直接 crate 依赖可从三个 `Cargo.toml` 验证；Cargo 在构建时拒绝 crate 依赖环。
+Node 工具随环境通过 TypeScript 直接运行；封面生成脚本需使用前端的路径解析和 SSR 构建。生产构建继续验证索引的一致性。Rust 的直接 crate 依赖可从三个 `Cargo.toml` 验证；Cargo 在构建时拒绝 crate 依赖环。`scripts/check-rust-dependencies.ts` 检查 Cargo 解析的常规直接依赖，阻止 core 引入 SeaORM 或 Axum、store 引入 Axum；测试依赖仍可使用。
 
 ## 修改入口
 
@@ -63,7 +63,7 @@ Node 工具随环境通过 TypeScript 直接运行；封面生成脚本需使用
 | 画布记录与视图 | `features/canvas/engine/model.ts`、`store.ts`、`editor.ts` | Store 持有文档、视图和历史。文档快照可进入项目、模板和导出；视图快照独立复制，按项目保存在浏览器。 |
 | 几何、图表与导出 | `features/canvas/excalidraw/scene.ts`、`charts/`、`engine/export.tsx`、`transfer.ts` | Excalidraw 管理原生场景，画布记录是可持久化的输入。图表布局供编辑和导出共享。完整项目与原生场景的导入导出保留各自格式。 |
 | 协作与重试 | `features/canvas/sync.ts`、`drafts.ts`；`huayu-core::Document` 和 `DocumentPatch` | 未确认修改按项目和分享上下文写入 IndexedDB。连接、重试、远端预览由 CanvasSync 持有；SQLite 修订号和服务端房间分别负责持久化顺序和广播。HTTP 删除与实时预览对无效键的处理不同。 |
-| 工作流与结果 | `workflow/generation.ts` 生成编排、`workflow/transcription.ts` 逐段转写、`workflow/graph.ts` 计划、`execute.ts` 执行、`freshness.ts` 新鲜度、`results.ts` 修订、`image-size.ts` 比例 | 运行和取消绑定 Editor，成功的业务结果才写入画布。图像菜单、请求像素与结果修订共用有序预设。 |
+| 工作流与结果 | `workflow/generation.ts` 生成编排、`workflow/transcription.ts` 逐段转写、`workflow/graph.ts` 计划、`execution-state.ts` 调度和运行状态、`execute.ts` 执行节点业务、`freshness.ts` 新鲜度、`results.ts` 修订、`image-size.ts` 比例 | 运行和取消绑定 Editor，成功的业务结果才写入画布。图像菜单、请求像素与结果修订共用有序预设。 |
 | 模型、工具与请求 | `ai/model-config.ts` 定义连接、解析旧配置和检查项；`ai/settings.ts` 管理存储与选择；`ai/model-request.ts` 和 `provider.ts` 处理请求 | 配置、验证结果和选择留在浏览器。协议请求有自己的取消和超时。显式连接可以独立交给协议适配器。 |
 | 录制、转写与报告 | `features/recording/capture-state.ts`、`RecorderProvider.tsx`、`analysis.ts`、`report.ts`、`analysis-task.ts` | 采集设备和进行中的操作由浏览器拥有。录制实体持有转写与报告检查点。恢复计划同时决定需要的模型能力及可重用的转写内容。 |
 | 项目与快速开始 | `features/projects/create-project.ts`、`pages/ProjectsPage.tsx`；仓库根目录 `templates/quick-start.json`、`catalog.json` | 三个入口共享空白项目创建。四个快速开始模板共享双语元数据，另二十个模板由 catalog 和生成的轻量索引驱动。用户的既有模板和项目内容继续由数据库持有。 |
