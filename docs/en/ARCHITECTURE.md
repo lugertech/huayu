@@ -1,5 +1,7 @@
 # Architecture and migration scope
 
+The [maintainer map](../governance/MAP.md) identifies state owners and shows how to generate the Web module graph. The [governance log](../governance/PROGRESS.md) tracks migrations and open decisions.
+
 ## Layout
 
 ```text
