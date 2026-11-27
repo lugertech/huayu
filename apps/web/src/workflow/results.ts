@@ -2,29 +2,10 @@ import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 import type { CanvasShape, Editor } from "@/features/canvas/editor";
 import { createConnectedComponent } from "@/features/canvas/connection-parser";
+import { imageRatio } from "./image-size";
 import { nodeIsBusy } from "./execute";
 
 export type ResultKind = "text" | "image" | "website";
-export const IMAGE_RATIOS = [
-  "1:1",
-  "3:2",
-  "4:3",
-  "16:9",
-  "21:9",
-  "2:3",
-  "3:4",
-  "9:16",
-];
-export function imageRatio(width: number, height: number) {
-  if (!(width > 0 && height > 0)) return "1:1";
-  return [...IMAGE_RATIOS].sort((a, b) => {
-    const ratio = (value: string) => {
-      const [w, h] = value.split(":").map(Number);
-      return Math.abs(Math.log(w / h / (width / height)));
-    };
-    return ratio(a) - ratio(b);
-  })[0];
-}
 export function resultKind(shape: CanvasShape): ResultKind | null {
   if (
     shape.type === "ai-text" ||

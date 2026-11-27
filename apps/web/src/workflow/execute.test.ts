@@ -229,6 +229,21 @@ describe("workflow execution parity", () => {
     ).toEqual([{ type: "text", text: "画框" }]);
     expect(capture).toHaveBeenCalledTimes(5);
   });
+  it.each([
+    [undefined, "2048x2048"],
+    ["3:4", "1728x2304"],
+    ["21:9", "3024x1296"],
+    ["1280x800", "1280x800"],
+  ])(
+    "uses the project image size %s for the request",
+    async (imageSize, expected) => {
+      const editor = board();
+      node(editor, "shape:image", "ai-image", "Make a poster");
+      editor.updateShape({ id: "shape:image", props: { imageSize } });
+      await runWorkflow(editor, "shape:image");
+      expect(mocks.image.mock.calls[0][1].size).toBe(expected);
+    },
+  );
   it("uses only text, images and frame snapshots as image generation inputs", async () => {
     const editor = board();
     node(editor, "shape:source", "ai-text", "新的图片要求");

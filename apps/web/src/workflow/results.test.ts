@@ -6,10 +6,10 @@ import {
   loadSnapshot,
 } from "@/features/canvas/editor";
 import { connectShapes } from "@/features/canvas/connection-parser";
+import { imageRatio } from "./image-size";
 import { generationFingerprint, resultIsStale } from "./freshness";
 import {
   createImageRevision,
-  imageRatio,
   previousRevision,
   readResultDraft,
   resultDraftKey,

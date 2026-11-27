@@ -20,6 +20,7 @@ import {
   createConnectedTextShape,
   getPreviousConnectedShapes,
 } from "../features/canvas/connection-parser";
+import { imageRequestSize } from "./image-size";
 import { drawingShapes } from "./context";
 import { planWorkflow, type GraphEdge } from "./graph";
 import {
@@ -447,19 +448,8 @@ async function executeNode(
       throw new LocalizedError({ key: "workflow.connectOrUploadInput" });
     }
     if (prompt) inputs.unshift({ type: "text", text: prompt });
-    const size = props.imageSize || "1:1";
-    const sizes: Record<string, string> = {
-      "1:1": "2048x2048",
-      "3:2": "2496x1664",
-      "2:3": "1664x2496",
-      "4:3": "2304x1728",
-      "3:4": "1728x2304",
-      "16:9": "2560x1440",
-      "9:16": "1440x2560",
-      "21:9": "3024x1296",
-    };
     const value = await imageAPI(inputs, {
-      size: sizes[size] || size,
+      size: imageRequestSize(props.imageSize),
       signal,
       settings,
     });

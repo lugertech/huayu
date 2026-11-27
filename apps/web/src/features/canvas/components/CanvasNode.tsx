@@ -31,7 +31,7 @@ import { ComponentConnectionDots } from "./ComponentConnectionDots";
 import { ComponentHeader } from "./ComponentHeader";
 import { canvasErrorToast } from "./CanvasErrorToast";
 import { isSharedCanvas } from "@/lib/canvas-access";
-import { IMAGE_RATIOS } from "@/workflow/results";
+import { DEFAULT_IMAGE_RATIO, IMAGE_SIZE_PRESETS } from "@/workflow/image-size";
 import { componentPlaceholder } from "@/config/components";
 import { formatDuration } from "@/features/recording/duration";
 import { applyComponentUpload, uploadComponentFile } from "@/workflow/uploads";
@@ -562,21 +562,18 @@ export function CanvasNode({
             >
               <ComponentToolSelect
                 label={t("results.imageRatio")}
-                value={props.imageSize || "1:1"}
+                value={props.imageSize || DEFAULT_IMAGE_RATIO}
                 disabled={uploading || running || props.isLocked}
-                options={IMAGE_RATIOS.map((ratio) => {
-                  const [w, h] = ratio.split(":").map(Number);
-                  return {
-                    value: ratio,
-                    label: ratio,
-                    icon:
-                      w === h
-                        ? Square
-                        : w > h
-                          ? RectangleHorizontal
-                          : RectangleVertical,
-                  };
-                })}
+                options={IMAGE_SIZE_PRESETS.map(({ ratio, width, height }) => ({
+                  value: ratio,
+                  label: ratio,
+                  icon:
+                    width === height
+                      ? Square
+                      : width > height
+                        ? RectangleHorizontal
+                        : RectangleVertical,
+                }))}
                 onChange={(imageSize) => update({ imageSize })}
               />
             </div>
