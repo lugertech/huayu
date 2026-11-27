@@ -1212,21 +1212,6 @@ export const en = {
   "settings.storageUnavailable":
     "Browser storage is unavailable. Check your browser settings.",
   "settings.title": "Settings",
-  "templates.chart.description":
-    "Find the structure in your materials and create a mind map.",
-  "templates.chart.name": "Knowledge map",
-  "templates.image.description":
-    "Turn a written idea into an image and caption.",
-  "templates.image.name": "Words and images",
-  "templates.tags.learning": "Learning",
-  "templates.tags.product": "Product design",
-  "templates.tags.visual": "Visual creation",
-  "templates.tags.writing": "Writing",
-  "templates.web.description":
-    "Describe what you need and create an interactive page.",
-  "templates.web.name": "Web prototype",
-  "templates.writing.description": "Develop a topic into ideas and a draft.",
-  "templates.writing.name": "Inspired writing",
   "workflow.addACreativeStepBeforeRunningTheWorkflow":
     "Add a creative step before running the workflow",
   "workflow.aStepInThisWorkflowIsAlreadyRunning":

@@ -1,3 +1,4 @@
+import quickStartRecipes from "../templates/quick-start.json";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -17,7 +18,7 @@ const height = 540;
 await mkdir(output, { recursive: true });
 for (const locale of ["zh-CN", "en"] as const) {
   setLanguage(locale);
-  for (const recipe of ["writing", "image", "chart", "website"]) {
+  for (const { recipe } of quickStartRecipes) {
     const editor = new Editor(createCanvasStore());
     applyRecipe(editor, recipe);
     const result = await exportSVG(
@@ -36,4 +37,6 @@ for (const locale of ["zh-CN", "en"] as const) {
     await writeFile(resolve(output, `${recipe}-${locale}.svg`), preview);
   }
 }
-console.log("Generated eight quick-start covers from the canvas recipes.");
+console.log(
+  `Generated quick-start covers for ${quickStartRecipes.length} recipes.`,
+);

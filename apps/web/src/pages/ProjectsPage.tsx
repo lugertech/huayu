@@ -1,4 +1,5 @@
 import { createBlankProject } from "@/features/projects/create-project";
+import quickStartRecipes from "../../../../templates/quick-start.json";
 import { readDraft, applyDraft } from "@/features/canvas/drafts";
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
@@ -113,16 +114,6 @@ const recipeIcons = {
   speech: Volume2,
   file: FileText,
 };
-const quickStartRecipes = [
-  {
-    id: "builtin-writing",
-    recipe: "writing",
-    nameKey: "templates.writing.name",
-  },
-  { id: "builtin-image", recipe: "image", nameKey: "templates.image.name" },
-  { id: "builtin-chart", recipe: "chart", nameKey: "templates.chart.name" },
-  { id: "builtin-web", recipe: "website", nameKey: "templates.web.name" },
-] as const;
 const recipeOrder: readonly string[] = quickStartRecipes.map(
   (entry) => entry.recipe,
 );
@@ -508,7 +499,7 @@ export function ProjectsPage() {
     return {
       id: preset.id,
       recipe: preset.recipe,
-      name: saved?.name || t(preset.nameKey),
+      name: saved?.name || (locale === "en" ? preset.en.name : preset.name),
       cover:
         saved?.cover ||
         `/examples/quick-start/${preset.recipe}-${getLocale()}.svg`,

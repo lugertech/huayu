@@ -550,51 +550,12 @@ impl Store {
     }
 
     async fn seed_templates(&self) -> StoreResult<()> {
+        let quick_start: Vec<BuiltinTemplateSeed> =
+            serde_json::from_str(include_str!("../../../../../templates/quick-start.json"))?;
         let catalog: Vec<BuiltinTemplateSeed> =
             serde_json::from_str(include_str!("../../../../../templates/catalog.json"))?;
-        let additional = catalog.iter().map(|entry| {
-            (
-                entry.id.as_str(),
-                entry.name.as_str(),
-                entry.description.as_str(),
-                entry.recipe.as_str(),
-                entry.tag.as_str(),
-            )
-        });
-        for (id, name, description, recipe, tag) in [
-            (
-                "builtin-writing",
-                "灵感写作",
-                "从主题出发，整理思路并生成文稿。",
-                "writing",
-                "内容创作",
-            ),
-            (
-                "builtin-image",
-                "图文创作",
-                "将文字想法转化为图片与配文。",
-                "image",
-                "图文设计",
-            ),
-            (
-                "builtin-chart",
-                "知识梳理",
-                "从材料中提炼结构，生成思维导图。",
-                "chart",
-                "学习研究",
-            ),
-            (
-                "builtin-web",
-                "网页原型",
-                "描述需求，生成可以交互的网页。",
-                "website",
-                "产品设计",
-            ),
-        ]
-        .into_iter()
-        .chain(additional)
-        {
-            if template::Entity::find_by_id(id)
+        for entry in quick_start.into_iter().chain(catalog) {
+            if template::Entity::find_by_id(&entry.id)
                 .one(&self.db)
                 .await?
                 .is_some()
@@ -602,13 +563,13 @@ impl Store {
                 continue;
             }
             template::ActiveModel {
-                id: Set(id.to_owned()),
-                name: Set(name.to_owned()),
-                description: Set(description.to_owned()),
+                id: Set(entry.id),
+                name: Set(entry.name),
+                description: Set(entry.description),
                 cover: Set(None),
                 document: Set(None),
-                recipe: Set(Some(recipe.to_owned())),
-                tags: Set(serde_json::json!([tag])),
+                recipe: Set(Some(entry.recipe)),
+                tags: Set(serde_json::json!([entry.tag])),
                 fork_count: Set(0),
                 created_at: Set(timestamp()),
             }

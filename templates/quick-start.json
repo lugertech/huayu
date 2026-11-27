@@ -1,0 +1,50 @@
+[
+  {
+    "id": "builtin-writing",
+    "recipe": "writing",
+    "name": "灵感写作",
+    "description": "从主题出发，整理思路并生成文稿。",
+    "tag": "内容创作",
+    "en": {
+      "name": "Inspired writing",
+      "description": "Develop a topic into ideas and a draft.",
+      "tag": "Writing"
+    }
+  },
+  {
+    "id": "builtin-image",
+    "recipe": "image",
+    "name": "图文创作",
+    "description": "将文字想法转化为图片与配文。",
+    "tag": "图文设计",
+    "en": {
+      "name": "Words and images",
+      "description": "Turn a written idea into an image and caption.",
+      "tag": "Visual creation"
+    }
+  },
+  {
+    "id": "builtin-chart",
+    "recipe": "chart",
+    "name": "知识梳理",
+    "description": "从材料中提炼结构，生成思维导图。",
+    "tag": "学习研究",
+    "en": {
+      "name": "Knowledge map",
+      "description": "Find the structure in your materials and create a mind map.",
+      "tag": "Learning"
+    }
+  },
+  {
+    "id": "builtin-web",
+    "recipe": "website",
+    "name": "网页原型",
+    "description": "描述需求，生成可以交互的网页。",
+    "tag": "产品设计",
+    "en": {
+      "name": "Web prototype",
+      "description": "Describe what you need and create an interactive page.",
+      "tag": "Product design"
+    }
+  }
+]

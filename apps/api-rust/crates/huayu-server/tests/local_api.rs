@@ -206,9 +206,29 @@ async fn builtin_templates_are_available_without_model_configuration_and_survive
     let directory = TempDir::new().unwrap();
     let app = application(&directory).await;
     let router = app.router();
-    let catalog: Vec<Value> =
+    let mut catalog: Vec<Value> =
         serde_json::from_str(include_str!("../../../../../templates/catalog.json")).unwrap();
-    assert_eq!(catalog.len(), 20);
+    let quick_start: Vec<Value> =
+        serde_json::from_str(include_str!("../../../../../templates/quick-start.json")).unwrap();
+    let public_recipes: Vec<_> = quick_start
+        .iter()
+        .map(|preset| {
+            (
+                preset["id"].as_str().unwrap(),
+                preset["recipe"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        public_recipes,
+        [
+            ("builtin-writing", "writing"),
+            ("builtin-image", "image"),
+            ("builtin-chart", "chart"),
+            ("builtin-web", "website"),
+        ]
+    );
+    catalog.extend(quick_start);
     let (status, templates) = request(&router, "GET", "/api/templates", Value::Null).await;
     assert_eq!(status, StatusCode::OK);
     let templates = templates.as_array().unwrap();
@@ -217,6 +237,8 @@ async fn builtin_templates_are_available_without_model_configuration_and_survive
         let id = preset["id"].as_str().unwrap();
         let template = templates.iter().find(|item| item["id"] == id).unwrap();
         assert_eq!(template["name"], preset["name"]);
+        assert_eq!(template["description"], preset["description"]);
+        assert_eq!(template["tags"], json!([preset["tag"]]));
         assert_eq!(template["recipe"], preset["recipe"]);
         let (status, project) = request(
             &router,
@@ -245,7 +267,7 @@ async fn builtin_templates_are_available_without_model_configuration_and_survive
         assert_eq!(template["fork_count"], 1);
     }
     let (_, projects) = request(&reopened.router(), "GET", "/api/projects", Value::Null).await;
-    assert_eq!(projects.as_array().unwrap().len(), 20);
+    assert_eq!(projects.as_array().unwrap().len(), catalog.len());
 }
 
 #[tokio::test]
