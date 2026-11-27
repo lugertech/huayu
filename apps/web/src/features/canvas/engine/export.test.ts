@@ -15,6 +15,68 @@ const image =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=";
 
 describe("canvas card export", () => {
+  it("exports mindmap branches and labeled flowchart edges with their node styles", async () => {
+    const editor = new Editor(new CanvasStore());
+    editor.createShape({
+      id: "shape:mindmap",
+      type: "chart",
+      props: {
+        chartType: "mindmap",
+        chartData: JSON.stringify({
+          content: "Root topic",
+          children: [{ content: "Child topic", children: [] }],
+        }),
+      },
+    });
+    editor.createShape({
+      id: "shape:flowchart",
+      type: "chart",
+      props: {
+        chartType: "flowchart",
+        chartData: JSON.stringify({
+          nodes: [
+            {
+              id: "a",
+              type: "input",
+              data: { nodeType: "start", label: "Begin" },
+            },
+            {
+              id: "b",
+              type: "default",
+              data: { nodeType: "decision", label: "Review" },
+            },
+          ],
+          edges: [{ id: "e", source: "a", target: "b", label: "Next" }],
+        }),
+      },
+    });
+    // Exercise the same fallback used when a browser has no 2D canvas context.
+    vi.stubGlobal("document", {
+      createElement: () => ({ getContext: () => null }),
+    });
+    try {
+      const output = await exportSVG(editor, [
+        "shape:mindmap",
+        "shape:flowchart",
+      ]);
+      for (const label of [
+        "Root topic",
+        "Child topic",
+        "Begin",
+        "Review",
+        "Next",
+      ])
+        expect(output?.svg).toContain(`>${label}<`);
+      expect(output?.svg).toContain(
+        "M 170 47.25 C 195 47.25, 195 47.25, 220 47.25",
+      );
+      expect(output?.svg).toContain("M 200 68 C 250 68, 250 68, 300 68");
+      for (const fill of ["#3b82f6", "#60a5fa", "#22c55e", "#f59e0b"])
+        expect(output?.svg).toContain(`fill="${fill}"`);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it("exports defaults in the canvas language without translating user content", async () => {
     const editor = new Editor(new CanvasStore());
     editor.locale = "en";

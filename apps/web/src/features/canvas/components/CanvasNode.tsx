@@ -46,14 +46,10 @@ import {
 import type { AIComponentShape } from "@/types/components";
 import { blobForSource } from "@/api/resources";
 import { downloadBlob } from "@/api/client";
-import {
-  MindmapRenderer,
-  type MindmapData,
-} from "./shapes/chart-shape/MindmapRenderer";
-import {
-  FlowchartRenderer,
-  type FlowchartData,
-} from "./shapes/chart-shape/FlowchartRenderer";
+import { MindmapRenderer } from "./shapes/chart-shape/MindmapRenderer";
+import type { MindmapData } from "../charts/mindmap-layout";
+import { FlowchartRenderer } from "./shapes/chart-shape/FlowchartRenderer";
+import type { FlowchartData } from "../charts/flowchart-layout";
 
 export function CanvasNode({
   shape,

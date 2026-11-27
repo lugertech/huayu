@@ -8,177 +8,19 @@ import React, {
 } from "react";
 import { Plus, Minus, Trash2 } from "lucide-react";
 
-// 思维导图数据结构
-export interface MindmapData {
-  content: string;
-  children: MindmapData[];
-}
-
-// 节点布局信息
-interface NodeLayout {
-  id: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  level: number;
-  data: MindmapData;
-  parentId?: string;
-  index: number; // 在树中的遍历索引
-  path: number[]; // 在树中的路径 [parentChildIndex, ...]
-}
-
-// 连接线信息
-interface ConnectionLayout {
-  fromId: string;
-  toId: string;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-}
+import {
+  layoutMindmap,
+  mindmapLayout,
+  type MindmapData,
+  type NodeLayout,
+  type ConnectionLayout,
+} from "../../../charts/mindmap-layout";
 
 interface MindmapRendererProps {
   data: MindmapData;
   width: number;
   height: number;
   onDataChange?: (newData: MindmapData) => void;
-}
-
-// 布局配置
-const LAYOUT_CONFIG = {
-  minNodeHeight: 36,
-  lineHeight: 1.5,
-  horizontalGap: 50,
-  verticalGap: 16,
-  nodePadding: 16,
-  minNodeWidth: 150,
-  maxNodeWidth: 300,
-  fontSize: {
-    0: 15,
-    1: 15,
-    2: 15,
-  },
-  colors: {
-    0: { bg: "#3b82f6", text: "#ffffff", border: "#1d4ed8" },
-    1: { bg: "#60a5fa", text: "#ffffff", border: "#2563eb" },
-    2: { bg: "#93c5fd", text: "#1e3a5f", border: "#3b82f6" },
-  },
-};
-
-// 计算文本宽度
-function getTextWidth(text: string, fontSize: number): number {
-  const width = text.length * fontSize * 0.6 + LAYOUT_CONFIG.nodePadding * 2;
-  return Math.max(
-    LAYOUT_CONFIG.minNodeWidth,
-    Math.min(width, LAYOUT_CONFIG.maxNodeWidth),
-  );
-}
-
-// 计算文本高度
-function getTextHeight(text: string, width: number, fontSize: number): number {
-  const lineHeight = fontSize * LAYOUT_CONFIG.lineHeight;
-  const availableWidth = width - LAYOUT_CONFIG.nodePadding * 2;
-  const charsPerLine = Math.floor(availableWidth / (fontSize * 0.6));
-  const lines = Math.ceil(text.length / charsPerLine);
-  const contentHeight = lines * lineHeight;
-  const totalHeight = contentHeight + LAYOUT_CONFIG.nodePadding * 2;
-  return Math.max(totalHeight, LAYOUT_CONFIG.minNodeHeight);
-}
-
-// 计算子树高度
-function calculateSubtreeHeight(node: MindmapData, level: number = 0): number {
-  const fontSize =
-    LAYOUT_CONFIG.fontSize[level as keyof typeof LAYOUT_CONFIG.fontSize] ||
-    LAYOUT_CONFIG.fontSize[2];
-  const nodeWidth = getTextWidth(node.content, fontSize);
-  const nodeHeight = getTextHeight(node.content, nodeWidth, fontSize);
-
-  if (node.children.length === 0) {
-    return nodeHeight;
-  }
-  const childrenHeight = node.children.reduce((sum, child) => {
-    return (
-      sum + calculateSubtreeHeight(child, level + 1) + LAYOUT_CONFIG.verticalGap
-    );
-  }, -LAYOUT_CONFIG.verticalGap);
-  return Math.max(nodeHeight, childrenHeight);
-}
-
-// 递归布局节点
-let globalIndex = 0;
-function layoutNodes(
-  node: MindmapData,
-  level: number,
-  x: number,
-  y: number,
-  parentId: string | undefined,
-  nodes: NodeLayout[],
-  connections: ConnectionLayout[],
-  path: number[] = [],
-): { width: number; height: number } {
-  const nodeId = `node-${globalIndex}`;
-  const currentIndex = globalIndex;
-  globalIndex++;
-
-  const fontSize =
-    LAYOUT_CONFIG.fontSize[level as keyof typeof LAYOUT_CONFIG.fontSize] ||
-    LAYOUT_CONFIG.fontSize[2];
-  const nodeWidth = getTextWidth(node.content, fontSize);
-  const nodeHeight = getTextHeight(node.content, nodeWidth, fontSize);
-  const subtreeHeight = calculateSubtreeHeight(node, level);
-  const nodeY = y + (subtreeHeight - nodeHeight) / 2;
-
-  nodes.push({
-    id: nodeId,
-    x,
-    y: nodeY,
-    w: nodeWidth,
-    h: nodeHeight,
-    level,
-    data: node,
-    parentId,
-    index: currentIndex,
-    path: [...path],
-  });
-
-  // 添加连接线
-  if (parentId) {
-    const parentNode = nodes.find((n) => n.id === parentId);
-    if (parentNode) {
-      connections.push({
-        fromId: parentId,
-        toId: nodeId,
-        startX: parentNode.x + parentNode.w,
-        startY: parentNode.y + parentNode.h / 2,
-        endX: x,
-        endY: nodeY + nodeHeight / 2,
-      });
-    }
-  }
-
-  // 布局子节点
-  if (node.children.length > 0) {
-    const childX = x + nodeWidth + LAYOUT_CONFIG.horizontalGap;
-    let childY = y;
-
-    node.children.forEach((child, childIndex) => {
-      const childSubtreeHeight = calculateSubtreeHeight(child, level + 1);
-      layoutNodes(
-        child,
-        level + 1,
-        childX,
-        childY,
-        nodeId,
-        nodes,
-        connections,
-        [...path, childIndex],
-      );
-      childY += childSubtreeHeight + LAYOUT_CONFIG.verticalGap;
-    });
-  }
-
-  return { width: nodeWidth, height: subtreeHeight };
 }
 
 // 生成贝塞尔曲线路径
@@ -325,39 +167,6 @@ function moveNode(
   }
 
   return newData;
-}
-
-export function layoutMindmap(data: MindmapData) {
-  globalIndex = 0;
-  const nodes: NodeLayout[] = [];
-  const connections: ConnectionLayout[] = [];
-
-  layoutNodes(data, 0, 20, 20, undefined, nodes, connections);
-
-  // 计算边界
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const node of nodes) {
-    minX = Math.min(minX, node.x);
-    minY = Math.min(minY, node.y);
-    maxX = Math.max(maxX, node.x + node.w);
-    maxY = Math.max(maxY, node.y + node.h);
-  }
-
-  return {
-    nodes,
-    connections,
-    bounds: {
-      minX,
-      minY,
-      maxX,
-      maxY,
-      width: maxX - minX + 40,
-      height: maxY - minY + 40,
-    },
-  };
 }
 
 export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
@@ -823,13 +632,13 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
         {/* 节点 */}
         {nodes.map((node) => {
           const colors =
-            LAYOUT_CONFIG.colors[
-              node.level as keyof typeof LAYOUT_CONFIG.colors
-            ] || LAYOUT_CONFIG.colors[2];
+            mindmapLayout.colors[
+              node.level as keyof typeof mindmapLayout.colors
+            ] || mindmapLayout.colors[2];
           const fontSize =
-            LAYOUT_CONFIG.fontSize[
-              node.level as keyof typeof LAYOUT_CONFIG.fontSize
-            ] || LAYOUT_CONFIG.fontSize[2];
+            mindmapLayout.fontSize[
+              node.level as keyof typeof mindmapLayout.fontSize
+            ] || mindmapLayout.fontSize[2];
           const isEditing = editingNode?.id === node.id;
           const isSelected = selectedNodeId === node.id;
           const isDraggingThis = draggingNode?.id === node.id;
@@ -884,7 +693,7 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
                       fontSize: `${fontSize}px`,
                       color: colors.text,
                       fontWeight: node.level === 0 ? 600 : 500,
-                      lineHeight: LAYOUT_CONFIG.lineHeight,
+                      lineHeight: mindmapLayout.lineHeight,
                       wordBreak: "break-word",
                       overflowWrap: "break-word",
                       textAlign: "center",
@@ -918,13 +727,13 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
           const previewY = draggingNode.currentY - rect.top;
 
           const colors =
-            LAYOUT_CONFIG.colors[
-              draggedNode.level as keyof typeof LAYOUT_CONFIG.colors
-            ] || LAYOUT_CONFIG.colors[2];
+            mindmapLayout.colors[
+              draggedNode.level as keyof typeof mindmapLayout.colors
+            ] || mindmapLayout.colors[2];
           const fontSize =
-            LAYOUT_CONFIG.fontSize[
-              draggedNode.level as keyof typeof LAYOUT_CONFIG.fontSize
-            ] || LAYOUT_CONFIG.fontSize[2];
+            mindmapLayout.fontSize[
+              draggedNode.level as keyof typeof mindmapLayout.fontSize
+            ] || mindmapLayout.fontSize[2];
 
           return (
             <div
@@ -953,7 +762,7 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
                   fontSize: `${fontSize * transform.scale}px`,
                   color: colors.text,
                   fontWeight: draggedNode.level === 0 ? 600 : 500,
-                  lineHeight: LAYOUT_CONFIG.lineHeight,
+                  lineHeight: mindmapLayout.lineHeight,
                   wordBreak: "break-word",
                   textAlign: "center",
                 }}
@@ -993,8 +802,8 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
           const pos = getEditInputPosition(node);
 
           const fontSize =
-            LAYOUT_CONFIG.fontSize[
-              node.level as keyof typeof LAYOUT_CONFIG.fontSize
+            mindmapLayout.fontSize[
+              node.level as keyof typeof mindmapLayout.fontSize
             ] || 15;
           const scaledFontSize = fontSize * transform.scale;
           const scaledPadding = 8 * transform.scale;
@@ -1014,7 +823,7 @@ export function MindmapRenderer({ data, onDataChange }: MindmapRendererProps) {
                 width: pos.width,
                 height: pos.height,
                 fontSize: `${scaledFontSize}px`,
-                lineHeight: LAYOUT_CONFIG.lineHeight,
+                lineHeight: mindmapLayout.lineHeight,
                 padding: `${scaledPadding}px ${scaledPadding * 2}px`,
               }}
             />

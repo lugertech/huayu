@@ -13,8 +13,8 @@ import {
 } from "@/config/components";
 import { FileText, ImageIcon, ImageOff } from "lucide-react";
 import { blobForSource, blobAsDataURL } from "@/api/resources";
-import { layoutMindmap } from "@/features/canvas/components/shapes/chart-shape/MindmapRenderer";
-import { layoutFlowchart } from "@/features/canvas/components/shapes/chart-shape/FlowchartRenderer";
+import { layoutMindmap, mindmapLayout } from "../charts/mindmap-layout";
+import { layoutFlowchart, flowchartLayout } from "../charts/flowchart-layout";
 
 function ChartSVG({ shape }: { shape: CanvasShape }) {
   const data = JSON.parse(shape.props.chartData);
@@ -31,9 +31,7 @@ function ChartSVG({ shape }: { shape: CanvasShape }) {
     (width - layout.bounds.width * scale) / 2 - layout.bounds.minX * scale;
   const ty =
     (height - layout.bounds.height * scale) / 2 - layout.bounds.minY * scale;
-  const links = flow
-    ? (layout as ReturnType<typeof layoutFlowchart>).edges
-    : (layout as ReturnType<typeof layoutMindmap>).connections;
+  const links = "edges" in layout ? layout.edges : layout.connections;
   return (
     <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
       {links.map((edge, index) => (
@@ -56,39 +54,33 @@ function ChartSVG({ shape }: { shape: CanvasShape }) {
           )}
         </g>
       ))}
-      {layout.nodes.map((node: any) => {
-        const kind = flow ? node.node.data.nodeType : "process";
-        const color = flow
-          ? {
-              start: "#22c55e",
-              end: "#ef4444",
-              process: "#3b82f6",
-              decision: "#f59e0b",
-              input: "#8b5cf6",
-              output: "#06b6d4",
-            }[kind] || "#3b82f6"
-          : ["#3b82f6", "#60a5fa", "#93c5fd"][Math.min(node.level, 2)];
+      {layout.nodes.map((node) => {
+        const kind = "node" in node ? node.node.data.nodeType : "process";
+        const colors =
+          "node" in node
+            ? (flowchartLayout.colors[kind] ?? flowchartLayout.colors.process)
+            : (mindmapLayout.colors[node.level] ?? mindmapLayout.colors[2]);
         return (
           <g key={node.id} transform={`translate(${node.x} ${node.y})`}>
             {kind === "decision" ? (
               <path
                 d={`M ${node.w / 2} 0 L ${node.w} ${node.h / 2} L ${node.w / 2} ${node.h} L 0 ${node.h / 2} Z`}
-                fill={color}
+                fill={colors.bg}
               />
             ) : (
               <rect
                 width={node.w}
                 height={node.h}
                 rx={kind === "start" || kind === "end" ? node.h / 2 : 6}
-                fill={color}
+                fill={colors.bg}
               />
             )}
             <TextSVG
-              text={flow ? node.node.data.label : node.data.content}
+              text={"node" in node ? node.node.data.label : node.data.content}
               w={node.w}
               h={node.h}
               size={15}
-              color={!flow && node.level > 1 ? "#1e3a5f" : "#ffffff"}
+              color={colors.text}
             />
           </g>
         );
