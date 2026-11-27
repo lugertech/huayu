@@ -7,7 +7,7 @@ import {
   modelEndpoint,
   type Capability,
   type Connection,
-} from "./settings";
+} from "./model-config";
 import { LocalizedError, type ErrorTranslation } from "@/i18n/errors";
 
 const MODEL_TIMEOUT = 180_000;

@@ -4,7 +4,7 @@ import {
   ALIYUN_TTS_MODEL,
   type SpeechConnection,
   type TranscriptionConnection,
-} from "./settings";
+} from "./model-config";
 import {
   blobDataUrl,
   decodeBase64,

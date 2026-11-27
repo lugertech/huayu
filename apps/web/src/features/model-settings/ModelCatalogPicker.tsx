@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ListFilter, LoaderCircle } from "lucide-react";
 import { listLanguageModels } from "@/ai/provider";
-import type { LanguageConnection } from "@/ai/settings";
+import type { LanguageConnection } from "@/ai/model-config";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

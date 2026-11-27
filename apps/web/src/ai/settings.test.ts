@@ -1,4 +1,12 @@
 import {
+  defaultSettings,
+  modelCheckStatus,
+  modelEndpoint,
+  newLanguageConnection,
+  parseSettings,
+  updateConnection,
+} from "./model-config";
+import {
   afterEach,
   beforeEach,
   describe,
@@ -31,7 +39,6 @@ describe("browser model settings", () => {
       dismissModelSetup,
       MODEL_STORAGE_KEY,
       getSettings,
-      newLanguageConnection,
     } = await import("./settings");
     expect(shouldOfferModelSetup()).toBe(true);
     expect(getSettings().language).toEqual([]);
@@ -47,12 +54,7 @@ describe("browser model settings", () => {
   });
 
   it("still offers setup with only search enabled and accepts a keyless local model", async () => {
-    const {
-      defaultSettings,
-      newLanguageConnection,
-      saveSettings,
-      shouldOfferModelSetup,
-    } = await import("./settings");
+    const { saveSettings, shouldOfferModelSetup } = await import("./settings");
     const settings = defaultSettings();
     settings.search = {
       ...settings.search,
@@ -74,9 +76,7 @@ describe("browser model settings", () => {
     expect(shouldOfferModelSetup()).toBe(false);
   });
 
-  it("ignores saved placeholder rows and retains real language connections from before the API URL was required", async () => {
-    const { defaultSettings, parseSettings, newLanguageConnection } =
-      await import("./settings");
+  it("ignores saved placeholder rows and retains real language connections from before the API URL was required", () => {
     const placeholder = { ...newLanguageConnection(), model: "gpt-6-luna" };
     const named = {
       ...newLanguageConnection(),
@@ -110,7 +110,6 @@ describe("browser model settings", () => {
       LEGACY_MODEL_STORAGE_KEY,
       saveSettingsEdits,
       connectionFor,
-      modelCheckStatus,
       requireConnection,
     } = await import("./settings");
     const legacy = JSON.stringify({
@@ -158,8 +157,7 @@ describe("browser model settings", () => {
     expect(localStorage.getItem(LEGACY_MODEL_STORAGE_KEY)).toBe(legacy);
   });
 
-  it("only migrates official image and search keys to their matching services", async () => {
-    const { parseSettings } = await import("./settings");
+  it("only migrates official image and search keys to their matching services", () => {
     const input = {
       image: {
         baseUrl: "https://gateway.example/v1",
@@ -184,13 +182,8 @@ describe("browser model settings", () => {
   });
 
   it("merges edits in separate categories without replacing a selection made in another tab", async () => {
-    const {
-      defaultSettings,
-      newLanguageConnection,
-      saveSettings,
-      getSettings,
-      saveSettingsEdits,
-    } = await import("./settings");
+    const { saveSettings, getSettings, saveSettingsEdits } =
+      await import("./settings");
     const original = defaultSettings();
     const language = {
       ...newLanguageConnection(),
@@ -214,13 +207,8 @@ describe("browser model settings", () => {
   });
 
   it("keeps an edited credential with its URL when another tab changed them", async () => {
-    const {
-      defaultSettings,
-      newLanguageConnection,
-      saveSettings,
-      getSettings,
-      saveSettingsEdits,
-    } = await import("./settings");
+    const { saveSettings, getSettings, saveSettingsEdits } =
+      await import("./settings");
     const before = {
       ...newLanguageConnection(),
       baseUrl: "https://original.example/v1",
@@ -250,13 +238,8 @@ describe("browser model settings", () => {
   });
 
   it("keeps the active form connection when saving the same request settings", async () => {
-    const {
-      defaultSettings,
-      newLanguageConnection,
-      saveSettings,
-      getSettings,
-      saveSettingsEdits,
-    } = await import("./settings");
+    const { saveSettings, getSettings, saveSettingsEdits } =
+      await import("./settings");
     const before = {
       ...newLanguageConnection(),
       baseUrl: "http://localhost:11434/v1",
@@ -276,14 +259,8 @@ describe("browser model settings", () => {
   });
 
   it("retains verification from a new test only when the committed settings still match it", async () => {
-    const {
-      defaultSettings,
-      newLanguageConnection,
-      saveSettings,
-      getSettings,
-      updateConnection,
-      saveSettingsEdits,
-    } = await import("./settings");
+    const { saveSettings, getSettings, saveSettingsEdits } =
+      await import("./settings");
     const before = {
       ...newLanguageConnection(),
       baseUrl: "http://localhost:11434/v1",
@@ -318,8 +295,7 @@ describe("browser model settings", () => {
   });
 
   it("requires verified image understanding and defaults to the only enabled image provider", async () => {
-    const { defaultSettings, newLanguageConnection, requireConnection } =
-      await import("./settings");
+    const { requireConnection } = await import("./settings");
     const language = {
       ...newLanguageConnection(),
       baseUrl: "http://localhost:11434/v1",
@@ -348,13 +324,8 @@ describe("browser model settings", () => {
   });
 
   it("ignores a completed operation after its credentials changed", async () => {
-    const {
-      defaultSettings,
-      saveSettings,
-      getSettings,
-      recordSuccessfulCheck,
-      updateConnection,
-    } = await import("./settings");
+    const { saveSettings, getSettings, recordSuccessfulCheck } =
+      await import("./settings");
     const settings = defaultSettings();
     const started = {
       ...settings.images.seedream,
@@ -373,8 +344,7 @@ describe("browser model settings", () => {
 
   it.each([5858, 5173, 9000])(
     "accepts an external model service on port %i even with an API path",
-    async (port) => {
-      const { modelEndpoint } = await import("./settings");
+    (port) => {
       expect(
         modelEndpoint(
           { baseUrl: "http://model.example:" + port + "/api/v1" },
@@ -384,9 +354,8 @@ describe("browser model settings", () => {
     },
   );
 
-  it("rejects the application's API as a model service", async () => {
+  it("rejects the application's API as a model service", () => {
     vi.stubGlobal("__HUAYU_DEV_API_ORIGIN__", "http://127.0.0.1:9000");
-    const { modelEndpoint } = await import("./settings");
     for (const origin of ["http://127.0.0.1:5173", "http://127.0.0.1:9000"]) {
       expect(() =>
         modelEndpoint({ baseUrl: origin + "/api" }, "chat/completions"),
@@ -403,13 +372,12 @@ describe("browser model settings", () => {
         throw new Error("Storage blocked");
       },
     });
-    const { getSettings, defaultSettings } = await import("./settings");
+    const { getSettings } = await import("./settings");
     expect(getSettings()).toEqual(defaultSettings());
   });
 
   it("keeps a saved setting active if writing a draft fails", async () => {
-    const { defaultSettings, getSettings, saveSettings } =
-      await import("./settings");
+    const { getSettings, saveSettings } = await import("./settings");
     const saved = {
       ...defaultSettings(),
       selection: {
@@ -431,8 +399,7 @@ describe("browser model settings", () => {
     expect(loaded.selection.image).toBe("seedream");
   });
 
-  it("accepts pasted address whitespace and a trailing slash", async () => {
-    const { modelEndpoint } = await import("./settings");
+  it("accepts pasted address whitespace and a trailing slash", () => {
     expect(
       modelEndpoint(
         { baseUrl: "  http://localhost:11434/v1/ \n" },

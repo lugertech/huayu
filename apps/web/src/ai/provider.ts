@@ -18,18 +18,17 @@ import {
   PROBE_TIMEOUT,
   UnsupportedVisionError,
 } from "./model-request";
-import {
-  recordSuccessfulCheck,
-  requireConnection,
-  type CheckResult,
-  type Connection,
-  type ImageConnection,
-  type LanguageConnection,
-  type ModelCheck,
-  type SearchConnection,
-  type SpeechConnection,
-  type TranscriptionConnection,
-} from "./settings";
+import type {
+  CheckResult,
+  Connection,
+  ImageConnection,
+  LanguageConnection,
+  ModelCheck,
+  SearchConnection,
+  SpeechConnection,
+  TranscriptionConnection,
+} from "./model-config";
+import { recordSuccessfulCheck, requireConnection } from "./settings";
 
 export type { SpeechSegment, Transcription } from "./aliyun-speech";
 

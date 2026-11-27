@@ -9,13 +9,15 @@ import {
 } from "lucide-react";
 import {
   connectionBaseUrl,
-  connectionFor,
   IMAGE_PROVIDERS,
   modelCheckStatus,
-  saveSettingsEdits,
-  useModelSettings,
   type ImageProvider,
   type ModelSettings,
+} from "@/ai/model-config";
+import {
+  connectionFor,
+  saveSettingsEdits,
+  useModelSettings,
 } from "@/ai/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

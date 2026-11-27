@@ -8,7 +8,7 @@ import {
   type SearchConnection,
   type SpeechConnection,
   type TranscriptionConnection,
-} from "@/ai/settings";
+} from "@/ai/model-config";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {

@@ -1,7 +1,7 @@
 import { t, useLocale, type MessageKey, type Values } from "@/i18n";
 import { translatedErrorMessage, type ErrorTranslation } from "@/i18n/errors";
 import { useSyncExternalStore } from "react";
-import type { Capability } from "@/ai/settings";
+import type { Capability } from "@/ai/model-config";
 import type { Recording } from "@/api/client";
 
 export type AnalysisPhase =

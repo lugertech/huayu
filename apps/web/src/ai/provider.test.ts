@@ -15,7 +15,7 @@ import {
   readChatStream,
   testModelOperation,
 } from "./provider";
-import { defaultSettings, newLanguageConnection } from "./settings";
+import { defaultSettings, newLanguageConnection } from "./model-config";
 
 const PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=";

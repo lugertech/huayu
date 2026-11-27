@@ -87,11 +87,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { openModelSettings } from "@/lib/settings-event";
-import {
-  CAPABILITY_MESSAGE_KEYS,
-  connectionIssue,
-  useModelSettings,
-} from "@/ai/settings";
+import { CAPABILITY_MESSAGE_KEYS } from "@/ai/model-config";
+import { connectionIssue, useModelSettings } from "@/ai/settings";
 import {
   activeSegment,
   sentenceNavigation,

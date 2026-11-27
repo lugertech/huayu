@@ -9,7 +9,7 @@ import {
 import { LocaleContext, t } from "@/i18n";
 import { DocumentTitle } from "@/components/DocumentTitle";
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
-import type { Capability } from "@/ai/settings";
+import type { Capability } from "@/ai/model-config";
 
 const SettingsDialog = lazy(() =>
   import("@/components/SettingsDialog").then((module) => ({

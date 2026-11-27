@@ -1,5 +1,5 @@
 import type { MessageKey } from "@/i18n";
-import type { Capability } from "@/ai/settings";
+import type { Capability } from "@/ai/model-config";
 import { ModelConnectionError } from "@/ai/errors";
 
 export const OPEN_SETTINGS_EVENT = "huayu:open-settings";

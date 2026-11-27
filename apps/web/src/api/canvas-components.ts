@@ -1,10 +1,7 @@
 import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
-import {
-  getSettings,
-  requireConnection,
-  type ModelSettings,
-} from "@/ai/settings";
+import type { ModelSettings } from "@/ai/model-config";
+import { getSettings, requireConnection } from "@/ai/settings";
 import { t } from "@/i18n";
 import { chat, parseModelJSON } from "../ai/provider";
 import { messagesForInputs, type AIAPIInput } from "./backend";

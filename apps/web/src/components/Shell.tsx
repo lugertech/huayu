@@ -22,11 +22,8 @@ import {
 import { useIsMobile } from "@/lib/use-mobile";
 import "./sidebar.css";
 import { OPEN_SETTINGS_EVENT } from "@/lib/settings-event";
-import {
-  dismissModelSetup,
-  shouldOfferModelSetup,
-  type Capability,
-} from "@/ai/settings";
+import type { Capability } from "@/ai/model-config";
+import { dismissModelSetup, shouldOfferModelSetup } from "@/ai/settings";
 
 import { AppSidebar } from "./AppSidebar";
 

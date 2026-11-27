@@ -1,11 +1,10 @@
 import { errorText, LocalizedError } from "@/i18n/errors";
 import { t, getLocale, type MessageKey, type Values } from "@/i18n";
-import {
-  getSettings,
-  requireConnection,
-  type LanguageConnection,
-  type TranscriptionConnection,
-} from "@/ai/settings";
+import type {
+  LanguageConnection,
+  TranscriptionConnection,
+} from "@/ai/model-config";
+import { getSettings, requireConnection } from "@/ai/settings";
 import { ModelConnectionError } from "@/ai/errors";
 import { api, APIError, type Recording } from "@/api/client";
 import { blobForSource } from "@/api/resources";

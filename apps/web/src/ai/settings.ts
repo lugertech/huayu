@@ -19,37 +19,6 @@ import {
   type ModelSettings,
 } from "./model-config";
 
-export {
-  ALIYUN_ASR_MODEL,
-  ALIYUN_TTS_MODEL,
-  CAPABILITIES,
-  CAPABILITY_MESSAGE_KEYS,
-  IMAGE_PROVIDERS,
-  OPENAI_API_BASE_URL,
-  TAVILY_API_ORIGIN,
-  configurationIssue,
-  connectionBaseUrl,
-  defaultSettings,
-  modelCheckStatus,
-  modelEndpoint,
-  newLanguageConnection,
-  parseSettings,
-  updateConnection,
-  type AliyunRegion,
-  type Capability,
-  type CheckResult,
-  type Connection,
-  type ImageConnection,
-  type ImageProvider,
-  type LanguageConnection,
-  type ModelCheck,
-  type ModelProtocol,
-  type ModelSettings,
-  type SearchConnection,
-  type SpeechConnection,
-  type TranscriptionConnection,
-} from "./model-config";
-
 export const MODEL_STORAGE_KEY = "huayu:model-settings:v2";
 export const LEGACY_MODEL_STORAGE_KEY = "huayu:model-settings:v1";
 const MODEL_SETUP_DISMISSED_KEY = "huayu:model-setup-dismissed";

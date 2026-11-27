@@ -1,11 +1,8 @@
 import { LocalizedError } from "@/i18n/errors";
 import { modelPrompts } from "@/ai/prompts";
 import { t } from "@/i18n";
-import {
-  getSettings,
-  requireConnection,
-  type ModelSettings,
-} from "@/ai/settings";
+import type { ModelSettings } from "@/ai/model-config";
+import { getSettings, requireConnection } from "@/ai/settings";
 import { extractRecordingAudio } from "@/features/recording/audio";
 import { api, uploadAsset, type Asset } from "./client";
 import { blobAsDataURL, blobForSource } from "./resources";

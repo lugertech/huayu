@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { useTranslations } from "@/i18n";
 import { errorText } from "@/i18n/errors";
-import { connectionRequestKey } from "@/ai/model-config";
 import {
+  connectionRequestKey,
   configurationIssue,
+  type Capability,
+  type Connection,
+  type ModelSettings as SavedSettings,
+} from "@/ai/model-config";
+import {
   connectionFor,
   dismissModelSetup,
   getSettings,
   saveSettingsEdits,
   useModelSettings,
-  type Capability,
-  type Connection,
-  type ModelSettings as SavedSettings,
 } from "@/ai/settings";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

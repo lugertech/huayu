@@ -19,11 +19,13 @@ import {
 import {
   CAPABILITY_MESSAGE_KEYS,
   IMAGE_PROVIDERS,
+  modelCheckStatus,
+  type Capability,
+} from "@/ai/model-config";
+import {
   connectionFor,
   defaultImageConnection,
-  modelCheckStatus,
   useModelSettings,
-  type Capability,
 } from "@/ai/settings";
 import { Button } from "@/components/ui/button";
 import {

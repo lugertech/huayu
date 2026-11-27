@@ -6,11 +6,8 @@ import {
 import { t, type Locale, type MessageKey } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "@/ai/errors";
-import {
-  getSettings,
-  type Capability,
-  type ModelSettings,
-} from "@/ai/settings";
+import type { Capability, ModelSettings } from "@/ai/model-config";
+import { getSettings } from "@/ai/settings";
 import {
   Editor,
   plainText,

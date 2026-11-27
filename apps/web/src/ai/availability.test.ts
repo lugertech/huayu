@@ -1,4 +1,10 @@
 import {
+  ALIYUN_ASR_MODEL,
+  ALIYUN_TTS_MODEL,
+  defaultSettings,
+  newLanguageConnection,
+} from "./model-config";
+import {
   afterEach,
   beforeEach,
   describe,
@@ -35,16 +41,16 @@ const PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=";
 
 async function configured() {
-  const settings = await import("./settings");
-  const value = settings.defaultSettings();
+  const { saveSettings } = await import("./settings");
+  const value = defaultSettings();
   const connection = {
-    ...settings.newLanguageConnection(),
+    ...newLanguageConnection(),
     baseUrl: "http://localhost:11434/v1",
     model: "local-model",
   };
   value.language.push(connection);
   value.selection.text = connection.id;
-  settings.saveSettings(value);
+  saveSettings(value);
   return connection;
 }
 
@@ -133,7 +139,7 @@ describe("image request sizes", () => {
   ])(
     "sends %s size %s as %s (editing=%s)",
     async (model, size, expected, editing) => {
-      const { defaultSettings, saveSettings } = await import("./settings");
+      const { saveSettings } = await import("./settings");
       const value = defaultSettings();
       const connection = value.images["gpt-image"];
       connection.model = model;
@@ -258,7 +264,6 @@ describe("Model transport errors and bounded tests", () => {
     expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
   });
   it("does not report a model list or invalid bytes as successful image generation", async () => {
-    const { defaultSettings } = await import("./settings");
     const connection = {
       ...defaultSettings().images["gpt-image"],
       apiKey: "test-only",
@@ -300,7 +305,7 @@ describe("Model transport errors and bounded tests", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const { defaultSettings, getSettings } = await import("./settings");
+    const { getSettings } = await import("./settings");
     const connection = {
       ...defaultSettings().search,
       apiKey: "test-search-key",
@@ -323,7 +328,6 @@ describe("Model transport errors and bounded tests", () => {
   });
 
   it("uses Ark's documented base64 image inputs and output", async () => {
-    const { defaultSettings } = await import("./settings");
     const connection = {
       ...defaultSettings().images.seedream,
       apiKey: "test-only",
@@ -364,7 +368,6 @@ describe("Model transport errors and bounded tests", () => {
   });
 
   it("preserves multipart image editing and accepts multiple reference files", async () => {
-    const { defaultSettings } = await import("./settings");
     const connection = {
       ...defaultSettings().images["gpt-image"],
       apiKey: "test-only",
@@ -398,7 +401,6 @@ describe("Model transport errors and bounded tests", () => {
   });
 
   it("collects DashScope synthesis bytes in wire order and requires a completed stream", async () => {
-    const { defaultSettings, ALIYUN_TTS_MODEL } = await import("./settings");
     const connection = {
       ...defaultSettings().speech,
       workspaceId: "llm-example",
@@ -426,8 +428,13 @@ describe("Model transport errors and bounded tests", () => {
       stream(true),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const { synthesizeSpeech } = await import("./provider");
-    const output = await synthesizeSpeech("Read aloud", undefined, connection);
+    vi.mocked(window.addEventListener).mockClear();
+    const { requestSpeech } = await import("./aliyun-speech");
+    const output = await requestSpeech("Read aloud", connection);
+    expect(window.addEventListener).not.toHaveBeenCalledWith(
+      "storage",
+      expect.any(Function),
+    );
     expect(output.type).toBe("audio/mpeg");
     expect(await output.text()).toBe("ID3-first-second");
     const [url, request] = fetchMock.mock.calls[0];
@@ -442,6 +449,7 @@ describe("Model transport errors and bounded tests", () => {
       input: { text: "Read aloud", voice: connection.voice, format: "mp3" },
     });
     fetchMock.mockResolvedValueOnce(stream(false));
+    const { synthesizeSpeech } = await import("./provider");
     await expect(
       synthesizeSpeech("Read aloud", undefined, connection),
     ).rejects.toMatchObject({
@@ -450,7 +458,6 @@ describe("Model transport errors and bounded tests", () => {
   });
 
   it("keeps final DashScope sentences and converts millisecond offsets exactly once", async () => {
-    const { defaultSettings, ALIYUN_ASR_MODEL } = await import("./settings");
     const connection = {
       ...defaultSettings().transcription,
       workspaceId: "llm-example",

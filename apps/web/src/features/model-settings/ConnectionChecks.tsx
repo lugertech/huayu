@@ -21,7 +21,7 @@ import {
   type CheckResult,
   type Connection,
   type ModelCheck,
-} from "@/ai/settings";
+} from "@/ai/model-config";
 import { testModelOperation } from "@/ai/provider";
 import { Button } from "@/components/ui/button";
 import { ConnectionStatus } from "./ConnectionFields";

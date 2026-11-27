@@ -3,13 +3,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "@/i18n";
 import {
   configurationIssue,
-  connectionFor,
   newLanguageConnection,
   updateConnection,
   type LanguageConnection,
   type ModelProtocol,
   type ModelSettings,
-} from "@/ai/settings";
+} from "@/ai/model-config";
+import { connectionFor } from "@/ai/settings";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {

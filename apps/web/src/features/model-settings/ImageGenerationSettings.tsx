@@ -2,14 +2,14 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Image, Sparkles } from "lucide-react";
 import { useTranslations } from "@/i18n";
 import {
-  defaultImageConnection,
   IMAGE_PROVIDERS,
   modelCheckStatus,
   updateConnection,
   type ImageConnection,
   type ImageProvider,
   type ModelSettings,
-} from "@/ai/settings";
+} from "@/ai/model-config";
+import { defaultImageConnection } from "@/ai/settings";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ConnectionChecks } from "./ConnectionChecks";
