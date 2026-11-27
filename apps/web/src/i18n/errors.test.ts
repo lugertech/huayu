@@ -5,7 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { LocaleContext } from "./index";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { parseProjectFile } from "@/features/canvas/transfer";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { linkWorkflow } from "@/workflow/connections";
 import {
   LocalizedError,

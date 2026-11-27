@@ -2,7 +2,8 @@ import { LocalizedError } from "@/i18n/errors";
 import { formatNumber, getTranslator, getLocale, type Locale } from "@/i18n";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Bounds, type Editor } from "./editor";
+import { Bounds } from "./bounds";
+import type { Editor } from "./editor";
 import type { CanvasShape } from "./model";
 import { NativeSVG, TextSVG } from "./visual";
 import {

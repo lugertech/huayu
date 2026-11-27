@@ -1,6 +1,6 @@
 import { mediaFileName } from "@/lib/file-name";
 import { getTranslator, getLocale, type Locale } from "@/i18n";
-import type { Editor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/resources";
 import { createDocumentBlob } from "@/ai/documents";

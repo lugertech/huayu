@@ -6,10 +6,7 @@ import {
   useSyncExternalStore,
   type HTMLAttributes,
 } from "react";
-import { Editor } from "./engine/editor";
-export * from "./engine/editor";
-export * from "./engine/model";
-export * from "./engine/store";
+import type { Editor } from "./engine/editor";
 export const EditorContext = createContext<Editor | null>(null);
 export function useEditor() {
   const editor = useContext(EditorContext);

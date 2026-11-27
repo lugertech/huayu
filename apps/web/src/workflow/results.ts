@@ -1,6 +1,7 @@
 import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
-import type { CanvasShape, Editor } from "@/features/canvas/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { createConnectedComponent } from "@/features/canvas/connection-parser";
 import { imageRatio } from "./image-size";
 import { nodeIsBusy, type NodeData } from "./execute";

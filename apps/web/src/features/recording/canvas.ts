@@ -1,10 +1,8 @@
 import { LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
-import {
-  createCanvasStore,
-  Editor,
-  createShapeId,
-} from "@/features/canvas/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createShapeId } from "@/features/canvas/engine/model";
 import { getDefaultComponentProps } from "@/config/components";
 import { connectShapes } from "@/features/canvas/connection-parser";
 import type { Recording } from "@/api/client";

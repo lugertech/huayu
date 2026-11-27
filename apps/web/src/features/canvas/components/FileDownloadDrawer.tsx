@@ -1,7 +1,7 @@
 import { errorText } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
 import { useEffect, useState } from "react";
-import type { Editor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { Download, FileText, MoreHorizontal, Focus } from "lucide-react";
 import {
   Dialog,

@@ -8,12 +8,9 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import {
-  loadSnapshot,
-  Bounds,
-  type Editor,
-  type CanvasSession,
-} from "@/features/canvas/editor";
+import { loadSnapshot, type Editor } from "@/features/canvas/engine/editor";
+import { Bounds } from "@/features/canvas/engine/bounds";
+import type { CanvasSession } from "@/features/canvas/engine/model";
 import { ExcalidrawSurface as CanvasSurface } from "@/features/canvas/excalidraw/ExcalidrawSurface";
 import {
   useBoardLanguage,

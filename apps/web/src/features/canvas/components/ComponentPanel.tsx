@@ -7,11 +7,8 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { flushSync } from "react-dom";
-import {
-  EditorContext,
-  useEditor,
-  type Editor,
-} from "@/features/canvas/editor";
+import { EditorContext, useEditor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
 import {
   ComponentDrag,
   createCanvasShape,

@@ -1,9 +1,7 @@
 import { useTranslations } from "@/i18n";
-import {
-  useEditor,
-  type Editor,
-  type CanvasShape,
-} from "@/features/canvas/editor";
+import { useEditor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
 import { CanvasNode } from "@/features/canvas/components/CanvasNode";
 import { StartComponent } from "@/features/canvas/components/shapes/start-shape/StartComponent";
 import { DrawComponent } from "@/features/canvas/components/shapes/draw-shape/DrawComponent";

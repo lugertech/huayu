@@ -8,12 +8,12 @@ import { useSyncExternalStore } from "react";
 import { ModelConnectionError } from "@/ai/errors";
 import type { Capability, ModelSettings } from "@/ai/model-config";
 import { getSettings } from "@/ai/settings";
+import type { Editor } from "@/features/canvas/engine/editor";
 import {
-  Editor,
   plainText,
   type ShapeId,
   type CanvasShape,
-} from "@/features/canvas/editor";
+} from "@/features/canvas/engine/model";
 import { COMPONENT_CONFIGS } from "../config/components";
 import {
   connectedShapes,

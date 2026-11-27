@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   Editor,
-  createCanvasStore,
   getSnapshot,
   loadSnapshot,
-} from "@/features/canvas/editor";
+} from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { connectShapes } from "@/features/canvas/connection-parser";
 import { setLanguage } from "@/i18n";
 import { getSettings, saveSettings } from "@/ai/settings";

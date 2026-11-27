@@ -1,6 +1,6 @@
 import { getTranslator, type Locale, type MessageKey } from "@/i18n";
 import { LocalizedError } from "@/i18n/errors";
-import type { Editor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import {
   connectedShapes,

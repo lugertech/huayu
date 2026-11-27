@@ -3,13 +3,13 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import { isLegacyConnectionLabel } from "@/features/canvas/connection-parser";
 import { repairFrameArrowMembership } from "./frame-bindings";
+import type { Editor } from "@/features/canvas/engine/editor";
 import {
-  Editor,
   plainText,
   richText,
   type CanvasRecord,
   type CanvasShape,
-} from "@/features/canvas/editor";
+} from "@/features/canvas/engine/model";
 
 type Element = ExcalidrawElement & Record<string, any>;
 export const INTERNAL_EMBED_PREFIX = "https://huayu.local/component/";

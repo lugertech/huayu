@@ -1,5 +1,8 @@
 import { t, getLocale } from "@/i18n";
-import { Editor, Bounds, createShapeId } from "@/features/canvas/editor";
+import { createCanvasStore } from "./engine/store";
+import { Editor } from "./engine/editor";
+import { Bounds } from "@/features/canvas/engine/bounds";
+import { createShapeId } from "@/features/canvas/engine/model";
 import {
   getDefaultComponentProps,
   type ComponentType,
@@ -12,6 +15,12 @@ export const templatePresets = catalog as TemplatePreset[];
 const presetsByRecipe = new Map(
   templatePresets.map((item) => [item.recipe, item]),
 );
+
+export function createRecipeEditor(recipe: string) {
+  const editor = new Editor(createCanvasStore());
+  applyRecipe(editor, recipe);
+  return editor;
+}
 
 export function applyRecipe(editor: Editor, recipe: string) {
   const preset = presetsByRecipe.get(recipe);

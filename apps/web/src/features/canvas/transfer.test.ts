@@ -12,13 +12,12 @@ import {
   parseProjectFile,
   rewriteProjectResources,
 } from "./transfer";
-import {
-  createCanvasStore,
-  Editor,
-  loadSnapshot,
-  type CanvasRecord,
-  type DocumentSnapshot,
-} from "@/features/canvas/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
+import { Editor, loadSnapshot } from "@/features/canvas/engine/editor";
+import type {
+  CanvasRecord,
+  DocumentSnapshot,
+} from "@/features/canvas/engine/model";
 import {
   api,
   downloadBlob,

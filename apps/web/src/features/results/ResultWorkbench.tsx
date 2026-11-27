@@ -15,7 +15,8 @@ import {
   X,
   History,
 } from "lucide-react";
-import { useEditor, type CanvasShape } from "@/features/canvas/editor";
+import { useEditor } from "@/features/canvas/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "@/components/common/Markdown";

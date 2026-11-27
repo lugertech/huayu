@@ -1,4 +1,5 @@
-import type { CanvasShape, Editor } from "@/features/canvas/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { connectedShapes } from "@/features/canvas/connection-parser";
 import { drawingShapes } from "./context";
 

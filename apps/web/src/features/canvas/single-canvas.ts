@@ -1,12 +1,12 @@
+import { Bounds } from "./engine/bounds";
+import { Editor } from "./engine/editor";
 import {
-  Bounds,
-  Editor,
   createShapeId,
   type CanvasRecord,
   type CanvasShape,
-  type CanvasStore,
   type OtherRecord,
-} from "./editor";
+} from "./engine/model";
+import type { CanvasStore } from "./engine/store";
 import {
   generationFingerprint,
   generationInfo,

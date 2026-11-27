@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { errorText } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
-import { useEditor, type CanvasShape } from "@/features/canvas/editor";
+import { useEditor } from "@/features/canvas/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
 import {
   COMPONENT_CONFIGS,
   componentConfig,

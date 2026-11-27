@@ -4,12 +4,9 @@ import {
   getDefaultComponentProps,
   type ComponentType,
 } from "@/config/components";
-import {
-  Editor,
-  createCanvasStore,
-  createShapeId,
-  type VecLike,
-} from "./editor";
+import { Editor } from "./engine/editor";
+import { createCanvasStore } from "./engine/store";
+import { createShapeId, type VecLike } from "./engine/model";
 
 export function createCanvasShape(
   editor: Editor,

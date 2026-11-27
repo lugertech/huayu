@@ -2,13 +2,13 @@ import { rewriteWebsiteAttachments } from "./website-attachments";
 import { limitName } from "@/lib/file-name";
 import { t } from "@/i18n";
 import { LocalizedError } from "@/i18n/errors";
+import { createCanvasStore } from "@/features/canvas/engine/store";
+import { loadSnapshot, Editor } from "@/features/canvas/engine/editor";
 import {
-  createCanvasStore,
-  loadSnapshot,
   type DocumentSnapshot,
   type CanvasRecord,
-  Editor,
-} from "@/features/canvas/editor";
+  persistedRecord,
+} from "@/features/canvas/engine/model";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { applyNativeScene } from "./excalidraw/scene";
 import {
@@ -19,7 +19,6 @@ import {
   type Project,
 } from "@/api/client";
 import { blobAsDataURL, blobForSource } from "@/api/resources";
-import { persistedRecord } from "./engine/model";
 import {
   generationFingerprint,
   generationInfo,

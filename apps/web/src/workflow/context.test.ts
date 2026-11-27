@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createCanvasStore, Editor } from "@/features/canvas/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
+import { Editor } from "@/features/canvas/engine/editor";
 import {
   createConnectedComponent,
   connectedShapes,

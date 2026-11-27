@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { connectShapes } from "@/features/canvas/connection-parser";
 import { generationFingerprint, resultIsStale } from "./freshness";
 

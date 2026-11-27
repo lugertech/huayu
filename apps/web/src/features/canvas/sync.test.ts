@@ -7,7 +7,8 @@ import {
   vi,
 } from "vite-plus/test";
 import { APIError, type Project } from "@/api/client";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { CanvasSync, type CanvasPeer } from "./sync";
 
 const mocks = vi.hoisted(() => ({ api: vi.fn(), saveDraft: vi.fn() }));

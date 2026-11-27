@@ -1,4 +1,5 @@
-import type { Editor, VecLike } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
+import type { VecLike } from "@/features/canvas/engine/model";
 import { isCustomElement } from "./scene";
 
 /** Component bodies can be inert at overview zoom, so use canvas geometry for drops. */

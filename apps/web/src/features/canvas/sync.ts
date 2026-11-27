@@ -3,11 +3,14 @@ import { LocalizedError } from "@/i18n/errors";
 import { type MessageKey } from "@/i18n";
 import {
   createCanvasStore,
-  loadSnapshot,
-  type CanvasRecord,
   type CanvasStore,
+} from "@/features/canvas/engine/store";
+import { loadSnapshot } from "@/features/canvas/engine/editor";
+import {
+  type CanvasRecord,
   type DocumentSnapshot,
-} from "@/features/canvas/editor";
+  persistedRecord,
+} from "@/features/canvas/engine/model";
 import { api, APIError, type CanvasDocument, type Project } from "@/api/client";
 import {
   applyDraft,
@@ -16,7 +19,6 @@ import {
   saveDraft,
   type RecordPatch,
 } from "./drafts";
-import { persistedRecord } from "./engine/model";
 import { mergeCanvasPages } from "./single-canvas";
 
 export type SaveStatus = "saved" | "saving" | "offline" | "error";

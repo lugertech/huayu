@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState } from "@excalidraw/excalidraw/types";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { sceneFromEditor } from "./scene";
 import { getResetZoomViewport } from "./zoom-reset";
 

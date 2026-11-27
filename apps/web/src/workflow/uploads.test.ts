@@ -29,7 +29,8 @@ import { errorText, LocalizedError } from "@/i18n/errors";
 import { t } from "@/i18n";
 import { uploadComponentFile } from "./uploads";
 import { applyComponentUpload } from "./results";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());

@@ -20,7 +20,8 @@ import {
 } from "./index";
 import { localizeTemplate, templateTag } from "./templates";
 import { modelPrompts } from "@/ai/prompts";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { applyRecipe } from "@/features/canvas/recipes";
 import { generationFingerprint } from "@/workflow/freshness";
 import { analysisMarkdown } from "@/features/recording/report";

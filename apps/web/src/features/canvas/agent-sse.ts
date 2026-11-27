@@ -2,9 +2,10 @@ import { LocalizedError } from "@/i18n/errors";
 import {
   createShapeId,
   createBindingId,
-  loadSnapshot,
   type ShapeId,
-} from "@/features/canvas/editor";
+  plainText,
+} from "@/features/canvas/engine/model";
+import { loadSnapshot } from "@/features/canvas/engine/editor";
 function normalizeShapeId(id?: string): ShapeId {
   return id?.startsWith("shape:") ? (id as ShapeId) : createShapeId(id);
 }
@@ -13,7 +14,6 @@ import { blobForSource, blobAsDataURL } from "../../api/resources";
 import { modelPrompts } from "@/ai/prompts";
 import { getSettings, requireConnection } from "@/ai/settings";
 import { executeLayoutEvent } from "./agent-layout";
-import { plainText } from "@/features/canvas/editor";
 
 // Agent API请求接口
 export interface AgentAPIRequest {

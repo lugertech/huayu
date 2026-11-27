@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore, getSnapshot } from "./editor";
+import { Editor, getSnapshot } from "./engine/editor";
+import { createCanvasStore } from "./engine/store";
 import { ComponentDrag, createCanvasShape } from "./component-creation";
 import { COMPONENT_CONFIGS, type ComponentType } from "@/config/components";
 

@@ -1,5 +1,6 @@
 import { LocalizedError } from "@/i18n/errors";
-import { type CanvasShape, type Editor } from "@/features/canvas/editor";
+import type { CanvasShape } from "@/features/canvas/engine/model";
+import type { Editor } from "@/features/canvas/engine/editor";
 
 const shapeId = (value: string) =>
   value.startsWith("shape:") ? value : `shape:${value}`;

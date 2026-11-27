@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore } from "./editor";
+import { Editor } from "./engine/editor";
+import { createCanvasStore } from "./engine/store";
 import { collectDownloadableFiles } from "./file-collector";
 
 describe("attachment interface language", () => {

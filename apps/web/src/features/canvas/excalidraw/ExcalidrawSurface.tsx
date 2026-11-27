@@ -32,12 +32,9 @@ import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
 } from "@excalidraw/excalidraw/element/types";
-import {
-  Editor,
-  EditorContext,
-  type CanvasStore,
-} from "@/features/canvas/editor";
-import type { ChangeEntry } from "@/features/canvas/engine/store";
+import { Editor } from "@/features/canvas/engine/editor";
+import { EditorContext } from "@/features/canvas/editor";
+import type { CanvasStore, ChangeEntry } from "@/features/canvas/engine/store";
 import type { CanvasSync } from "@/features/canvas/sync";
 import { memberColor, memberName } from "@/features/canvas/members";
 import { useToast } from "@/components/common/ToastProvider";

@@ -1,10 +1,7 @@
 import { t, type Locale } from "@/i18n";
-import {
-  Bounds,
-  plainText,
-  type CanvasShape,
-  type Editor,
-} from "@/features/canvas/editor";
+import { Bounds } from "@/features/canvas/engine/bounds";
+import { plainText, type CanvasShape } from "@/features/canvas/engine/model";
+import type { Editor } from "@/features/canvas/engine/editor";
 import {
   COMPONENT_CONFIGS,
   componentConfig,

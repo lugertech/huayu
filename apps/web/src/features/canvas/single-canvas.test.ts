@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  Bounds,
-  Editor,
-  createCanvasStore,
-  getSnapshot,
-  loadSnapshot,
-} from "./editor";
+import { Bounds } from "./engine/bounds";
+import { Editor, getSnapshot, loadSnapshot } from "./engine/editor";
+import { createCanvasStore } from "./engine/store";
 import { mergeCanvasPages } from "./single-canvas";
 import {
   connectShapes,

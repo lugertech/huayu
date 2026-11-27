@@ -1,13 +1,13 @@
 import { t, type MessageKey } from "@/i18n";
+import type { Editor } from "@/features/canvas/engine/editor";
+import { Bounds } from "@/features/canvas/engine/bounds";
 import {
-  Editor,
-  Bounds,
   type CanvasShape,
   type ShapeId,
   type ArrowBinding,
   createShapeId,
   createBindingId,
-} from "@/features/canvas/editor";
+} from "@/features/canvas/engine/model";
 import {
   COMPONENT_CONFIGS,
   getDefaultComponentProps,

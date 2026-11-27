@@ -7,9 +7,8 @@ import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
 } from "@excalidraw/excalidraw/element/types";
-import type { Editor } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
 import { createCanvasStore } from "@/features/canvas/engine/store";
-import { Editor as SnapshotEditor } from "@/features/canvas/engine/editor";
 import { shapeIdForElement, isCustomElement } from "./scene";
 import { blobAsDataURL } from "@/api/resources";
 
@@ -45,7 +44,7 @@ export async function exportScene(
       elements.push(element);
       continue;
     }
-    const isolated = new SnapshotEditor(createCanvasStore());
+    const isolated = new Editor(createCanvasStore());
     isolated.theme = editor.theme;
     isolated.locale = locale;
     isolated.store.put(

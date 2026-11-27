@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { Editor, createCanvasStore } from "@/features/canvas/editor";
+import { Editor } from "@/features/canvas/engine/editor";
+import { createCanvasStore } from "@/features/canvas/engine/store";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import { setLanguage } from "@/i18n";
 import { localizeTemplate, templateTag } from "@/i18n/templates";

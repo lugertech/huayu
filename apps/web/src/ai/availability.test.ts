@@ -116,8 +116,9 @@ describe("capability availability", () => {
         .mockResolvedValueOnce(completion("{}"))
         .mockResolvedValueOnce(completion(JSON.stringify(generated))),
     );
-    const { Editor, createCanvasStore } =
-      await import("@/features/canvas/editor");
+    const { Editor } = await import("@/features/canvas/engine/editor");
+    const { createCanvasStore } =
+      await import("@/features/canvas/engine/store");
     const { runWorkflow } = await import("@/workflow/execute");
     const editor = new Editor(createCanvasStore());
     const id = "shape:instruction";

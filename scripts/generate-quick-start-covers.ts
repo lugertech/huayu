@@ -1,11 +1,7 @@
 import quickStartRecipes from "../templates/quick-start.json";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import {
-  Editor,
-  createCanvasStore,
-} from "../apps/web/src/features/canvas/editor";
-import { applyRecipe } from "../apps/web/src/features/canvas/recipes";
+import { createRecipeEditor } from "../apps/web/src/features/canvas/recipes";
 import { exportSVG } from "../apps/web/src/features/canvas/engine/export";
 import { setLanguage } from "../apps/web/src/i18n";
 
@@ -19,8 +15,7 @@ await mkdir(output, { recursive: true });
 for (const locale of ["zh-CN", "en"] as const) {
   setLanguage(locale);
   for (const { recipe } of quickStartRecipes) {
-    const editor = new Editor(createCanvasStore());
-    applyRecipe(editor, recipe);
+    const editor = createRecipeEditor(recipe);
     // The cover stacks shapes in recipe order, including when creation shares a timestamp.
     const shapes = editor.getCurrentPageShapes();
     const indexWidth = String(shapes.length).length;

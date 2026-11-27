@@ -30,7 +30,7 @@ import { useToast } from "@/components/common/ToastProvider";
 import { LocalizedError } from "@/i18n/errors";
 import { useTranslations } from "@/i18n";
 import { openModelSettings } from "@/lib/settings-event";
-import type { Editor } from "@/features/canvas/editor";
+import type { Editor } from "@/features/canvas/engine/editor";
 import { canvasErrorToast } from "./CanvasErrorToast";
 
 type Choice = { label: string; group: string; model: string } & (
