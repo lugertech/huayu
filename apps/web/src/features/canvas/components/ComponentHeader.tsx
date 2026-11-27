@@ -9,7 +9,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { componentConfig } from "@/config/components";
-import { useNodeBusy, type NodeData } from "@/workflow/execute";
+import type { NodeData } from "@/workflow/execute";
+import { useNodeBusy } from "@/workflow/execution-state";
 import type { AIComponentShape } from "@/types/components";
 
 export function ComponentHeader({

@@ -1,12 +1,11 @@
+import { LocalizedError } from "@/i18n/errors";
+import { t } from "@/i18n";
+import type { ModelSettings } from "@/ai/model-config";
 import {
-  LocalizedError,
-  translatedErrorMessage,
-  type ErrorTranslation,
-} from "@/i18n/errors";
-import { t, type Locale, type MessageKey } from "@/i18n";
-import { useSyncExternalStore } from "react";
-import { ModelConnectionError } from "@/ai/errors";
-import type { Capability, ModelSettings } from "@/ai/model-config";
+  executeLevels,
+  stopAllExecutions,
+  stopNodeExecution,
+} from "./execution-state";
 import { getSettings } from "@/ai/settings";
 import type { Editor } from "@/features/canvas/engine/editor";
 import {
@@ -69,123 +68,6 @@ export interface NodeData {
   url?: string;
   recordingSource?: { id: string; name: string; start: number; end?: number };
 }
-interface WorkflowRun {
-  phase: "running" | "cancelling";
-  controller: AbortController;
-}
-const executions = new WeakMap<Editor, Map<string, WorkflowRun>>();
-export interface NodeExecution {
-  status: "idle" | "queued" | "running" | "success" | "error" | "cancelled";
-  message: string;
-  modelCapability?: Capability;
-}
-const idleExecution: NodeExecution = { status: "idle", message: "" };
-interface ExecutionState extends NodeExecution {
-  messageKey?: MessageKey;
-  errorTranslation?: ErrorTranslation;
-}
-const states = new WeakMap<Editor, Map<string, ExecutionState>>();
-const listeners = new Set<() => void>();
-let version = 0;
-function changed() {
-  version++;
-  listeners.forEach((listener) => listener());
-}
-/** Includes queued nodes and completed nodes still owned by the current plan. */
-export function nodeIsBusy(editor: Editor, id: string) {
-  return executions.get(editor)?.has(id) || false;
-}
-export function useNodeBusy(editor: Editor, id: string) {
-  useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    () => version,
-  );
-  return nodeIsBusy(editor, id);
-}
-export function nodeExecution(
-  editor: Editor,
-  id: string,
-  locale?: Locale,
-): NodeExecution {
-  const state = states.get(editor)?.get(id);
-  if (!state) return idleExecution;
-  const { messageKey, errorTranslation, ...execution } = state;
-  return {
-    ...execution,
-    message: errorTranslation
-      ? translatedErrorMessage(errorTranslation, locale)
-      : messageKey
-        ? t(messageKey, undefined, locale)
-        : state.message,
-  };
-}
-export function useNodeExecution(editor: Editor, id: string, locale: Locale) {
-  useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    () => version,
-  );
-  return nodeExecution(editor, id, locale);
-}
-export function useWorkflowState(editor: Editor) {
-  useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    () => version,
-  );
-  const runs = [...(executions.get(editor)?.values() ?? [])];
-  return {
-    busy: runs.length > 0,
-    stopping:
-      runs.length > 0 && runs.every((run) => run.phase === "cancelling"),
-  };
-}
-function updateExecution(
-  editor: Editor,
-  id: string,
-  value: Partial<ExecutionState>,
-) {
-  const current = states.get(editor) || new Map<string, ExecutionState>();
-  states.set(editor, current);
-  const next = { ...idleExecution, ...current.get(id), ...value };
-  if (value.messageKey || value.message !== undefined)
-    next.errorTranslation = value.errorTranslation;
-  if (value.messageKey) next.message = "";
-  else if (value.message !== undefined) delete next.messageKey;
-  current.set(id, next);
-  changed();
-}
-function cancelRuns(editor: Editor, runs: Set<WorkflowRun>) {
-  for (const run of runs) {
-    run.phase = "cancelling";
-    run.controller.abort();
-  }
-  for (const [id, run] of executions.get(editor) || []) {
-    if (runs.has(run) && states.get(editor)?.get(id)?.status === "queued")
-      updateExecution(editor, id, {
-        status: "cancelled",
-        messageKey: "workflow.status.notRun",
-      });
-  }
-  changed();
-}
-export function stopAllExecutions(editor: Editor) {
-  cancelRuns(editor, new Set(executions.get(editor)?.values()));
-}
-
 export async function inputForShape(
   editor: Editor,
   shape: CanvasShape,
@@ -376,6 +258,7 @@ async function executeNode(
   id: ShapeId,
   signal: AbortSignal,
   settings: ModelSettings,
+  progress: (message: string) => void,
 ) {
   signal.throwIfAborted();
   const shape = editor.getShape(id);
@@ -565,8 +448,7 @@ async function executeNode(
           .map((event) => event.text || event.intent)
           .filter((value) => typeof value === "string")
           .at(-1);
-        if (message)
-          updateExecution(editor, id, { message: message.slice(0, 160) });
+        if (message) progress(message.slice(0, 160));
       },
       signal,
       settings,
@@ -605,19 +487,12 @@ export async function runWorkflow(
   editor: Editor,
   root: ShapeId,
 ): Promise<void> {
-  const existing = executions.get(editor)?.get(root);
-  if (existing) {
-    cancelRuns(editor, new Set([existing]));
-    return;
-  }
+  if (stopNodeExecution(editor, root)) return;
   await runPlan(editor, [root]);
 }
 
 export async function runProjectWorkflow(editor: Editor): Promise<void> {
-  if (executions.get(editor)?.size) {
-    stopAllExecutions(editor);
-    return;
-  }
+  if (stopAllExecutions(editor)) return;
   const roots = editor
     .getCurrentPageShapes()
     .filter(
@@ -632,10 +507,7 @@ export async function runProjectWorkflow(editor: Editor): Promise<void> {
 }
 
 export async function runStaleWorkflow(editor: Editor): Promise<void> {
-  if (executions.get(editor)?.size) {
-    stopAllExecutions(editor);
-    return;
-  }
+  if (stopAllExecutions(editor)) return;
   const roots = editor
     .getCurrentPageShapes()
     .filter((shape) => !shape.props.isLocked && resultIsStale(editor, shape.id))
@@ -659,81 +531,7 @@ async function runPlan(editor: Editor, roots: string[]) {
     }
   }
   const levels = planWorkflow(roots, edges);
-  const controller = new AbortController();
-  const run: WorkflowRun = { phase: "running", controller };
-  const running = executions.get(editor) || new Map<string, WorkflowRun>();
-  executions.set(editor, running);
-  const ids = levels.flat();
-  if (ids.some((id) => running.has(id)))
-    throw new LocalizedError({
-      key: "workflow.aStepInThisWorkflowIsAlreadyRunning",
-    });
-  if (!running.size) states.set(editor, new Map());
-  ids.forEach((id) => running.set(id, run));
-  for (const id of ids)
-    updateExecution(editor, id, {
-      status: "queued",
-      messageKey: "workflow.status.queued",
-      modelCapability: undefined,
-    });
-  changed();
-  try {
-    for (const level of levels) {
-      controller.signal.throwIfAborted();
-      let failureCause: unknown;
-      const results = await Promise.allSettled(
-        level.map(async (id) => {
-          updateExecution(editor, id, {
-            status: "running",
-            messageKey: "workflow.status.processing",
-          });
-          try {
-            await executeNode(editor, id, controller.signal, settings);
-            controller.signal.throwIfAborted();
-            updateExecution(editor, id, {
-              status: "success",
-              messageKey: editor.getShape(id)?.props.isLocked
-                ? "workflow.status.reusedLockedResult"
-                : "workflow.status.completed",
-            });
-          } catch (error) {
-            const aborted = controller.signal.aborted;
-            if (!aborted) failureCause = error;
-            updateExecution(editor, id, {
-              status: aborted ? "cancelled" : "error",
-              modelCapability:
-                !aborted && error instanceof ModelConnectionError
-                  ? error.capability
-                  : undefined,
-              messageKey: aborted ? "workflow.status.cancelled" : undefined,
-              errorTranslation:
-                !aborted && error instanceof LocalizedError
-                  ? error.translation
-                  : undefined,
-              message: aborted
-                ? ""
-                : error instanceof Error
-                  ? error.message
-                  : t("workflow.status.failed"),
-            });
-            if (!aborted) cancelRuns(editor, new Set([run]));
-            throw error;
-          }
-        }),
-      );
-      const failure = results.find((result) => result.status === "rejected");
-      if (failure?.status === "rejected") throw failureCause || failure.reason;
-    }
-  } finally {
-    ids.forEach((id) => {
-      if (running.get(id) === run) running.delete(id);
-      const state = nodeExecution(editor, id);
-      if (state.status === "queued" || state.status === "running")
-        updateExecution(editor, id, {
-          status: "cancelled",
-          messageKey: "workflow.status.notRun",
-        });
-    });
-    changed();
-  }
+  await executeLevels(editor, levels, (id, signal, progress) =>
+    executeNode(editor, id, signal, settings, progress),
+  );
 }

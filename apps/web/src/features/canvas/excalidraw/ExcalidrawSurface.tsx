@@ -57,7 +57,7 @@ import { ToolbarTools } from "./ToolbarTools";
 import { StylesPanel } from "./StylesPanel";
 import { BoardComponents } from "./BoardComponents";
 import { componentAtDropPoint } from "./image-drop";
-import { nodeExecution } from "@/workflow/execute";
+import { nodeExecution } from "@/workflow/execution-state";
 import { uploadComponentFile } from "@/workflow/uploads";
 import { NodeInspector } from "./NodeInspector";
 import { BoardConnections } from "./BoardConnections";

@@ -28,7 +28,7 @@ import {
   focusShapes,
   materialLabel,
 } from "@/workflow/context";
-import { useNodeBusy } from "@/workflow/execute";
+import { useNodeBusy } from "@/workflow/execution-state";
 import { resultIsStale } from "@/workflow/freshness";
 import {
   createImageRevision,

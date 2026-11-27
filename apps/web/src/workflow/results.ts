@@ -4,7 +4,8 @@ import type { CanvasShape } from "@/features/canvas/engine/model";
 import type { Editor } from "@/features/canvas/engine/editor";
 import { createConnectedComponent } from "@/features/canvas/connection-parser";
 import { imageRatio } from "./image-size";
-import { nodeIsBusy, type NodeData } from "./execute";
+import type { NodeData } from "./execute";
+import { nodeIsBusy } from "./execution-state";
 
 export type ResultKind = "text" | "image" | "website";
 export function resultKind(shape: CanvasShape): ResultKind | null {

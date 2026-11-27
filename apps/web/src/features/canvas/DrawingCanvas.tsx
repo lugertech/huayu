@@ -42,11 +42,11 @@ import {
 } from "@/features/canvas/thumbnail";
 import { exportProject } from "@/features/canvas/transfer";
 import { useTheme } from "@/lib/theme";
+import { runProjectWorkflow } from "@/workflow/execute";
 import {
-  runProjectWorkflow,
   stopAllExecutions,
   useWorkflowState,
-} from "@/workflow/execute";
+} from "@/workflow/execution-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { rememberOpenedProject } from "@/lib/recent-project";
@@ -201,7 +201,9 @@ function DrawingCanvasContent({
   }, [sync]);
   useEffect(() => {
     if (!editor) return;
-    return () => stopAllExecutions(editor);
+    return () => {
+      stopAllExecutions(editor);
+    };
   }, [editor]);
   useEffect(() => {
     if (shareClosed && editor) stopAllExecutions(editor);

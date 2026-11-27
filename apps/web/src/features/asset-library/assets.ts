@@ -2,7 +2,7 @@ import { limitName } from "@/lib/file-name";
 import { v4 as uuid } from "uuid";
 import { LocalizedError } from "@/i18n/errors";
 import { api, uploadAsset } from "@/api/client";
-import { nodeIsBusy } from "@/workflow/execute";
+import { nodeIsBusy } from "@/workflow/execution-state";
 import { createShapeId, type VecLike } from "@/features/canvas/engine/model";
 import type { Editor } from "@/features/canvas/engine/editor";
 

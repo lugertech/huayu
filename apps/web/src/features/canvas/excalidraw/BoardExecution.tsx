@@ -1,5 +1,5 @@
 import { useEditor } from "@/features/canvas/editor";
-import { nodeExecution, useWorkflowState } from "@/workflow/execute";
+import { nodeExecution, useWorkflowState } from "@/workflow/execution-state";
 import { resultIsStale } from "@/workflow/freshness";
 
 /** Execution is a view layer, so progress never changes saved arrow colors or exports. */

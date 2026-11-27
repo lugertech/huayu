@@ -38,12 +38,8 @@ import { formatDuration } from "@/features/recording/duration";
 import { uploadComponentFile } from "@/workflow/uploads";
 import { previewHTML } from "../../results/WebPreview";
 import { useToast } from "@/components/common/ToastProvider";
-import {
-  runWorkflow,
-  useNodeBusy,
-  useNodeExecution,
-  type NodeData,
-} from "@/workflow/execute";
+import { runWorkflow, type NodeData } from "@/workflow/execute";
+import { useNodeBusy, useNodeExecution } from "@/workflow/execution-state";
 import type { AIComponentShape } from "@/types/components";
 import { blobForSource } from "@/api/resources";
 import { downloadBlob } from "@/api/client";

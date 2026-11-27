@@ -5,7 +5,8 @@ import { Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { DrawShape } from "@/types/components";
-import { runWorkflow, useNodeBusy } from "@/workflow/execute";
+import { runWorkflow } from "@/workflow/execute";
+import { useNodeBusy } from "@/workflow/execution-state";
 import { useToast } from "../../../../../components/common/ToastProvider";
 import { modelSettingsAction } from "@/lib/settings-event";
 

@@ -5,7 +5,8 @@ import { Play, Square } from "lucide-react";
 import type { StartShape } from "@/types/components";
 import { ComponentConnectionDots } from "../../ComponentConnectionDots";
 import { Button } from "@/components/ui/button";
-import { runWorkflow, useNodeBusy } from "@/workflow/execute";
+import { runWorkflow } from "@/workflow/execute";
+import { useNodeBusy } from "@/workflow/execution-state";
 import { useToast } from "../../../../../components/common/ToastProvider";
 import { modelSettingsAction } from "@/lib/settings-event";
 

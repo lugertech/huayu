@@ -26,8 +26,8 @@
 
 | 编号 | 流程与源码 | 处理 | 状态与约束 |
 | --- | --- | --- | --- |
-| 12 | [整图执行](../apps/web/src/workflow/execute.ts) | 已调整 | 运行持有 `running / cancelling` 和 AbortController；取消先发布阶段再中止请求，finally 按运行身份释放节点。 |
-| 13 | [节点执行与占用](../apps/web/src/workflow/execute.ts) | 已调整 | 保留节点的 queued、running、success、error、cancelled 状态；增加统一 `nodeIsBusy` / `useNodeBusy`，成功节点在整个计划结束前仍受占用保护。 |
+| 12 | [整图执行](../apps/web/src/workflow/execution-state.ts) | 已调整 | 运行持有 `running / cancelling` 和 AbortController；取消先发布阶段再中止请求，finally 按运行身份释放节点。 |
+| 13 | [节点执行与占用](../apps/web/src/workflow/execution-state.ts) | 已调整 | 保留节点的 queued、running、success、error、cancelled 状态；增加统一 `nodeIsBusy` / `useNodeBusy`，成功节点在整个计划结束前仍受占用保护。 |
 | 14 | [结果新鲜度](../apps/web/src/workflow/freshness.ts)、[编辑守卫](../apps/web/src/workflow/results.ts) | 已调整 | 新鲜度继续由输入指纹派生；结果编辑、素材附加和上传提交统一使用运行占用与锁定约束。 |
 | 15 | [模型能力测试](../apps/web/src/features/model-settings/ConnectionChecks.tsx) | 已调整 | 测试绑定当前连接的输入和取消信号。完成后把验证结果写入草稿。保存时核对请求对应的配置，再写入浏览器。 |
 | 16 | [模型请求与流](../apps/web/src/ai/provider.ts) | 保留 | 请求以 AbortSignal 和异步迭代的终止、异常表示生命周期，SDK 重试配置与取消边界已有测试；不额外复制 SDK 状态。 |

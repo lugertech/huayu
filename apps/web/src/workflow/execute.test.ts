@@ -36,13 +36,15 @@ import {
   inputForShape,
   inputsForShapes,
   inputsForNode,
-  nodeExecution,
-  nodeIsBusy,
   runProjectWorkflow,
   runStaleWorkflow,
   runWorkflow,
-  stopAllExecutions,
 } from "./execute";
+import {
+  nodeExecution,
+  nodeIsBusy,
+  stopAllExecutions,
+} from "./execution-state";
 import { resultIsStale } from "./freshness";
 import { saveResultEdit } from "./results";
 const value = (text: string) => ({ name: "生成内容", description: "", text });
@@ -479,6 +481,38 @@ describe("workflow execution parity", () => {
     expect(nodeIsBusy(editor, "shape:independent")).toBe(false);
   });
 
+  it("keeps equal node IDs in different editors independently owned until their requests settle", async () => {
+    const first = board();
+    const second = board();
+    const id = "shape:instruction";
+    for (const editor of [first, second])
+      node(editor, id, "instruction", "Write");
+    let finish!: (result: ReturnType<typeof value>) => void;
+    const response = new Promise<ReturnType<typeof value>>((resolve) => {
+      finish = resolve;
+    });
+    mocks.instruction.mockReturnValue(response);
+    const runs = Promise.allSettled([
+      runWorkflow(first, id),
+      runWorkflow(second, id),
+    ]);
+    await vi.waitFor(() => expect(mocks.instruction).toHaveBeenCalledTimes(2));
+
+    await runWorkflow(first, id);
+    expect(nodeIsBusy(first, id)).toBe(true);
+    expect(nodeIsBusy(second, id)).toBe(true);
+    finish(value("Done"));
+    expect((await runs).map((result) => result.status)).toEqual([
+      "rejected",
+      "fulfilled",
+    ]);
+    expect(first.getShape(id).props.result).not.toBe("Done");
+    expect(second.getShape(id).props.result).toBe("Done");
+    expect(nodeExecution(first, id).status).toBe("cancelled");
+    expect(nodeExecution(second, id).status).toBe("success");
+    expect(nodeIsBusy(first, id)).toBe(false);
+    expect(nodeIsBusy(second, id)).toBe(false);
+  });
   it("stops an active AI drawing request and allows it to run again", async () => {
     const editor = board();
     editor.createShape({
@@ -549,6 +583,18 @@ describe("workflow execution parity", () => {
     expect(nodeExecution(editor, "shape:task").message).toBe("已完成");
     expect(editor.getShape("shape:task").props.text).toBe("保留用户原文");
     expect(editor.getShape("shape:task").props.result).toBe("保留生成结果");
+  });
+  it("renders an unrecognized failure in the current canvas language", async () => {
+    const editor = board();
+    node(editor, "shape:task", "instruction", "Write");
+    mocks.instruction.mockRejectedValueOnce(null);
+    await expect(runWorkflow(editor, "shape:task")).rejects.toBeNull();
+    expect(nodeExecution(editor, "shape:task", "zh-CN").message).toBe(
+      "运行失败",
+    );
+    expect(nodeExecution(editor, "shape:task", "en").message).toBe(
+      "Run failed",
+    );
   });
   it("preserves model errors instead of treating their text as translation keys", async () => {
     const editor = board();
