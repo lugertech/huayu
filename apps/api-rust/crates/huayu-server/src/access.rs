@@ -36,7 +36,7 @@ impl CanvasAccess {
         } = self
         {
             let project = state.store.project(project_id).await?;
-            if !project.is_collaborative || project.share_token.as_deref() != Some(token.as_str()) {
+            if project.active_share_token() != Some(token.as_str()) {
                 return Err(ApiError::new(ErrorCode::CollaborationClosed));
             }
             let member = state
@@ -156,7 +156,7 @@ async fn shared_access(
         .project(project_id)
         .await
         .map_err(|_| ApiError::new(ErrorCode::CollaborationClosed))?;
-    if !project.is_collaborative || project.share_token.as_deref() != Some(token) {
+    if project.active_share_token() != Some(token) {
         return Err(ApiError::new(ErrorCode::CollaborationClosed));
     }
     let cookie_name = format!("huayu_member_{project_id}");

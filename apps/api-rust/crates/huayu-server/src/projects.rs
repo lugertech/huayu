@@ -38,7 +38,7 @@ pub(crate) struct AccessQuery {
 
 fn check_shared_access(project: &Project, query: &AccessQuery) -> ApiResult<()> {
     if let Some(token) = &query.share
-        && (!project.is_collaborative || project.share_token.as_ref() != Some(token))
+        && project.active_share_token() != Some(token.as_str())
     {
         return Err(ApiError::new(ErrorCode::CollaborationClosed));
     }
@@ -397,9 +397,7 @@ pub(crate) async fn remove_member(
     let _guard = state.mutations.lock().await;
     let project = state.store.project(&id).await?;
     let token = project
-        .share_token
-        .as_deref()
-        .filter(|_| project.is_collaborative)
+        .active_share_token()
         .ok_or_else(|| ApiError::new(ErrorCode::CollaborationNotOpen))?;
     state
         .store

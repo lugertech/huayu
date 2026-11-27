@@ -163,6 +163,15 @@ pub struct Project {
     pub updated_at: String,
 }
 
+impl Project {
+    /// Returns the current link token only while collaboration is enabled.
+    pub fn active_share_token(&self) -> Option<&str> {
+        self.share_token
+            .as_deref()
+            .filter(|_| self.is_collaborative)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Template {
     pub id: String,
