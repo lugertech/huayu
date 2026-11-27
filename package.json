@@ -20,7 +20,7 @@
     "licenses:generate": "node scripts/generate-notices.ts",
     "licenses:check": "node scripts/generate-notices.ts --check",
     "start": "sh scripts/cargo.sh run --release --package huayu-server",
-    "check": "vp check --deny-warnings && vp run check:scripts && node scripts/check-web-dependencies.ts && sh scripts/cargo.sh check --workspace --all-targets --locked",
+    "check": "vp check --deny-warnings && vp run check:scripts && node scripts/check-web-dependencies.ts && node scripts/check-rust-dependencies.ts && sh scripts/cargo.sh check --workspace --all-targets --locked",
     "test": "vp run test:release && vp test && sh scripts/cargo.sh test --workspace --locked",
     "format": "vp fmt",
     "format:check": "vp fmt --check",
