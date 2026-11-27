@@ -1060,20 +1060,6 @@
     padding-right: 8px;
   }
 }
-.board-asset-panel {
-  position: absolute;
-  z-index: 10;
-  left: calc(var(--component-palette-width) + 24px);
-  top: var(--board-toolbar-clearance);
-  bottom: calc(var(--board-bottom-clearance) + 10px);
-  width: 360px;
-  max-width: calc(100% - var(--component-palette-width) - 36px);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--popover);
-  box-shadow: 0 8px 30px #00000012;
-}
 .huayu-board .default-sidebar-trigger {
   display: none;
 }
@@ -1091,17 +1077,9 @@
   display: none;
 }
 @container (width < 680px) {
-  .huayu-board:has(.board-asset-panel, .excalidraw .sidebar)
-    .App-toolbar-container {
+  .huayu-board:has(.excalidraw .sidebar) .App-toolbar-container {
     visibility: hidden;
     pointer-events: none;
-  }
-  .board-asset-panel {
-    top: var(--board-toolbar-clearance);
-    left: 12px;
-    right: 12px;
-    width: auto;
-    max-width: none;
   }
   .huayu-board .excalidraw .sidebar {
     top: var(--board-toolbar-clearance);

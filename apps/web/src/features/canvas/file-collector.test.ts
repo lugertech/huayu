@@ -49,3 +49,36 @@ describe("attachment interface language", () => {
     expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
 });
+
+it("lists a native canvas image with its asset filename and download URL", () => {
+  const editor = new Editor(createCanvasStore());
+  editor.store.put([
+    {
+      id: "asset:photo",
+      typeName: "asset",
+      type: "image",
+      props: {
+        name: "海边.png",
+        src: "/api/assets/local-image",
+        mimeType: "image/png",
+        w: 1600,
+        h: 800,
+      },
+      meta: {},
+    },
+  ]);
+  editor.createShape({
+    id: "shape:photo",
+    type: "image",
+    props: { assetId: "asset:photo" },
+  });
+
+  expect(collectDownloadableFiles(editor)).toMatchObject([
+    {
+      shapeId: "shape:photo",
+      fileName: "海边.png",
+      source: "image",
+      downloadUrl: "/api/assets/local-image",
+    },
+  ]);
+});

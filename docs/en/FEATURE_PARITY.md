@@ -46,8 +46,8 @@ Remote models are contacted only for requested AI capabilities. Use a local serv
 
 A Codex-style sidebar organizes recent projects and settings. The canvas uses a compact component menu and bottom toolbar; recordings pair playback/transcripts with a reading area. Neutral shadcn/Base UI styling supports light, dark and system appearance. English and Simplified Chinese follow browser preference or manual choice. Internal protocols, migration markers and checkpoints do not appear in user-facing flows.
 
-## Asset-library interactions — 2026-11-03
+## Standalone asset library (`/assets`)
 
-The asset library supports nested folders, directory cards, breadcrumbs, asset and folder context menus, drag moves to tree nodes and directory cards, drag previews, drop highlighting, batch uploads and ViewerJS preview controls. The insertion drawer supports tree filtering, search, sorting and native-image insertion by selection, double-click or drag. Items in Trash can be restored. Deleting a folder moves its contents to the parent folder. Dropping an item inside the drawer leaves the canvas intact.
+The library supports nested folders, directory cards, breadcrumbs, asset and folder context menus, drag moves to tree nodes and directory cards, drag previews, drop highlighting, batch uploads and ViewerJS preview controls. Items in Trash can be restored. Deleting a folder moves its contents to the parent folder.
 
 `features/asset-library/library-api.ts` adapts local UUIDs, query pagination and metadata. Images and folders remain in the local instance; accounts, quotas, public cloud galleries and moderation are outside the local version. Feature translations load on demand. ViewerJS 1.11.8 and its MIT notice are included in dependency and distribution records.

@@ -13,7 +13,7 @@ apps/
       canvas/              Canvas UI, engine, Excalidraw bridge, sync and transfer
       recording/           Capture, audio processing, transcription and analysis
       projects/            Project menus and previews
-      asset-library/       Asset management and insertion
+      asset-library/       Standalone asset library (/assets), folders and uploads
       library/             Cross-project library browsing
       results/             Work previews and editing
     src/i18n/              Locale detection, preferences and English catalog

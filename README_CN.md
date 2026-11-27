@@ -28,7 +28,7 @@ vp run start
 
 ## 使用文档
 
-[白板与作品](./docs/USER_GUIDE.md) · [模型连接](./docs/MODEL_SETUP.md) · [录屏与分析](./docs/RECORDING_GUIDE.md) · [部署与备份](./docs/DEPLOYMENT.md) · [常见问题](./docs/TROUBLESHOOTING.md) · [参与贡献](./CONTRIBUTING.md)
+[白板与作品](./docs/USER_GUIDE.md) · [素材库](./docs/USER_GUIDE.md#素材库) · [模型连接](./docs/MODEL_SETUP.md) · [录屏与分析](./docs/RECORDING_GUIDE.md) · [部署与备份](./docs/DEPLOYMENT.md) · [常见问题](./docs/TROUBLESHOOTING.md) · [参与贡献](./CONTRIBUTING.md)
 
 ## 许可
 

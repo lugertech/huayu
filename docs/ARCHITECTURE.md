@@ -13,7 +13,7 @@ apps/
       canvas/           画布界面、引擎、Excalidraw 适配、同步与导入导出
       recording/        录制、音轨处理、转写与分析任务
       projects/         项目菜单与预览
-      asset-library/    素材管理与导入
+      asset-library/    独立素材库（/assets）、文件夹与上传
       library/          跨项目资料浏览
       results/          作品预览与编辑
     src/i18n/           界面语言检测、浏览器偏好与英文文案

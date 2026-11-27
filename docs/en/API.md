@@ -48,7 +48,7 @@ JSON, query, multipart, and request-method rejections use the same JSON error st
 
 Asset listing returns `{ "assets": [], "total": 0 }`. Parameters are `search`, `folder_id`, `unfiled`, `trash`, `sort` (`newest` or `oldest`), `offset` and `limit` (default 50, maximum 100). Without a folder filter it lists all assets. `unfiled=true` restricts results to root and takes precedence over `folder_id`. `trash=true` lists trashed assets; the UI omits folder filters in Trash. Folders are a flat array containing `id`, `name`, `parent_id` and `asset_count`, the number of active images directly in that folder.
 
-Set an asset’s `trashed` field to `true` to move it to Trash, or `false` to restore it. Trashed assets cannot be read through the asset-detail endpoint for new insertion. The original attachment endpoint remains available to existing canvases.
+Set an asset’s `trashed` field to `true` to move it to Trash, or `false` to restore it. For an item in Trash, `GET /api/library/assets/{id}` returns `404`. Existing canvases can still read the file through its original attachment URL.
 
 ## Documents and collaboration
 

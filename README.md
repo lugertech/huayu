@@ -28,7 +28,7 @@ Projects and recordings are saved on the machine running Huayu. Model settings a
 
 ## Guides
 
-[Canvas](./docs/en/USER_GUIDE.md) · [Model connections](./docs/en/MODEL_SETUP.md) · [Recordings](./docs/en/RECORDING_GUIDE.md) · [Deployment and backups](./docs/en/DEPLOYMENT.md) · [Troubleshooting](./docs/en/TROUBLESHOOTING.md) · [Contributing](./docs/en/CONTRIBUTING.md)
+[Canvas](./docs/en/USER_GUIDE.md) · [Asset library](./docs/en/USER_GUIDE.md#standalone-asset-library) · [Model connections](./docs/en/MODEL_SETUP.md) · [Recordings](./docs/en/RECORDING_GUIDE.md) · [Deployment and backups](./docs/en/DEPLOYMENT.md) · [Troubleshooting](./docs/en/TROUBLESHOOTING.md) · [Contributing](./docs/en/CONTRIBUTING.md)
 
 ## License
 

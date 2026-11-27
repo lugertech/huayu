@@ -67,7 +67,6 @@ export const assetMessages = {
     "将图片拖到这里，批量上传": "将图片拖到这里，批量上传",
     "支持 JPG、PNG、GIF、WEBP 和 SVG 图片":
       "支持 JPG、PNG、GIF、WEBP 和 SVG 图片",
-    选择图片后插入: "选择图片后插入",
     打开: "打开",
     重命名: "重命名",
     "移动到文件夹...": "移动到文件夹...",
@@ -108,12 +107,6 @@ export const assetMessages = {
     "是否取消上传，取消后将清空上传列表？":
       "是否取消上传，取消后将清空上传列表？",
     暂无子文件夹: "暂无子文件夹",
-    全部分组: "全部分组",
-    素材分组筛选器: "素材分组筛选器",
-    素材分组树筛选器: "素材分组树筛选器",
-    收起: "收起",
-    展开: "展开",
-    暂无分类: "暂无分类",
   },
   en: {
     "{arg0} 个文件夹 · 已加载 {arg1}/{arg2} 个文件":
@@ -180,7 +173,6 @@ export const assetMessages = {
     "将图片拖到这里，批量上传": "Drop images here to upload",
     "支持 JPG、PNG、GIF、WEBP 和 SVG 图片":
       "JPG, PNG, GIF, WebP and SVG images",
-    选择图片后插入: "Select an image to insert",
     打开: "Open",
     重命名: "Rename",
     "移动到文件夹...": "Move to folder…",
@@ -221,12 +213,6 @@ export const assetMessages = {
     "是否取消上传，取消后将清空上传列表？":
       "Discard these files? The upload list will be cleared.",
     暂无子文件夹: "No folders yet",
-    全部分组: "All folders",
-    素材分组筛选器: "Filter by folder",
-    素材分组树筛选器: "Asset folders",
-    收起: "Collapse ",
-    展开: "Expand ",
-    暂无分类: "No folders yet",
   },
 } as const;
 

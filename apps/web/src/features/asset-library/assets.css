@@ -5,9 +5,6 @@
   height: 100%;
   background: var(--background);
 }
-.asset-browser-heading {
-  min-height: 64px;
-}
 .asset-gallery-scroll {
   min-width: 0;
   min-height: 0;
@@ -30,59 +27,6 @@
 }
 .group:is(:hover, :focus-within) > .asset-folder-more {
   opacity: 1;
-}
-.asset-browser-picker {
-  grid-template-columns: minmax(0, 1fr);
-}
-.asset-browser-picker
-  :is(
-    .asset-folder-sidebar,
-    .asset-folder-drawer-toggle,
-    .asset-new-folder,
-    .asset-refresh,
-    .asset-toolbar-upload
-  ) {
-  display: none;
-}
-.asset-browser-picker .asset-browser-heading {
-  min-height: 52px;
-}
-.asset-browser-picker .asset-browser-tools {
-  flex-wrap: nowrap;
-}
-.asset-browser-picker .asset-gallery-scroll {
-  padding: 12px;
-}
-.asset-picker-masonry {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: 8px;
-}
-.asset-picker-column {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-}
-.asset-picker-card {
-  position: relative;
-  display: block;
-  height: auto;
-}
-.asset-picker-card .asset-card-image {
-  position: relative;
-  aspect-ratio: 4 / 3;
-}
-.asset-picker-card .asset-card-image img {
-  object-fit: contain;
-}
-.asset-picker-card .asset-card-caption {
-  display: block;
-}
-.asset-picker-card + .asset-card-more {
-  right: 4px;
-  bottom: 4px;
 }
 .asset-row-date {
   display: none;
@@ -157,19 +101,6 @@
     display: none;
   }
 }
-.asset-selection-mark {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  display: flex;
-  width: 20px;
-  height: 20px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
 .asset-context-menu {
   max-height: calc(100dvh - 16px);
   overflow-y: auto;
@@ -191,9 +122,6 @@
   padding: 6px 12px;
   font-size: 14px;
 }
-.asset-browser-footer {
-  min-height: 60px;
-}
 .asset-upload-dialog {
   min-width: 0;
 }
@@ -209,15 +137,6 @@
 @media (max-width: 639px) {
   .asset-manager-grid {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  }
-  .asset-browser-picker .asset-browser-tools {
-    gap: 4px;
-  }
-  .asset-browser-picker .asset-browser-footer {
-    justify-content: space-between;
-  }
-  .asset-browser-picker .asset-browser-footer > span {
-    display: none;
   }
   .asset-upload-dialog [class*="grid-cols-"] {
     grid-template-columns: minmax(0, 1fr) 64px 48px;

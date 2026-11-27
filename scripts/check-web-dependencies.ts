@@ -72,6 +72,10 @@ for (const [file, from] of modulePaths) {
     if (
       (from.startsWith("api/") && /^(?:ai|features|workflow)\//.test(to)) ||
       (from.startsWith("features/") && to.startsWith("pages/")) ||
+      (from.startsWith("features/asset-library/") &&
+        to.startsWith("features/canvas/")) ||
+      (from.startsWith("features/canvas/") &&
+        to.startsWith("features/asset-library/")) ||
       (from.startsWith("features/canvas/engine/") &&
         to.startsWith("features/canvas/components/"))
     ) {

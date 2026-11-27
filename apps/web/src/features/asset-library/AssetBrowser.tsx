@@ -13,20 +13,13 @@ import {
 } from "react";
 import Viewer from "viewerjs";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
 import { useAssetTranslations, type AssetMessageKey } from "./messages";
 import { errorText } from "@/i18n/errors";
-import {
-  assetUrl,
-  ASSET_DRAG_TYPE,
-  assetMasonryColumns,
-  type LibraryAsset,
-} from "./assets";
+import { assetUrl, type LibraryAsset } from "./assets";
 import { folderPath, folderRows, type AssetFolderBranch } from "./folders";
 import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/resources";
 import "./assets.css";
-import { AssetFolderFilter } from "./AssetFolderFilter";
 import {
   Check,
   ChevronRight,
@@ -43,10 +36,8 @@ import {
   FolderPlus,
   MoreHorizontal,
   Pencil,
-  SquarePlus,
   Trash2,
   Undo2,
-  Shapes,
   ArrowDownUp,
   Download,
   X,
@@ -88,17 +79,7 @@ import "viewerjs/dist/viewer.css";
 
 const LIST_PAGE_SIZE = ASSET_PAGE_SIZE_MAX;
 const ASSET_VIEWER_IMAGE_CLASS = "asset-viewer-image";
-const DRAG_ASSET_ID_MIME = ASSET_DRAG_TYPE;
-
-interface AssetBrowserProps {
-  picker?: boolean;
-  onInsert?: (asset: LibraryAsset) => void | Promise<void>;
-  onClose?: () => void;
-  onShapeLibrary?: () => void;
-  navigation?: ReactNode;
-  selectionOnly?: boolean;
-  insertLabel?: string;
-}
+const DRAG_ASSET_ID_MIME = "application/x-huayu-library-asset";
 
 interface UploadDialogItem {
   id: string;
@@ -112,7 +93,7 @@ interface UploadDialogItem {
 type ContextMenuTarget =
   | { type: "asset"; assetId: string }
   | { type: "group"; groupId: string }
-  | { type: "canvas"; groupId: string | null };
+  | { type: "background"; groupId: string | null };
 
 interface ContextMenuState {
   x: number;
@@ -223,15 +204,7 @@ function AssetSkeletonGrid() {
   );
 }
 
-export function AssetBrowser({
-  picker = false,
-  onInsert,
-  onClose,
-  onShapeLibrary,
-  navigation,
-  selectionOnly = false,
-  insertLabel,
-}: AssetBrowserProps) {
+export function AssetBrowser({ navigation }: { navigation: ReactNode }) {
   const { locale, t, at } = useAssetTranslations();
   const loadErrorText = useRef(at);
   useEffect(() => {
@@ -284,7 +257,6 @@ export function AssetBrowser({
   const [view, setView] = useState<"grid" | "list">(() =>
     localStorage.getItem("huayu:assets-view") === "list" ? "list" : "grid",
   );
-  const [inserting, setInserting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLElement | null>(null);
   const galleryScrollRef = useRef<HTMLDivElement>(null);
@@ -417,13 +389,9 @@ export function AssetBrowser({
   );
   const selectedFolder = pathGroups.at(-1);
   const visibleFolderCards = useMemo(() => {
-    if (keyword || picker || trash) return [];
+    if (keyword || trash) return [];
     return selectedGroupId === null ? groups : selectedFolder?.children || [];
-  }, [groups, keyword, selectedGroupId, selectedFolder, picker, trash]);
-  const selectedAsset = useMemo(
-    () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
-    [assets, selectedAssetId],
-  );
+  }, [groups, keyword, selectedGroupId, selectedFolder, trash]);
   const listItems = useMemo(() => {
     const folders = keyword
       ? []
@@ -441,13 +409,6 @@ export function AssetBrowser({
     return [...folders, ...files];
   }, [assets, keyword, visibleFolderCards]);
   const listSummaryText = (() => {
-    if (picker)
-      return t(
-        assetsTotal > assets.length
-          ? "assets.loadedFileCount"
-          : "assets.fileCount",
-        { count: assetsTotal, loaded: assets.length },
-      );
     if (assetsTotal > assets.length) {
       return at("{arg0} 个文件夹 · 已加载 {arg1}/{arg2} 个文件", {
         arg0: visibleFolderCards.length,
@@ -498,7 +459,7 @@ export function AssetBrowser({
       try {
         const res = await getAssets({
           folder_id: selectedGroupId,
-          unfiled: !picker && selectedGroupId === null && !keyword,
+          unfiled: selectedGroupId === null && !keyword,
           sort,
           trash,
           keyword,
@@ -552,7 +513,7 @@ export function AssetBrowser({
         }
       }
     },
-    [activeAssetsKey, selectedGroupId, picker, sort, trash, keyword, addToast],
+    [activeAssetsKey, selectedGroupId, sort, trash, keyword, addToast],
   );
 
   const loadGroups = useCallback(async (): Promise<void> => {
@@ -1022,13 +983,7 @@ export function AssetBrowser({
     }
   };
 
-  const handleRenameSelectedAsset = (
-    targetAsset: LibraryAsset | null = selectedAsset,
-  ): void => {
-    if (!targetAsset) {
-      return;
-    }
-
+  const handleRenameAsset = (targetAsset: LibraryAsset): void => {
     setDialogState({
       type: "rename-asset",
       asset: targetAsset,
@@ -1051,13 +1006,7 @@ export function AssetBrowser({
     }
   };
 
-  const handleMoveAsset = (
-    targetAsset: LibraryAsset | null = selectedAsset,
-  ): void => {
-    if (!targetAsset) {
-      return;
-    }
-
+  const handleMoveAsset = (targetAsset: LibraryAsset): void => {
     setDialogState({
       type: "move-asset",
       asset: targetAsset,
@@ -1085,13 +1034,7 @@ export function AssetBrowser({
     }
   };
 
-  const handleDeleteSelectedAsset = (
-    targetAsset: LibraryAsset | null = selectedAsset,
-  ): void => {
-    if (!targetAsset) {
-      return;
-    }
-
+  const handleDeleteAsset = (targetAsset: LibraryAsset): void => {
     setDialogState({ type: "delete-asset", asset: targetAsset });
   };
 
@@ -1115,25 +1058,25 @@ export function AssetBrowser({
   const contextMenuTarget = contextMenu?.target;
   const contextMenuAssetId =
     contextMenuTarget?.type === "asset" ? contextMenuTarget.assetId : null;
-  const contextMenuCanvasGroup =
-    contextMenuTarget?.type === "canvas"
+  const contextMenuBackgroundGroup =
+    contextMenuTarget?.type === "background"
       ? folderById(contextMenuTarget.groupId)
       : null;
   const contextMenuCreateParentId =
     contextMenu?.target.type === "group"
       ? contextMenu.target.groupId
-      : contextMenu?.target.type === "canvas"
+      : contextMenu?.target.type === "background"
         ? contextMenu.target.groupId
         : null;
   const contextMenuCreateAvailability =
     contextMenu?.target.type === "group" ||
-    contextMenu?.target.type === "canvas"
+    contextMenu?.target.type === "background"
       ? getCreateFolderAvailability(contextMenuCreateParentId)
       : null;
   const contextMenuFocusedGroupId =
     contextMenu?.target.type === "group" ? contextMenu.target.groupId : null;
   const contextMenuFocusedAll =
-    contextMenu?.target.type === "canvas" &&
+    contextMenu?.target.type === "background" &&
     contextMenu.target.groupId === null;
   const dragMoveFocusedGroupId =
     dragMoveTarget?.type === "group" ? dragMoveTarget.groupId : null;
@@ -1188,7 +1131,7 @@ export function AssetBrowser({
   const handleAllFoldersContextMenu = (
     event: ReactMouseEvent | ReactKeyboardEvent,
   ): void => {
-    openContextMenu(event, { type: "canvas", groupId: null });
+    openContextMenu(event, { type: "background", groupId: null });
   };
 
   const handleAssetContextMenu = (
@@ -1199,8 +1142,8 @@ export function AssetBrowser({
     openContextMenu(event, { type: "asset", assetId: asset.id });
   };
 
-  const handleCanvasContextMenu = (event: ReactMouseEvent): void => {
-    openContextMenu(event, { type: "canvas", groupId: selectedGroupId });
+  const handleBackgroundContextMenu = (event: ReactMouseEvent): void => {
+    openContextMenu(event, { type: "background", groupId: selectedGroupId });
   };
 
   const setDragMoveTargetState = (nextTarget: DragMoveTarget | null): void => {
@@ -1307,7 +1250,7 @@ export function AssetBrowser({
         ? `${asset.width} × ${asset.height}`
         : "";
     const cardRect = event.currentTarget.getBoundingClientRect();
-    const listRow = !picker && view === "list";
+    const listRow = view === "list";
     const previewWidth = listRow ? 280 : cardRect.width;
     const offsetX = Math.max(
       0,
@@ -1337,7 +1280,7 @@ export function AssetBrowser({
     setDragPreviewArea("grid");
     scheduleDragPreviewPosition(event.clientX, event.clientY);
 
-    event.dataTransfer.effectAllowed = "copyMove";
+    event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.dropEffect = "move";
     event.dataTransfer.setData(DRAG_ASSET_ID_MIME, asset.id);
     const transparentImageElement = createTransparentDragImageElement();
@@ -1536,7 +1479,6 @@ export function AssetBrowser({
       | "delete"
       | "create-group"
       | "refresh"
-      | "insert"
       | "download"
       | "restore",
   ): Promise<void> => {
@@ -1574,7 +1516,7 @@ export function AssetBrowser({
       return;
     }
 
-    if (menu.target.type === "canvas") {
+    if (menu.target.type === "background") {
       if (action === "refresh") {
         await refreshAll();
         return;
@@ -1594,10 +1536,6 @@ export function AssetBrowser({
       return;
     }
 
-    if (action === "insert") {
-      await insertAsset(asset);
-      return;
-    }
     if (action === "download") {
       await downloadAsset(asset);
       return;
@@ -1612,7 +1550,7 @@ export function AssetBrowser({
     }
 
     if (action === "rename") {
-      handleRenameSelectedAsset(asset);
+      handleRenameAsset(asset);
       return;
     }
 
@@ -1622,7 +1560,7 @@ export function AssetBrowser({
     }
 
     if (action === "delete") {
-      handleDeleteSelectedAsset(asset);
+      handleDeleteAsset(asset);
     }
   };
 
@@ -1739,23 +1677,6 @@ export function AssetBrowser({
     }
   };
 
-  async function insertAsset(asset: LibraryAsset) {
-    if (inserting || !onInsert) return;
-    setInserting(true);
-    try {
-      await onInsert(asset);
-    } catch (error) {
-      addToast({
-        type: "error",
-        message:
-          error instanceof Error
-            ? errorText(error, locale)
-            : t("assets.insertFailed"),
-      });
-    } finally {
-      setInserting(false);
-    }
-  }
   async function restoreAsset(asset: LibraryAsset) {
     try {
       await updateAsset(asset, { trashed: false });
@@ -1788,7 +1709,6 @@ export function AssetBrowser({
   function renderAssetCard(asset: LibraryAsset) {
     const active = asset.id === selectedAssetId;
     const dragging = asset.id === draggingAssetId;
-    const draggable = !trash && !selectionOnly;
     const previewUrl = resolveAssetImageUrl(asset);
     const viewerSrc = assetUrl(asset);
     const resolution =
@@ -1806,15 +1726,11 @@ export function AssetBrowser({
           type="button"
           variant="ghost"
           data-asset-grid-item="asset"
-          draggable={draggable}
+          draggable={!trash}
           onClickCapture={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            if (picker) setSelectedAssetId(asset.id);
-            else handleOpenAssetPreview(asset);
-          }}
-          onDoubleClick={() => {
-            if (picker && !trash) void insertAsset(asset);
+            handleOpenAssetPreview(asset);
           }}
           onDragStart={(event) => handleAssetDragStart(event, asset)}
           onDrag={handleAssetDragging}
@@ -1822,21 +1738,18 @@ export function AssetBrowser({
             finishAssetDrag(event.dataTransfer.dropEffect === "none")
           }
           onContextMenu={(event) => {
-            if (!selectionOnly) handleAssetContextMenu(event, asset);
+            handleAssetContextMenu(event, asset);
           }}
           onKeyDown={(event) => {
             if (
-              !selectionOnly &&
-              (event.key === "ContextMenu" ||
-                (event.shiftKey && event.key === "F10"))
+              event.key === "ContextMenu" ||
+              (event.shiftKey && event.key === "F10")
             )
               openContextMenu(event, { type: "asset", assetId: asset.id });
           }}
-          aria-label={t("assets.selectAsset", { name: asset.name })}
+          aria-label={t("assets.previewAsset", { name: asset.name })}
           title={asset.name}
-          aria-pressed={active}
           className={cn(
-            picker && "asset-picker-card",
             "group flex h-auto min-h-0 w-full flex-col items-stretch justify-start gap-0 overflow-hidden rounded-lg border bg-background p-0 text-left text-inherit shadow-none",
             "transition-colors duration-200",
             dragging && "opacity-70",
@@ -1862,11 +1775,6 @@ export function AssetBrowser({
             ) : (
               <FileText className="absolute inset-0 m-auto size-9 text-muted-foreground" />
             )}
-            {picker && active && (
-              <span className="asset-selection-mark">
-                <Check className="size-3" />
-              </span>
-            )}
           </div>
           <div className="asset-card-caption p-2.5">
             <div
@@ -1880,30 +1788,26 @@ export function AssetBrowser({
               {resolution ? ` · ${resolution}` : ""}
             </div>
           </div>
-          {!picker && (
-            <time
-              className="asset-row-date text-xs text-muted-foreground"
-              dateTime={asset.created_at}
-            >
-              {new Date(asset.created_at).toLocaleDateString(locale)}
-            </time>
-          )}
-        </Button>
-        {!selectionOnly && (
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className="asset-card-more absolute right-1 bottom-1"
-            aria-label={t("assets.assetActions", { name: asset.name })}
-            onClick={(event) => {
-              event.stopPropagation();
-              setSelectedAssetId(asset.id);
-              openContextMenu(event, { type: "asset", assetId: asset.id });
-            }}
+          <time
+            className="asset-row-date text-xs text-muted-foreground"
+            dateTime={asset.created_at}
           >
-            <MoreHorizontal />
-          </Button>
-        )}
+            {new Date(asset.created_at).toLocaleDateString(locale)}
+          </time>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="asset-card-more absolute right-1 bottom-1"
+          aria-label={t("assets.assetActions", { name: asset.name })}
+          onClick={(event) => {
+            event.stopPropagation();
+            setSelectedAssetId(asset.id);
+            openContextMenu(event, { type: "asset", assetId: asset.id });
+          }}
+        >
+          <MoreHorizontal />
+        </Button>
       </div>
     );
   }
@@ -1943,12 +1847,7 @@ export function AssetBrowser({
           setDragMoveTargetState(null);
       }}
       ref={explorerRef}
-      className={cn(
-        "asset-browser grid h-full min-h-0 grid-cols-1 overflow-hidden bg-background",
-        picker
-          ? "asset-browser-picker"
-          : "asset-browser-manager md:grid-cols-[252px_minmax(0,1fr)]",
-      )}
+      className="asset-browser grid h-full min-h-0 grid-cols-1 overflow-hidden bg-background md:grid-cols-[252px_minmax(0,1fr)]"
     >
       {sidebarDrawerOpen && (
         <div
@@ -1961,7 +1860,7 @@ export function AssetBrowser({
         ref={sidebarRef}
         aria-label={t("assets.folders")}
         className={cn(
-          "asset-folder-sidebar min-h-0 overflow-hidden border-r border-border bg-background",
+          "min-h-0 overflow-hidden border-r border-border bg-background",
           "flex flex-col",
           "fixed inset-y-0 left-0 z-50 w-[272px] transition-transform duration-200 ease-out",
           "md:static md:z-auto md:w-auto md:translate-x-0 md:transition-none",
@@ -2107,60 +2006,15 @@ export function AssetBrowser({
           }
         }}
       >
-        {picker && (
-          <div className="asset-browser-heading flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              {navigation}
-              <h2 className="truncate text-sm font-semibold">
-                {t("assets.title")}
-              </h2>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {onShapeLibrary && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("assets.shapeLibrary")}
-                  onClick={onShapeLibrary}
-                >
-                  <Shapes />
-                </Button>
-              )}
-              {!selectionOnly && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  nativeButton={false}
-                  render={<Link to="/assets" />}
-                  className="text-muted-foreground"
-                  aria-label={t("assets.manage")}
-                >
-                  <FolderOpen />
-                </Button>
-              )}
-              {onClose && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("assets.close")}
-                  onClick={onClose}
-                  disabled={uploading}
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
         <div className="border-b border-border bg-background">
           <div className="flex flex-col gap-2 px-4 py-2.5 md:flex-row md:flex-wrap md:items-center md:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-2 md:basis-60">
-              {!picker && navigation}
+              {navigation}
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="asset-folder-drawer-toggle md:hidden"
+                className="md:hidden"
                 title={at("文件夹")}
                 aria-label={at("文件夹")}
                 onClick={() => setSidebarDrawerOpen(true)}
@@ -2196,64 +2050,43 @@ export function AssetBrowser({
               </form>
             </div>
 
-            <div className="asset-browser-tools flex flex-wrap items-center gap-2">
-              {!picker && (
-                <>
-                  <div
-                    className="asset-view-toggle"
-                    role="group"
-                    aria-label={t("assets.viewMode")}
-                  >
-                    {(["grid", "list"] as const).map((mode) => (
-                      <Tooltip key={mode}>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={t(
-                                mode === "grid"
-                                  ? "assets.gridView"
-                                  : "assets.listView",
-                              )}
-                              aria-pressed={view === mode}
-                              className="border-0 text-muted-foreground aria-pressed:bg-card aria-pressed:text-foreground"
-                              onClick={() => {
-                                setView(mode);
-                                localStorage.setItem("huayu:assets-view", mode);
-                              }}
-                            >
-                              {mode === "grid" ? <LayoutGrid /> : <List />}
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>
-                          {t(
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="asset-view-toggle"
+                role="group"
+                aria-label={t("assets.viewMode")}
+              >
+                {(["grid", "list"] as const).map((mode) => (
+                  <Tooltip key={mode}>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={t(
                             mode === "grid"
                               ? "assets.gridView"
                               : "assets.listView",
                           )}
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </>
-              )}
-              {picker && (
-                <AssetFolderFilter
-                  selectedPath={pathGroups}
-                  groups={groups}
-                  selectedGroupId={selectedGroupId}
-                  onSelectAll={() => {
-                    setSelectedGroupId(null);
-                    setTrash(false);
-                  }}
-                  onSelectGroup={(id) => {
-                    setSelectedGroupId(id);
-                    setTrash(false);
-                  }}
-                />
-              )}
+                          aria-pressed={view === mode}
+                          className="border-0 text-muted-foreground aria-pressed:bg-card aria-pressed:text-foreground"
+                          onClick={() => {
+                            setView(mode);
+                            localStorage.setItem("huayu:assets-view", mode);
+                          }}
+                        >
+                          {mode === "grid" ? <LayoutGrid /> : <List />}
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      {t(
+                        mode === "grid" ? "assets.gridView" : "assets.listView",
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -2279,7 +2112,6 @@ export function AssetBrowser({
               <Button
                 type="button"
                 variant="outline"
-                className="asset-new-folder"
                 onClick={() => handleCreateFolder()}
                 disabled={trash}
               >
@@ -2293,7 +2125,6 @@ export function AssetBrowser({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="asset-refresh"
                       aria-label={at("刷新")}
                       onClick={() => void refreshAll()}
                       disabled={refreshing}
@@ -2319,7 +2150,6 @@ export function AssetBrowser({
               <Button
                 type="button"
                 variant="default"
-                className="asset-toolbar-upload"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canUpload || uploading}
               >
@@ -2347,11 +2177,11 @@ export function AssetBrowser({
                 (event.shiftKey && event.key === "F10")
               )
                 openContextMenu(event, {
-                  type: "canvas",
+                  type: "background",
                   groupId: selectedGroupId,
                 });
             }}
-            onContextMenu={(event) => handleCanvasContextMenu(event)}
+            onContextMenu={(event) => handleBackgroundContextMenu(event)}
           >
             <div ref={assetGridRef}>
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -2426,21 +2256,6 @@ export function AssetBrowser({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {!trash && t("assets.emptyFilesHint")}
                   </p>
-                </div>
-              ) : picker ? (
-                <div
-                  className="asset-picker-masonry"
-                  style={{
-                    gridTemplateColumns: `repeat(${selectionOnly ? 3 : 2}, minmax(0, 1fr))`,
-                  }}
-                >
-                  {assetMasonryColumns(assets, selectionOnly ? 3 : 2).map(
-                    (column, index) => (
-                      <div key={index} className="asset-picker-column">
-                        {column.map(renderAssetCard)}
-                      </div>
-                    ),
-                  )}
                 </div>
               ) : (
                 <div
@@ -2612,34 +2427,6 @@ export function AssetBrowser({
             </DialogContent>
           </Dialog>
         )}
-        {picker && (
-          <div className="asset-browser-footer flex shrink-0 items-center gap-2 border-t px-3 py-3">
-            {!selectionOnly && (
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || trash}
-              >
-                <Upload className="size-4" />
-                {t("assets.upload")}
-              </Button>
-            )}
-            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-              {selectedAsset?.name ||
-                (selectionOnly
-                  ? t("assets.chooseAnImage")
-                  : at("选择图片后插入"))}
-            </span>
-            <Button
-              disabled={!selectedAsset || inserting || trash}
-              onClick={() => selectedAsset && void insertAsset(selectedAsset)}
-            >
-              {inserting && <Loader2 className="size-4 animate-spin" />}
-              {insertLabel || t("assets.insert")}
-            </Button>
-          </div>
-        )}
-
         {draggingAssetId &&
           dragPreview &&
           createPortal(
@@ -2767,19 +2554,6 @@ export function AssetBrowser({
           >
             {contextMenu.target.type === "asset" && (
               <>
-                {!trash && onInsert && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    role="menuitem"
-                    className="asset-menu-item"
-                    disabled={inserting}
-                    onClick={() => void handleContextMenuAction("insert")}
-                  >
-                    <SquarePlus />
-                    {t("assets.insert")}
-                  </Button>
-                )}
                 {trash && (
                   <Button
                     type="button"
@@ -2909,7 +2683,7 @@ export function AssetBrowser({
               </>
             )}
 
-            {contextMenu.target.type === "canvas" && (
+            {contextMenu.target.type === "background" && (
               <>
                 <Button
                   role="menuitem"
@@ -2935,7 +2709,7 @@ export function AssetBrowser({
                   onClick={() => void handleContextMenuAction("create-group")}
                 >
                   <FolderPlus />
-                  {contextMenuCanvasGroup
+                  {contextMenuBackgroundGroup
                     ? at("新建子文件夹")
                     : at("新建文件夹")}
                 </Button>

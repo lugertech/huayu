@@ -93,7 +93,7 @@ The library reflects current project attachments. Project renames, replacement a
 
 ## Standalone asset library
 
-The asset library manages uploaded files independently of projects. Its sidebar entry is hidden; it remains available at `/assets`. It does not automatically collect project content or offer canvas insertion.
+Open `/assets` directly on the computer running Huayu to manage your uploaded files. The library stores files independently of projects. You can drag an asset card to a folder or the root of the library. To use an image on a canvas, download it and then drag the local file onto the canvas.
 
 - **Organize folders:** use the folder tree or directory cards. Deleting a folder moves its files and subfolders to its parent without deleting them.
 - **Move files:** drag a file onto a folder or the Assets root, or choose **Move to folder** from its **…** menu.

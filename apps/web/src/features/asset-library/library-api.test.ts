@@ -21,7 +21,7 @@ const item: LibraryAsset = {
 };
 
 describe("local asset explorer adapter", () => {
-  it("keeps manager root, picker all-assets, and trash queries distinct", async () => {
+  it("keeps the unfiled root, search across folders, and trash queries distinct", async () => {
     const fetch = vi
       .fn()
       .mockImplementation(() =>
@@ -45,9 +45,10 @@ describe("local asset explorer adapter", () => {
       last_page: 2,
       total: 75,
     });
-    await getAssets({ ...filters, unfiled: false });
+    await getAssets({ ...filters, unfiled: false, keyword: "poster" });
     query = new URL(String(fetch.mock.calls[1][0]), "http://localhost")
       .searchParams;
+    expect(query.get("search")).toBe("poster");
     expect(query.has("unfiled")).toBe(false);
     expect(query.has("folder_id")).toBe(false);
     await getAssets({ ...filters, folder_id: "brand", trash: true });

@@ -1,5 +1,7 @@
 # Local verification
 
+These records describe the versions tested at the time. Checks for the asset insertion drawer, dragging a library image onto the canvas and undoing that insertion apply to earlier versions. The current library is the standalone `/assets` page. See the [user guide](./USER_GUIDE.md#standalone-asset-library).
+
 ## Canvas component language (pending manual verification) — 2026-11-05
 
 Native menus followed the English canvas language while Huayu cards still read the application language, leaving default titles and input hints in Chinese. The canvas now provides a scoped locale shared by cards, the component palette, connection actions, zoom/style menus, expanded editors, web previews and chart controls. Default component names, help, placeholders, execution labels and editing controls follow this locale; screens without an override retain the application language.

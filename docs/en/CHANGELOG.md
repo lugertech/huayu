@@ -10,7 +10,7 @@ The first local open-source preview, for personal creation and learning.
 - One infinite Excalidraw canvas, material cards and connected AI workflows; legacy pages merge while preserving materials and connections.
 - Left component palette with click and drag creation, clearer card outlines, and Ctrl + wheel zoom over cards.
 - Full-height canvas without a global content header, with floating project controls and actions in its top corners.
-- Left asset library with batch image upload, folders, search, sorting, previews, downloads, reversible trash, and double-click or drag insertion; reusable shapes remain available.
+- Standalone asset library at `/assets` with batch uploads, folders, search, sorting, image previews, downloads, file moves between folders and recovery from Trash.
 - Manus-inspired warm-white and gray surfaces with ink-colored actions, coordinated dark mode, canvas tools and card previews.
 - Text, image, web, audio, file and chart generation; selection-based creation, stopping, retries, outdated-result feedback and branch updates.
 - Unified work viewer with text editing, image cropping and rotation, web preview and HTML editing, new versions and version navigation.

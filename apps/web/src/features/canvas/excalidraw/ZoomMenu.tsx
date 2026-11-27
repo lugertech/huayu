@@ -39,7 +39,7 @@ export function fitBoardElements(
   // excluded from its bounds. Native fitting still owns zoom and centering.
   for (const [selector, edge] of [
     [".board-component-palette", "left"],
-    [".App-menu__left, .App-mobile-menu, .board-asset-panel", "right"],
+    [".App-menu__left, .App-mobile-menu", "right"],
     [".board-toolbar", "top"],
     [".App-toolbar-container, .zoom-actions", "bottom"],
   ] as const) {
