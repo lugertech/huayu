@@ -47,15 +47,20 @@ import { downloadRecording } from "@/features/recording/files";
 import {
   analyzeRecording,
   cancelAnalysis,
+  planRecordingAnalysis,
+} from "@/features/recording/analysis";
+import {
   useAnalysisTask,
   getAnalysisTask,
+} from "@/features/recording/analysis-task";
+import {
   readAnalysis,
   readCheckpoint,
   readTranscript,
   analysisMarkdown,
   transcriptExport,
   type Transcript,
-} from "@/features/recording/analysis";
+} from "@/features/recording/report";
 import { formatDuration } from "@/features/recording/duration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +92,6 @@ import {
   connectionIssue,
   useModelSettings,
 } from "@/ai/settings";
-import { recordingCapabilities } from "@/features/recording/analysis";
 import {
   activeSegment,
   sentenceNavigation,
@@ -147,7 +151,7 @@ function AnalysisWorkspace({ id }: { id: string }) {
   const task = useAnalysisTask(id);
   const modelSettings = useModelSettings();
   const missingCapabilities = recording
-    ? recordingCapabilities(recording).filter((capability) =>
+    ? planRecordingAnalysis(recording).capabilities.filter((capability) =>
         connectionIssue(capability, modelSettings),
       )
     : [];

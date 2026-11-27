@@ -31,8 +31,6 @@ import {
   type AnalysisReport,
   type Transcript,
 } from "./report";
-export * from "./report";
-export { getAnalysisTask, useAnalysisTask } from "./analysis-task";
 
 const controllers = new Map<string, AbortController>();
 export function cancelAnalysis(id: string) {
@@ -156,28 +154,34 @@ function groundedReport(
   };
 }
 
-/** The browser owns model requests. Local checkpoints survive cancellation, failures and reloads. */
-export function recordingCapabilities(
-  recording: Recording,
-  options: { forceTranscription?: boolean; transcriptionOnly?: boolean } = {},
-): ("text" | "transcription")[] {
-  const transcript = readTranscript(recording.transcript);
-  const capabilities: ("text" | "transcription")[] = [];
-  if (
-    options.forceTranscription ||
-    !transcript.text.trim() ||
-    transcript.complete === false ||
-    (transcript.sourceAssetId &&
-      transcript.sourceAssetId !== recording.asset_id)
-  )
-    capabilities.push("transcription");
-  if (!options.transcriptionOnly) capabilities.push("text");
-  return capabilities;
+interface AnalysisOptions {
+  forceTranscription?: boolean;
+  transcriptionOnly?: boolean;
 }
 
+export function planRecordingAnalysis(
+  recording: Recording,
+  options: AnalysisOptions = {},
+) {
+  let transcript = readTranscript(
+    options.forceTranscription ? null : recording.transcript,
+  );
+  if (
+    transcript.sourceAssetId &&
+    transcript.sourceAssetId !== recording.asset_id
+  )
+    transcript = { version: 1, text: "", segments: [] };
+  const capabilities: ("text" | "transcription")[] = [];
+  if (!transcript.text.trim() || transcript.complete === false)
+    capabilities.push("transcription");
+  if (!options.transcriptionOnly) capabilities.push("text");
+  return { transcript, capabilities };
+}
+
+/** The browser owns model requests. Local checkpoints survive cancellation, failures and reloads. */
 export async function analyzeRecording(
   initial: Recording,
-  options: { forceTranscription?: boolean; transcriptionOnly?: boolean } = {},
+  options: AnalysisOptions = {},
 ): Promise<Recording> {
   const outputLocale = getLocale();
   const prompt = (key: MessageKey) => t(key, undefined, outputLocale);
@@ -185,11 +189,12 @@ export async function analyzeRecording(
     throw new LocalizedError({
       key: "recordings.analysis.thisRecordingIsAlreadyBeingAnalyzed",
     });
+  const plan = planRecordingAnalysis(initial, options);
   const settings = getSettings();
   let transcriptionConnection: TranscriptionConnection | undefined;
   let languageConnection: LanguageConnection | undefined;
   try {
-    for (const capability of recordingCapabilities(initial, options)) {
+    for (const capability of plan.capabilities) {
       if (capability === "transcription")
         transcriptionConnection = requireConnection(capability, settings);
       else languageConnection = requireConnection(capability, settings);
@@ -255,14 +260,7 @@ export async function analyzeRecording(
     window.dispatchEvent(new Event("huayu:recordings-changed"));
   }
   try {
-    let transcript = options.forceTranscription
-      ? { version: 1 as const, text: "", segments: [] }
-      : readTranscript(recording.transcript);
-    if (
-      transcript.sourceAssetId &&
-      transcript.sourceAssetId !== recording.asset_id
-    )
-      transcript = { version: 1, text: "", segments: [] };
+    let transcript = plan.transcript;
     progress(
       "preparing",
       transcript.text && transcript.complete !== false
@@ -270,7 +268,7 @@ export async function analyzeRecording(
         : { key: "recordings.analysis.preparingAudio" },
     );
     await saveCheckpoint();
-    if (!transcript.text.trim() || transcript.complete === false) {
+    if (plan.capabilities.includes("transcription")) {
       const source = await audioSource(recording, signal);
       if (!recording.duration && source.duration > 0) {
         recording = await api<Recording>(`/api/recordings/${recording.id}`, {

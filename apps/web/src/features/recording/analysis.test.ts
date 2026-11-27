@@ -22,13 +22,11 @@ vi.mock("@/ai/provider", () => ({
 }));
 import {
   analyzeRecording,
-  readCheckpoint,
-  readTranscript,
-  readAnalysis,
-  getAnalysisTask,
-  recordingCapabilities,
+  planRecordingAnalysis,
   cancelAnalysis,
 } from "./analysis";
+import { readCheckpoint, readTranscript, readAnalysis } from "./report";
+import { getAnalysisTask } from "./analysis-task";
 import { ModelConnectionError } from "@/ai/errors";
 import type { Recording } from "@/api/client";
 import { setLanguage } from "@/i18n";
@@ -128,23 +126,45 @@ describe("recording analysis recovery", () => {
     expect(readAnalysis(saved.analysis)?.summary).toBe("已完成的片段");
   });
   it("only needs transcription for transcribing and only text for an existing transcript", () => {
-    expect(recordingCapabilities(saved, { transcriptionOnly: true })).toEqual([
-      "transcription",
-    ]);
+    expect(
+      planRecordingAnalysis(saved, { transcriptionOnly: true }).capabilities,
+    ).toEqual(["transcription"]);
     saved.transcript = JSON.stringify({
       version: 1,
       text: "已有转写",
       segments: [],
       complete: true,
     });
-    expect(recordingCapabilities(saved)).toEqual(["text"]);
-    expect(recordingCapabilities(saved, { transcriptionOnly: true })).toEqual(
-      [],
-    );
-    expect(recordingCapabilities(saved, { forceTranscription: true })).toEqual([
+    expect(planRecordingAnalysis(saved).capabilities).toEqual(["text"]);
+    expect(
+      planRecordingAnalysis(saved, { transcriptionOnly: true }).capabilities,
+    ).toEqual([]);
+    expect(
+      planRecordingAnalysis(saved, { forceTranscription: true }).capabilities,
+    ).toEqual(["transcription", "text"]);
+  });
+  it("starts transcription from the first chunk when the saved transcript belongs to a different asset", async () => {
+    saved.transcript = JSON.stringify({
+      version: 1,
+      text: "old audio",
+      segments: [],
+      sourceAssetId: "old-asset",
+      complete: false,
+      processedChunks: 2,
+      chunkSeconds: 300,
+    });
+    const options = { transcriptionOnly: true };
+    expect(planRecordingAnalysis(saved, options).capabilities).toEqual([
       "transcription",
-      "text",
     ]);
+    mocks.transcribe.mockResolvedValue({ text: "new audio", segments: [] });
+    const result = await analyzeRecording(saved, options);
+    expect(mocks.transcribe).toHaveBeenCalledTimes(3);
+    expect(readTranscript(result.transcript)).toMatchObject({
+      text: "new audio\nnew audio\nnew audio",
+      sourceAssetId: saved.asset_id,
+      complete: true,
+    });
   });
   it("does not process audio or replace an existing report when a required connection is missing", async () => {
     saved.analysis = report("已有报告");
