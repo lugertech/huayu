@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { AssetGroupItem } from "./library-api";
+import type { AssetFolderBranch } from "./folders";
 import { useAssetTranslations } from "./messages";
 
 export function flattenExpandedGroups(
-  groups: AssetGroupItem[],
+  groups: AssetFolderBranch[],
   expandedGroupIds: ReadonlySet<string>,
   level = 0,
 ): GroupTreeRow[] {
@@ -45,38 +45,14 @@ export function flattenExpandedGroups(
 }
 
 interface GroupTreeRow {
-  group: AssetGroupItem;
+  group: AssetFolderBranch;
   hasChildren: boolean;
   isExpanded: boolean;
   level: number;
 }
 
-function findGroupPathById(
-  groups: AssetGroupItem[],
-  groupId: string,
-  path: AssetGroupItem[] = [],
-): AssetGroupItem[] | null {
-  for (const group of groups) {
-    const nextPath = [...path, group];
-
-    if (group.id === groupId) {
-      return nextPath;
-    }
-
-    if (group.children.length) {
-      const childPath = findGroupPathById(group.children, groupId, nextPath);
-
-      if (childPath) {
-        return childPath;
-      }
-    }
-  }
-
-  return null;
-}
-
 export function selectedGroupExpandedIds(
-  selectedPath: AssetGroupItem[],
+  selectedPath: AssetFolderBranch[],
 ): string[] {
   return selectedPath
     .filter(
@@ -91,11 +67,13 @@ export function AssetFolderFilter({
   onSelectAll,
   onSelectGroup,
   selectedGroupId,
+  selectedPath,
 }: {
-  groups: AssetGroupItem[];
+  groups: AssetFolderBranch[];
   onSelectAll: () => void;
   onSelectGroup: (id: string) => void;
   selectedGroupId: string | null;
+  selectedPath: AssetFolderBranch[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(
@@ -103,13 +81,6 @@ export function AssetFolderFilter({
   );
   const { at } = useAssetTranslations();
   const allLabel = at("全部分组");
-  const selectedPath = useMemo(
-    () =>
-      selectedGroupId === null
-        ? []
-        : (findGroupPathById(groups, selectedGroupId) ?? []),
-    [groups, selectedGroupId],
-  );
   const selectedLabel = selectedPath[selectedPath.length - 1]?.name ?? allLabel;
   const rows = useMemo(
     () => flattenExpandedGroups(groups, expandedGroupIds),

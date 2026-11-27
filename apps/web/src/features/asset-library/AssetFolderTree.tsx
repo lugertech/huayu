@@ -5,14 +5,14 @@ import {
 } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "@/i18n";
-import type { AssetGroupItem } from "./library-api";
+import type { AssetFolderBranch } from "./folders";
 import { useAssetTranslations } from "./messages";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import folderIcon from "./folder.svg";
 
 interface AssetFolderTreeProps {
-  groups: AssetGroupItem[];
+  groups: AssetFolderBranch[];
   loading: boolean;
   selectedGroupId: string | null;
   selectedRootGroupId: string | null;
@@ -24,17 +24,17 @@ interface AssetFolderTreeProps {
   onSelectGroup: (groupId: string) => void;
   onGroupContextMenu?: (
     event: ReactMouseEvent | ReactKeyboardEvent,
-    group: AssetGroupItem,
+    group: AssetFolderBranch,
   ) => void;
   onAllContextMenu?: (event: ReactMouseEvent | ReactKeyboardEvent) => void;
-  onGroupDragOver?: (event: ReactDragEvent, group: AssetGroupItem) => void;
-  onGroupDrop?: (event: ReactDragEvent, group: AssetGroupItem) => void;
+  onGroupDragOver?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
+  onGroupDrop?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
   onAllDragOver?: (event: ReactDragEvent) => void;
   onAllDrop?: (event: ReactDragEvent) => void;
 }
 
 interface TreeChildrenProps {
-  groups: AssetGroupItem[];
+  groups: AssetFolderBranch[];
   level: number;
   selectedGroupId: string | null;
   selectedRootGroupId: string | null;
@@ -43,10 +43,10 @@ interface TreeChildrenProps {
   onSelectGroup: (groupId: string) => void;
   onGroupContextMenu?: (
     event: ReactMouseEvent | ReactKeyboardEvent,
-    group: AssetGroupItem,
+    group: AssetFolderBranch,
   ) => void;
-  onGroupDragOver?: (event: ReactDragEvent, group: AssetGroupItem) => void;
-  onGroupDrop?: (event: ReactDragEvent, group: AssetGroupItem) => void;
+  onGroupDragOver?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
+  onGroupDrop?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
 }
 
 function FolderTreeRow({
@@ -60,7 +60,7 @@ function FolderTreeRow({
   onDragOver,
   onDrop,
 }: {
-  group: AssetGroupItem;
+  group: AssetFolderBranch;
   isSelected: boolean;
   isBranchActive: boolean;
   isContextFocused: boolean;
@@ -68,10 +68,10 @@ function FolderTreeRow({
   onSelect: () => void;
   onContextMenu?: (
     event: ReactMouseEvent | ReactKeyboardEvent,
-    group: AssetGroupItem,
+    group: AssetFolderBranch,
   ) => void;
-  onDragOver?: (event: ReactDragEvent, group: AssetGroupItem) => void;
-  onDrop?: (event: ReactDragEvent, group: AssetGroupItem) => void;
+  onDragOver?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
+  onDrop?: (event: ReactDragEvent, group: AssetFolderBranch) => void;
 }) {
   const { t } = useTranslations();
   return (

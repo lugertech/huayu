@@ -1,13 +1,8 @@
 import { api } from "@/api/client";
-import {
-  folderTree,
-  importLibraryFile,
-  type AssetFolder,
-  type LibraryAsset,
-} from "./assets";
+import { importLibraryFile, type LibraryAsset } from "./assets";
 
-export type AssetItem = LibraryAsset;
-export type { AssetFolderBranch as AssetGroupItem } from "./assets";
+import { folderTree, type AssetFolder } from "./folders";
+
 export const ASSET_PAGE_SIZE_MAX = 50;
 export async function getAssets({
   folder_id,

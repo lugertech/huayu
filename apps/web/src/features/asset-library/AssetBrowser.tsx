@@ -16,7 +16,13 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useAssetTranslations, type AssetMessageKey } from "./messages";
 import { errorText } from "@/i18n/errors";
-import { assetUrl, ASSET_DRAG_TYPE, assetMasonryColumns } from "./assets";
+import {
+  assetUrl,
+  ASSET_DRAG_TYPE,
+  assetMasonryColumns,
+  type LibraryAsset,
+} from "./assets";
+import { folderPath, folderRows, type AssetFolderBranch } from "./folders";
 import { downloadBlob } from "@/api/client";
 import { blobForSource } from "@/api/resources";
 import "./assets.css";
@@ -57,8 +63,6 @@ import {
   updateAsset,
   updateAssetGroup,
   uploadAsset,
-  type AssetGroupItem,
-  type AssetItem,
 } from "./library-api";
 import { useToast } from "@/components/common/ToastProvider";
 import { cn } from "@/lib/utils";
@@ -88,18 +92,12 @@ const DRAG_ASSET_ID_MIME = ASSET_DRAG_TYPE;
 
 interface AssetBrowserProps {
   picker?: boolean;
-  onInsert?: (asset: AssetItem) => void | Promise<void>;
+  onInsert?: (asset: LibraryAsset) => void | Promise<void>;
   onClose?: () => void;
   onShapeLibrary?: () => void;
   navigation?: ReactNode;
   selectionOnly?: boolean;
   insertLabel?: string;
-}
-
-interface FlatGroupOption {
-  id: string;
-  name: string;
-  depth: number;
 }
 
 interface UploadDialogItem {
@@ -128,11 +126,11 @@ type DialogState =
       parentId: string | null;
       value: string;
     }
-  | { type: "rename-group"; group: AssetGroupItem; value: string }
-  | { type: "rename-asset"; asset: AssetItem; value: string }
-  | { type: "move-asset"; asset: AssetItem; targetGroupId: string | null }
-  | { type: "delete-group"; group: AssetGroupItem }
-  | { type: "delete-asset"; asset: AssetItem };
+  | { type: "rename-group"; group: AssetFolderBranch; value: string }
+  | { type: "rename-asset"; asset: LibraryAsset; value: string }
+  | { type: "move-asset"; asset: LibraryAsset; targetGroupId: string | null }
+  | { type: "delete-group"; group: AssetFolderBranch }
+  | { type: "delete-asset"; asset: LibraryAsset };
 
 type DragMoveTarget =
   | { type: "group"; groupId: string; area: "tree" | "grid" }
@@ -149,9 +147,9 @@ interface DragPreviewState {
 }
 
 function mergeAssetPages(
-  current: AssetItem[],
-  incoming: AssetItem[],
-): AssetItem[] {
+  current: LibraryAsset[],
+  incoming: LibraryAsset[],
+): LibraryAsset[] {
   const assetsById = new Map(current.map((asset) => [asset.id, asset]));
 
   for (const asset of incoming) {
@@ -161,7 +159,7 @@ function mergeAssetPages(
   return Array.from(assetsById.values());
 }
 
-function resolveAssetImageUrl(asset: AssetItem): string {
+function resolveAssetImageUrl(asset: LibraryAsset): string {
   return asset.mime.startsWith("image/") ? assetUrl(asset) : "";
 }
 
@@ -204,65 +202,6 @@ function createTransparentDragImageElement(): HTMLDivElement {
   element.style.pointerEvents = "none";
   document.body.appendChild(element);
   return element;
-}
-
-function findGroupById(
-  groups: AssetGroupItem[],
-  id: string | null,
-): AssetGroupItem | null {
-  if (id === null) {
-    return null;
-  }
-
-  for (const group of groups) {
-    if (group.id === id) {
-      return group;
-    }
-
-    const childMatch = findGroupById(group.children, id);
-    if (childMatch) {
-      return childMatch;
-    }
-  }
-
-  return null;
-}
-
-function flattenPersonalGroups(
-  groups: AssetGroupItem[],
-  depth = 0,
-): FlatGroupOption[] {
-  return groups.flatMap((group) => [
-    { id: group.id, name: group.name, depth },
-    ...flattenPersonalGroups(group.children, depth + 1),
-  ]);
-}
-
-function getGroupPath(
-  groups: AssetGroupItem[],
-  selectedGroupId: string | null,
-): AssetGroupItem[] {
-  const current = findGroupById(groups, selectedGroupId);
-  if (!current) {
-    return [];
-  }
-
-  const path: AssetGroupItem[] = [current];
-  let parent = current.parent_id
-    ? findGroupById(groups, current.parent_id)
-    : null;
-  while (parent) {
-    path.unshift(parent);
-    parent = parent.parent_id ? findGroupById(groups, parent.parent_id) : null;
-  }
-  return path;
-}
-
-function getSelectedRootGroup(
-  groups: AssetGroupItem[],
-  selectedGroupId: string | null,
-): AssetGroupItem | null {
-  return getGroupPath(groups, selectedGroupId)[0] || null;
 }
 
 function AssetSkeletonGrid() {
@@ -335,11 +274,11 @@ export function AssetBrowser({
   const [keyword, setKeyword] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const [assets, setAssets] = useState<AssetItem[]>([]);
+  const [assets, setAssets] = useState<LibraryAsset[]>([]);
   const [assetsPage, setAssetsPage] = useState(1);
   const [assetsLastPage, setAssetsLastPage] = useState(1);
   const [assetsTotal, setAssetsTotal] = useState(0);
-  const [groups, setGroups] = useState<AssetGroupItem[]>([]);
+  const [groups, setGroups] = useState<AssetFolderBranch[]>([]);
   const [trash, setTrash] = useState(false);
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
   const [view, setView] = useState<"grid" | "list">(() =>
@@ -396,7 +335,7 @@ export function AssetBrowser({
   }
   const [loadedAssetsKey, setLoadedAssetsKey] = useState("");
 
-  const [previewFile, setPreviewFile] = useState<AssetItem | null>(null);
+  const [previewFile, setPreviewFile] = useState<LibraryAsset | null>(null);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [assetDrag, setAssetDrag] = useState<
     | { phase: "idle" }
@@ -469,30 +408,18 @@ export function AssetBrowser({
     });
   };
 
+  function folderById(id: string | null) {
+    return folderPath(groups, id).at(-1);
+  }
   const pathGroups = useMemo(
-    () => getGroupPath(groups, selectedGroupId),
+    () => folderPath(groups, selectedGroupId),
     [groups, selectedGroupId],
   );
-  const selectedRootGroup = useMemo(
-    () => getSelectedRootGroup(groups, selectedGroupId),
-    [groups, selectedGroupId],
-  );
+  const selectedFolder = pathGroups.at(-1);
   const visibleFolderCards = useMemo(() => {
-    if (keyword || picker || trash) {
-      return [];
-    }
-
-    if (selectedGroupId === null) {
-      return groups;
-    }
-
-    const current = findGroupById(groups, selectedGroupId);
-    if (!current) {
-      return [];
-    }
-
-    return current.children;
-  }, [groups, keyword, selectedGroupId, picker, trash]);
+    if (keyword || picker || trash) return [];
+    return selectedGroupId === null ? groups : selectedFolder?.children || [];
+  }, [groups, keyword, selectedGroupId, selectedFolder, picker, trash]);
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
     [assets, selectedAssetId],
@@ -534,10 +461,7 @@ export function AssetBrowser({
       arg1: assets.length,
     });
   })();
-  const personalGroupOptions = useMemo(
-    () => flattenPersonalGroups(groups),
-    [groups],
-  );
+  const personalGroupOptions = useMemo(() => folderRows(groups), [groups]);
   const uploadDialogOpen = uploadDialogItems.length > 0;
   const uploadDialogPendingCount = useMemo(
     () => uploadDialogItems.filter((item) => item.status === "pending").length,
@@ -692,10 +616,10 @@ export function AssetBrowser({
       return;
     }
 
-    if (!groupsLoading && !findGroupById(groups, selectedGroupId)) {
+    if (!groupsLoading && !selectedFolder) {
       setSelectedGroupId(null);
     }
-  }, [groups, selectedGroupId, groupsLoading]);
+  }, [selectedFolder, selectedGroupId, groupsLoading]);
 
   useEffect(() => {
     if (!selectedAssetId) {
@@ -1018,7 +942,7 @@ export function AssetBrowser({
       return { allowed: true, message: "" };
     }
 
-    const parentGroup = findGroupById(groups, parentId);
+    const parentGroup = folderById(parentId);
     if (!parentGroup) {
       return { allowed: false, message: at("目标文件夹不存在") };
     }
@@ -1057,12 +981,12 @@ export function AssetBrowser({
     }
   };
 
-  const handleRenameGroup = (group: AssetGroupItem): void => {
+  const handleRenameGroup = (group: AssetFolderBranch): void => {
     setDialogState({ type: "rename-group", group, value: group.name });
   };
 
   const submitRenameGroup = async (
-    group: AssetGroupItem,
+    group: AssetFolderBranch,
     name: string,
   ): Promise<void> => {
     try {
@@ -1076,11 +1000,11 @@ export function AssetBrowser({
     }
   };
 
-  const handleDeleteGroup = (group: AssetGroupItem): void => {
+  const handleDeleteGroup = (group: AssetFolderBranch): void => {
     setDialogState({ type: "delete-group", group });
   };
 
-  const submitDeleteGroup = async (group: AssetGroupItem): Promise<void> => {
+  const submitDeleteGroup = async (group: AssetFolderBranch): Promise<void> => {
     try {
       await deleteAssetGroup(group.id);
       addToast({ type: "success", message: at("文件夹已删除") });
@@ -1099,7 +1023,7 @@ export function AssetBrowser({
   };
 
   const handleRenameSelectedAsset = (
-    targetAsset: AssetItem | null = selectedAsset,
+    targetAsset: LibraryAsset | null = selectedAsset,
   ): void => {
     if (!targetAsset) {
       return;
@@ -1113,7 +1037,7 @@ export function AssetBrowser({
   };
 
   const submitRenameAsset = async (
-    targetAsset: AssetItem,
+    targetAsset: LibraryAsset,
     name: string,
   ): Promise<void> => {
     try {
@@ -1128,7 +1052,7 @@ export function AssetBrowser({
   };
 
   const handleMoveAsset = (
-    targetAsset: AssetItem | null = selectedAsset,
+    targetAsset: LibraryAsset | null = selectedAsset,
   ): void => {
     if (!targetAsset) {
       return;
@@ -1142,7 +1066,7 @@ export function AssetBrowser({
   };
 
   const submitMoveAsset = async (
-    targetAsset: AssetItem,
+    targetAsset: LibraryAsset,
     nextGroupId: string | null,
   ): Promise<void> => {
     if (nextGroupId === (targetAsset.folder_id ?? null)) {
@@ -1162,7 +1086,7 @@ export function AssetBrowser({
   };
 
   const handleDeleteSelectedAsset = (
-    targetAsset: AssetItem | null = selectedAsset,
+    targetAsset: LibraryAsset | null = selectedAsset,
   ): void => {
     if (!targetAsset) {
       return;
@@ -1171,7 +1095,9 @@ export function AssetBrowser({
     setDialogState({ type: "delete-asset", asset: targetAsset });
   };
 
-  const submitDeleteAsset = async (targetAsset: AssetItem): Promise<void> => {
+  const submitDeleteAsset = async (
+    targetAsset: LibraryAsset,
+  ): Promise<void> => {
     try {
       await deleteAsset(targetAsset);
       addToast({ type: "success", message: at("素材已删除") });
@@ -1191,7 +1117,7 @@ export function AssetBrowser({
     contextMenuTarget?.type === "asset" ? contextMenuTarget.assetId : null;
   const contextMenuCanvasGroup =
     contextMenuTarget?.type === "canvas"
-      ? findGroupById(groups, contextMenuTarget.groupId)
+      ? folderById(contextMenuTarget.groupId)
       : null;
   const contextMenuCreateParentId =
     contextMenu?.target.type === "group"
@@ -1254,7 +1180,7 @@ export function AssetBrowser({
 
   const handleGroupContextMenu = (
     event: ReactMouseEvent | ReactKeyboardEvent,
-    group: AssetGroupItem,
+    group: AssetFolderBranch,
   ): void => {
     openContextMenu(event, { type: "group", groupId: group.id });
   };
@@ -1267,7 +1193,7 @@ export function AssetBrowser({
 
   const handleAssetContextMenu = (
     event: ReactMouseEvent,
-    asset: AssetItem,
+    asset: LibraryAsset,
   ): void => {
     setSelectedAssetId(asset.id);
     openContextMenu(event, { type: "asset", assetId: asset.id });
@@ -1337,7 +1263,7 @@ export function AssetBrowser({
   const getDragMoveAvailability = (
     assetId: string | null,
     targetGroupId: string | null,
-  ): { allowed: boolean; asset: AssetItem | null } => {
+  ): { allowed: boolean; asset: LibraryAsset | null } => {
     if (!assetId || trash) {
       return { allowed: false, asset: null };
     }
@@ -1352,7 +1278,7 @@ export function AssetBrowser({
     }
 
     if (targetGroupId !== null) {
-      const targetGroup = findGroupById(groups, targetGroupId);
+      const targetGroup = folderById(targetGroupId);
       if (!targetGroup) {
         return { allowed: false, asset: targetAsset };
       }
@@ -1363,7 +1289,7 @@ export function AssetBrowser({
 
   const handleAssetDragStart = (
     event: ReactDragEvent<HTMLButtonElement>,
-    asset: AssetItem,
+    asset: LibraryAsset,
   ): void => {
     if (trash || dragMoveSubmitting) {
       event.preventDefault();
@@ -1577,7 +1503,7 @@ export function AssetBrowser({
     setSelectedAssetId(null);
   };
 
-  const handleOpenAssetPreview = (asset: AssetItem): void => {
+  const handleOpenAssetPreview = (asset: LibraryAsset): void => {
     if (!asset.mime.startsWith("image/")) {
       setPreviewFile(asset);
       return;
@@ -1622,7 +1548,7 @@ export function AssetBrowser({
     }
 
     if (menu.target.type === "group") {
-      const group = findGroupById(groups, menu.target.groupId);
+      const group = folderById(menu.target.groupId);
       if (!group) {
         return;
       }
@@ -1813,7 +1739,7 @@ export function AssetBrowser({
     }
   };
 
-  async function insertAsset(asset: AssetItem) {
+  async function insertAsset(asset: LibraryAsset) {
     if (inserting || !onInsert) return;
     setInserting(true);
     try {
@@ -1830,7 +1756,7 @@ export function AssetBrowser({
       setInserting(false);
     }
   }
-  async function restoreAsset(asset: AssetItem) {
+  async function restoreAsset(asset: LibraryAsset) {
     try {
       await updateAsset(asset, { trashed: false });
       addToast({ type: "success", message: t("assets.restored") });
@@ -1845,7 +1771,7 @@ export function AssetBrowser({
       });
     }
   }
-  async function downloadAsset(asset: AssetItem) {
+  async function downloadAsset(asset: LibraryAsset) {
     try {
       downloadBlob(await blobForSource(assetUrl(asset)), asset.name);
     } catch (error) {
@@ -1859,7 +1785,7 @@ export function AssetBrowser({
     }
   }
 
-  function renderAssetCard(asset: AssetItem) {
+  function renderAssetCard(asset: LibraryAsset) {
     const active = asset.id === selectedAssetId;
     const dragging = asset.id === draggingAssetId;
     const draggable = !trash && !selectionOnly;
@@ -2062,7 +1988,7 @@ export function AssetBrowser({
             groups={groups}
             loading={groupsLoading}
             selectedGroupId={trash ? "trash" : selectedGroupId}
-            selectedRootGroupId={selectedRootGroup?.id ?? null}
+            selectedRootGroupId={pathGroups[0]?.id ?? null}
             contextGroupId={contextMenuFocusedGroupId}
             contextAllFocused={contextMenuFocusedAll}
             dropTargetGroupId={
@@ -2315,6 +2241,7 @@ export function AssetBrowser({
               )}
               {picker && (
                 <AssetFolderFilter
+                  selectedPath={pathGroups}
                   groups={groups}
                   selectedGroupId={selectedGroupId}
                   onSelectAll={() => {
@@ -2806,9 +2733,7 @@ export function AssetBrowser({
                   })
                 : contextMenu.target.type === "group"
                   ? t("assets.folderActions", {
-                      name:
-                        findGroupById(groups, contextMenu.target.groupId)
-                          ?.name ?? "",
+                      name: folderById(contextMenu.target.groupId)?.name ?? "",
                     })
                   : t("assets.title")
             }
@@ -3042,8 +2967,8 @@ export function AssetBrowser({
                       arg0:
                         dialogState.parentId === null
                           ? at("素材")
-                          : (findGroupById(groups, dialogState.parentId)
-                              ?.name ?? at("素材")),
+                          : (folderById(dialogState.parentId)?.name ??
+                            at("素材")),
                     })
                   : dialogState.type === "rename-group"
                     ? at("当前名称：{arg0}", { arg0: dialogState.group.name })
@@ -3212,8 +3137,7 @@ export function AssetBrowser({
             <DialogTitle>
               {at("上传文件到【")}
               {uploadTargetGroupId
-                ? (findGroupById(groups, uploadTargetGroupId)?.name ??
-                  at("未知"))
+                ? (folderById(uploadTargetGroupId)?.name ?? at("未知"))
                 : at("根目录 / 未分组")}
             </DialogTitle>
           </DialogHeader>

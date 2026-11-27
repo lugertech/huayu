@@ -9,15 +9,6 @@ import {
   type VecLike,
 } from "@/features/canvas/editor";
 
-export interface AssetFolder {
-  id: string;
-  name: string;
-  parent_id: string | null;
-  asset_count?: number;
-}
-export interface AssetFolderBranch extends AssetFolder {
-  children: AssetFolderBranch[];
-}
 export interface LibraryAsset {
   id: string;
   name: string;
@@ -173,34 +164,6 @@ export function insertLibraryImage(
     editor.setCurrentTool("select");
   });
   return id;
-}
-
-export function folderRows(
-  folders: AssetFolder[],
-  parentId: string | null = null,
-  depth = 0,
-): Array<AssetFolder & { depth: number }> {
-  return folders
-    .filter((folder) => folder.parent_id === parentId)
-    .flatMap((folder) => [
-      { ...folder, depth },
-      ...folderRows(folders, folder.id, depth + 1),
-    ]);
-}
-
-export function folderTree(folders: AssetFolder[]): AssetFolderBranch[] {
-  const branches = new Map(
-    folders.map((folder) => [
-      folder.id,
-      { ...folder, children: [] } as AssetFolderBranch,
-    ]),
-  );
-  const roots: AssetFolderBranch[] = [];
-  for (const folder of branches.values()) {
-    if (folder.parent_id) branches.get(folder.parent_id)!.children.push(folder);
-    else roots.push(folder);
-  }
-  return roots;
 }
 
 /** Balance insertion columns by the images' aspect ratios. */
