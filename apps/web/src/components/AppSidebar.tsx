@@ -1,3 +1,4 @@
+import { createBlankProject } from "@/features/projects/create-project";
 import { t, useLocale } from "@/i18n";
 import { errorText } from "@/i18n/errors";
 import { lazy, Suspense, useState } from "react";
@@ -13,7 +14,6 @@ import {
   Search,
   LibraryBig,
 } from "lucide-react";
-import { api, type Project } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { SidebarProjects } from "./SidebarProjects";
@@ -72,10 +72,7 @@ export function AppSidebar({
   async function createProject() {
     setCreating(true);
     try {
-      const project = await api<Project>("/api/projects", {
-        method: "POST",
-        body: JSON.stringify({ name: t("projects.untitled") }),
-      });
+      const project = await createBlankProject();
       navigate(`/drawing/${project.id}`);
       onNavigate?.();
     } catch (error) {

@@ -1,3 +1,4 @@
+import { createBlankProject } from "@/features/projects/create-project";
 import { t, useLocale, type MessageKey } from "@/i18n";
 import { errorText } from "@/i18n/errors";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -209,10 +210,7 @@ export function QuickSearch({
       creatingRef.current = true;
       setCreating(true);
       try {
-        const project = await api<Project>("/api/projects", {
-          method: "POST",
-          body: JSON.stringify({ name: t("projects.untitled") }),
-        });
+        const project = await createBlankProject();
         handoff.current = true;
         onOpenChange(false);
         navigate(`/drawing/${project.id}`);

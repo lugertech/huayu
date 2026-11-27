@@ -1,3 +1,4 @@
+import { createBlankProject } from "@/features/projects/create-project";
 import { readDraft, applyDraft } from "@/features/canvas/drafts";
 import { localizeTemplate, templateTag } from "@/i18n/templates";
 import { t, useLocale, getLocale } from "@/i18n";
@@ -379,10 +380,7 @@ export function ProjectsPage() {
     if (busy) return;
     setPending("blank");
     try {
-      const project = await api<Project>("/api/projects", {
-        method: "POST",
-        body: JSON.stringify({ name: t("projects.untitled") }),
-      });
+      const project = await createBlankProject();
       navigate(`/drawing/${project.id}`);
     } catch (error) {
       failed(error);
