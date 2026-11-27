@@ -15,6 +15,39 @@ import { modelPrompts } from "@/ai/prompts";
 import { getSettings, requireConnection } from "@/ai/settings";
 import { executeLayoutEvent } from "./agent-layout";
 
+const geometryTypes = new Set([
+  "rectangle",
+  "ellipse",
+  "triangle",
+  "diamond",
+  "hexagon",
+  "oval",
+  "cloud",
+  "pentagon",
+  "octagon",
+  "star",
+  "rhombus",
+  "rhombus-2",
+  "trapezoid",
+  "arrow-right",
+  "arrow-left",
+  "arrow-up",
+  "arrow-down",
+  "x-box",
+  "check-box",
+  "heart",
+]);
+
+const geometryAliases: Record<string, string> = {
+  pill: "oval",
+  "parallelogram-right": "rhombus",
+  "parallelogram-left": "rhombus-2",
+  "fat-arrow-right": "arrow-right",
+  "fat-arrow-left": "arrow-left",
+  "fat-arrow-up": "arrow-up",
+  "fat-arrow-down": "arrow-down",
+};
+
 // Agent API请求接口
 export interface AgentAPIRequest {
   query: string;
@@ -282,77 +315,11 @@ export class AgentEventExecutor {
     };
 
     // 从Agent返回的数据中获取shape类型
-    const aliases: Record<string, string> = {
-      pill: "oval",
-      "parallelogram-right": "rhombus",
-      "parallelogram-left": "rhombus-2",
-      "fat-arrow-right": "arrow-right",
-      "fat-arrow-left": "arrow-left",
-      "fat-arrow-up": "arrow-up",
-      "fat-arrow-down": "arrow-down",
-    };
     const shapeType =
-      aliases[shape.type || shape._type] || shape.type || shape._type;
+      geometryAliases[shape.type || shape._type] || shape.type || shape._type;
 
     // 根据类型映射画布 shape
     switch (shapeType) {
-      // Geo 形状类型
-      case "rectangle":
-      case "ellipse":
-      case "triangle":
-      case "diamond":
-      case "hexagon":
-      case "oval":
-      case "cloud":
-      case "pentagon":
-      case "octagon":
-      case "star":
-      case "rhombus":
-      case "rhombus-2":
-      case "trapezoid":
-      case "arrow-right":
-      case "arrow-left":
-      case "arrow-up":
-      case "arrow-down":
-      case "x-box":
-      case "check-box":
-      case "heart":
-        // 所有这些都是 geo 形状的子类型
-        shapeProps.type = "geo";
-        shapeProps.props = {
-          geo: this.mapGeoType(shapeType),
-          w: shape.w,
-          h: shape.h,
-          fill: this.mapFillType(shape.fill || "none"),
-          color: this.mapColor(shape.color),
-          dash: this.mapDashType(shape.dash || "solid"),
-          size: this.mapSizeType(shape.size || "m"),
-          font: this.mapFontType(shape.font || "draw"),
-          align: this.mapAlignType(shape.align || "middle"),
-          verticalAlign: this.mapVerticalAlignType(
-            shape.verticalAlign || "middle",
-          ),
-        };
-
-        // 如果有文本，geo shape 使用 richText 属性
-        if (shape.text) {
-          shapeProps.props.richText = {
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [
-                  {
-                    type: "text",
-                    text: shape.text,
-                  },
-                ],
-              },
-            ],
-          };
-        }
-        break;
-
       // 笔记类型 - 映射为 note shape 或 text shape
       case "note":
         shapeProps.type = "note";
@@ -570,15 +537,50 @@ export class AgentEventExecutor {
         break;
 
       default:
-        // 尝试创建一个基础的几何形状作为回退
+        if (!geometryTypes.has(shapeType)) {
+          shapeProps.type = "geo";
+          shapeProps.props = {
+            geo: "rectangle",
+            w: shape.w || 100,
+            h: shape.h || 100,
+            fill: "none",
+            color: "black",
+          };
+          break;
+        }
         shapeProps.type = "geo";
         shapeProps.props = {
-          geo: "rectangle",
-          w: shape.w || 100,
-          h: shape.h || 100,
-          fill: "none",
-          color: "black",
+          geo: shapeType,
+          w: shape.w,
+          h: shape.h,
+          fill: this.mapFillType(shape.fill || "none"),
+          color: this.mapColor(shape.color),
+          dash: this.mapDashType(shape.dash || "solid"),
+          size: this.mapSizeType(shape.size || "m"),
+          font: this.mapFontType(shape.font || "draw"),
+          align: this.mapAlignType(shape.align || "middle"),
+          verticalAlign: this.mapVerticalAlignType(
+            shape.verticalAlign || "middle",
+          ),
         };
+
+        // 如果有文本，geo shape 使用 richText 属性
+        if (shape.text) {
+          shapeProps.props.richText = {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [
+                  {
+                    type: "text",
+                    text: shape.text,
+                  },
+                ],
+              },
+            ],
+          };
+        }
         break;
     }
 
@@ -778,8 +780,8 @@ export class AgentEventExecutor {
           ];
 
           // 如果有新的几何形状类型，更新 geo 属性
-          if (newShapeType && this.isGeoShape(newShapeType)) {
-            filteredProps.geo = this.mapGeoType(newShapeType);
+          if (newShapeType && geometryTypes.has(newShapeType)) {
+            filteredProps.geo = newShapeType;
           }
 
           // 处理文本/注释更新
@@ -1038,118 +1040,17 @@ export class AgentEventExecutor {
     currentType: string,
     newShapeType: string,
   ): boolean {
-    // 将新的形状类型映射到 画布 的实际类型
-    let targetType: string;
-
-    // 判断新形状类型应该映射为什么 画布 类型
-    if (
-      [
-        "rectangle",
-        "ellipse",
-        "triangle",
-        "diamond",
-        "hexagon",
-        "oval",
-        "cloud",
-        "pentagon",
-        "octagon",
-        "star",
-        "rhombus",
-        "rhombus-2",
-        "trapezoid",
-        "arrow-right",
-        "arrow-left",
-        "arrow-up",
-        "arrow-down",
-        "x-box",
-        "check-box",
-        "heart",
-      ].includes(newShapeType)
-    ) {
-      targetType = "geo";
-    } else if (newShapeType === "line") {
-      targetType = "line";
-    } else if (newShapeType === "arrow") {
-      targetType = "arrow";
-    } else if (newShapeType === "text") {
-      targetType = "text";
-    } else if (newShapeType === "note") {
-      targetType = "note";
-    } else if (newShapeType === "pen") {
-      targetType = "draw";
-    } else {
-      targetType = "geo"; // 默认为 geo
+    switch (newShapeType) {
+      case "line":
+      case "arrow":
+      case "text":
+      case "note":
+        return currentType !== newShapeType;
+      case "pen":
+        return currentType !== "draw";
+      default:
+        return currentType !== "geo";
     }
-    return currentType !== targetType;
-  }
-
-  /**
-   * 判断是否为几何形状类型
-   */
-  private isGeoShape(shapeType: string): boolean {
-    return [
-      "rectangle",
-      "ellipse",
-      "triangle",
-      "diamond",
-      "hexagon",
-      "oval",
-      "cloud",
-      "pentagon",
-      "octagon",
-      "star",
-      "rhombus",
-      "rhombus-2",
-      "trapezoid",
-      "arrow-right",
-      "arrow-left",
-      "arrow-up",
-      "arrow-down",
-      "x-box",
-      "check-box",
-      "heart",
-    ].includes(shapeType);
-  }
-
-  /**
-   * 几何形状映射
-   */
-  private mapGeoType(type: string): string {
-    // 基于你提供的完整形状列表进行映射
-    const geoMap: Record<string, string> = {
-      // 基础几何形状
-      rectangle: "rectangle",
-      ellipse: "ellipse",
-      triangle: "triangle",
-      diamond: "diamond",
-      hexagon: "hexagon",
-      oval: "oval",
-      cloud: "cloud",
-      pentagon: "pentagon",
-      octagon: "octagon",
-      star: "star",
-      rhombus: "rhombus",
-      "rhombus-2": "rhombus-2",
-      trapezoid: "trapezoid",
-
-      // 箭头形状（作为 geo 类型）
-      "arrow-right": "arrow-right",
-      "arrow-left": "arrow-left",
-      "arrow-up": "arrow-up",
-      "arrow-down": "arrow-down",
-
-      // 特殊形状
-      "x-box": "x-box",
-      "check-box": "check-box",
-      heart: "heart",
-
-      // 兼容性映射
-      square: "rectangle",
-      circle: "ellipse",
-    };
-
-    const result = geoMap[type] || "rectangle";
-    return result;
   }
 
   /**

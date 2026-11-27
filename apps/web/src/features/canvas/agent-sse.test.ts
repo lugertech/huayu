@@ -8,6 +8,58 @@ import {
 import { AgentEventExecutor, completeAgentEvents } from "./agent-sse";
 
 describe("AI drawing commands", () => {
+  it.each([
+    ["heart", "heart", "red"],
+    ["fat-arrow-left", "arrow-left", "red"],
+    ["circle", "rectangle", "black"],
+    ["unrecognized", "rectangle", "black"],
+  ])(
+    "creates %s with the established drawing-command geometry and style",
+    (type, geo, color) => {
+      const editor = new Editor(createCanvasStore());
+      new AgentEventExecutor(editor).executeEvents([
+        {
+          _type: "create",
+          shape: { type, shapeId: "a", w: 100, h: 80, color: "red" },
+        },
+      ]);
+      expect(editor.getShape("shape:a")).toMatchObject({
+        type: "geo",
+        props: { geo, color },
+      });
+    },
+  );
+
+  it("retains imported geometry on an unrecognized update and accepts canonical changes", () => {
+    const editor = new Editor(createCanvasStore());
+    const executor = new AgentEventExecutor(editor);
+    const { store } = editor;
+    editor.createShape({ id: "shape:old", type: "geo" });
+    const document = store.getDocumentSnapshot();
+    store.replace({
+      ...document,
+      store: {
+        ...document.store,
+        "shape:old": {
+          ...editor.getShape("shape:old")!,
+          props: { geo: "legacy-glyph" },
+        },
+      },
+    });
+    for (const [type, expected] of [
+      ["pill", "legacy-glyph"],
+      ["octagon", "octagon"],
+    ]) {
+      executor.executeEvents([
+        { _type: "update", update: { shapeId: "old", type, color: "green" } },
+      ]);
+      expect(editor.getShape("shape:old")?.props).toMatchObject({
+        geo: expected,
+        color: "green",
+      });
+    }
+  });
+
   it.each(
     [
       { type: "pen", field: "isPen" },
