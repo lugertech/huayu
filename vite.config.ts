@@ -71,7 +71,7 @@ export default defineConfig({
     projects: ["apps/web"],
   },
   lint: {
-    plugins: ["oxc", "typescript", "unicorn"],
+    plugins: ["oxc", "typescript", "unicorn", "import"],
     categories: {
       correctness: "off",
     },
@@ -129,6 +129,7 @@ export default defineConfig({
       {
         files: ["apps/web/src/**/*.{ts,tsx}"],
         rules: {
+          "import/no-cycle": "error",
           "react/rules-of-hooks": "error",
           "react/exhaustive-deps": "error",
         },
