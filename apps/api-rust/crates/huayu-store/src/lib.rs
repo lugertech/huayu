@@ -14,7 +14,7 @@ use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{Set, Unchanged},
     ColumnTrait, ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbErr, EntityTrait,
-    IntoActiveModel, QueryFilter, QueryOrder, SqlErr, TransactionTrait,
+    IntoActiveModel, Iterable, QueryFilter, QueryOrder, QuerySelect, SqlErr, TransactionTrait,
     sea_query::LikeExpr,
 };
 use uuid::Uuid;
@@ -130,17 +130,18 @@ impl Store {
     }
 
     pub async fn projects(&self, search: Option<&str>) -> StoreResult<Vec<Project>> {
-        let mut query = project::Entity::find().order_by_desc(project::Column::UpdatedAt);
+        let mut query = project::Entity::find()
+            .select_only()
+            .columns(
+                project::Column::iter()
+                    .filter(|column| !matches!(column, project::Column::Document)),
+            )
+            .order_by_desc(project::Column::UpdatedAt);
         if let Some(search) = search.filter(|value| !value.is_empty()) {
             query = query.filter(project::Column::Name.like(name_contains(search)));
         }
         let rows = query.all(&self.db).await?;
-        rows.into_iter()
-            .map(|mut row| {
-                row.document = None;
-                project_from_row(row)
-            })
-            .collect()
+        rows.into_iter().map(project_from_row).collect()
     }
 
     pub async fn project(&self, id: &str) -> StoreResult<Project> {
@@ -641,6 +642,39 @@ fn recording_from_row(row: recording::Model) -> Recording {
 #[cfg(test)]
 mod tests {
     use super::{ConnectionTrait, Store, StoreError};
+
+    #[tokio::test]
+    async fn listing_projects_reads_only_metadata() {
+        let store = Store::open("sqlite::memory:").await.unwrap();
+        let project = store
+            .create_project(
+                "Listed",
+                Some(huayu_core::Document::default()),
+                Some("writing".into()),
+            )
+            .await
+            .unwrap();
+        let detail = store.project(&project.id).await.unwrap();
+        assert!(detail.document.is_some());
+        let mut expected = serde_json::to_value(detail).unwrap();
+        expected["document"] = serde_json::Value::Null;
+
+        // SQLite raises integer overflow only if a query reads this virtual column.
+        store
+            .db
+            .execute_unprepared(
+                "ALTER TABLE projects DROP COLUMN document;
+             ALTER TABLE projects ADD COLUMN document TEXT AS (abs(-9223372036854775808)) VIRTUAL;",
+            )
+            .await
+            .unwrap();
+        assert!(store.project(&project.id).await.is_err());
+        let listed = store.projects(None).await.unwrap();
+        assert_eq!(
+            serde_json::to_value(listed).unwrap(),
+            serde_json::json!([expected])
+        );
+    }
 
     #[tokio::test]
     async fn failed_fork_count_update_rolls_back_the_project_and_allows_retry() {
