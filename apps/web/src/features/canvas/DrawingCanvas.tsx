@@ -9,7 +9,6 @@ import {
 } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
-  getSnapshot,
   loadSnapshot,
   Bounds,
   type Editor,
@@ -37,11 +36,7 @@ import {
   type ProjectChange,
   type Project,
 } from "@/api/client";
-import {
-  CanvasSync,
-  documentSnapshot,
-  type CollaborationExit,
-} from "@/features/canvas/sync";
+import { CanvasSync, type CollaborationExit } from "@/features/canvas/sync";
 import { saveView, type RecordPatch } from "@/features/canvas/drafts";
 import {
   thumbnailScale,
@@ -233,7 +228,7 @@ function DrawingCanvasContent({
       () => {
         clearTimeout(viewTimer);
         viewTimer = setTimeout(() => {
-          void saveView(project.id, getSnapshot(editor.store).session).catch(
+          void saveView(project.id, editor.store.getSessionSnapshot()).catch(
             () => {},
           );
         }, 500);
@@ -337,7 +332,7 @@ function DrawingCanvasContent({
       else if (coverTimer !== undefined) void coverJob?.();
       unsubscribe();
       documentUnsubscribe();
-      void saveView(project.id, getSnapshot(editor.store).session).catch(
+      void saveView(project.id, editor.store.getSessionSnapshot()).catch(
         () => {},
       );
     };
@@ -359,7 +354,7 @@ function DrawingCanvasContent({
     setBusy(true);
     try {
       await sync.flush();
-      await exportProject(project.name, documentSnapshot(editor.store));
+      await exportProject(project.name, editor.store.getDocumentSnapshot());
     } catch (error) {
       failed(error);
     } finally {

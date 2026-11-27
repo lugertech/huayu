@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
-import { Editor, getSnapshot, loadSnapshot } from "./editor";
+import { describe, expect, it, vi } from "vite-plus/test";
+import { Editor, loadSnapshot } from "./editor";
 import { CanvasStore } from "./store";
 import { richText, plainText } from "./model";
 
@@ -9,6 +9,18 @@ function canvas() {
   return { store, editor };
 }
 describe("application canvas compatibility and editing", () => {
+  it("captures a detached camera and selection without enumerating document records", () => {
+    const { store, editor } = canvas();
+    editor.createShape({ id: "shape:a", type: "geo" });
+    editor.select("shape:a");
+    const serialize = vi.spyOn(store, "serialize");
+    const view = store.getSessionSnapshot();
+    expect(serialize).not.toHaveBeenCalled();
+    editor.select();
+    expect(view.selectedShapeIds).toEqual(["shape:a"]);
+    view.camera.x += 1;
+    expect(view.camera.x).not.toBe(editor.session.camera.x);
+  });
   it("includes a curved arrow in its bounds for selection and export", () => {
     const { editor } = canvas();
     editor.createShape({
@@ -123,7 +135,7 @@ describe("application canvas compatibility and editing", () => {
     });
     editor.updateShape({ id: "shape:right", x: 600 });
     expect(editor.arrowPoints(editor.getShape("shape:arrow")!).end.x).toBe(600);
-    expect(getSnapshot(store).document.schema).toEqual({
+    expect(store.getDocumentSnapshot().schema).toEqual({
       schemaVersion: 2,
       sequences: { "com.tldraw.shape.geo": 5 },
     });
@@ -258,14 +270,14 @@ describe("application canvas compatibility and editing", () => {
     expect(editor.viewport).toEqual({ x: -25, y: 40, zoom: 0.5 });
     expect(editor.getSelectedShapeIds()).toEqual(["shape:b"]);
     expect(
-      Object.values(getSnapshot(store).document.store).some(
+      Object.values(store.getDocumentSnapshot().store).some(
         (record) => "camera" in record,
       ),
     ).toBe(false);
   });
   it("rejects invalid project records before changing the store", () => {
     const { store } = canvas();
-    const before = getSnapshot(store).document;
+    const before = store.getDocumentSnapshot();
     expect(() =>
       loadSnapshot(store, {
         document: {
@@ -283,6 +295,6 @@ describe("application canvas compatibility and editing", () => {
         },
       }),
     ).toThrow();
-    expect(getSnapshot(store).document).toEqual(before);
+    expect(store.getDocumentSnapshot()).toEqual(before);
   });
 });

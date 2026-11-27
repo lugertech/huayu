@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { Editor, getSnapshot } from "./editor";
+import { Editor } from "./editor";
 import { CanvasStore } from "./store";
 import { exportSVG } from "./export";
 import { COMPONENT_CONFIGS } from "@/config/components";
@@ -87,13 +87,13 @@ describe("canvas card export", () => {
       x: 500,
       props: { name: "自定义名称", text: "保留原始正文" },
     });
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     const output = await exportSVG(editor, ["shape:task", "shape:authored"]);
     expect(output?.svg).toContain(">Instruction</text>");
     expect(output?.svg).not.toContain(">创作指令</text>");
     expect(output?.svg).toContain("自定义名称");
     expect(output?.svg).toContain("保留原始正文");
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
   it("keeps empty image and text cards recognizable without changing the document", async () => {
     const editor = new Editor(new CanvasStore());
@@ -109,7 +109,7 @@ describe("canvas card export", () => {
       props: { text: "保留的素材" },
     });
     editor.createShape({ id: "shape:empty-task", type: "instruction", x: 900 });
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     const output = await exportSVG(editor, [
       ...editor.getCurrentPageShapeIds(),
     ]);
@@ -119,7 +119,7 @@ describe("canvas card export", () => {
     expect(output?.svg).toContain("输入指令，连接组件获取更多上下文…");
     for (const title of ["AI绘图", "文本", "创作指令"])
       expect(output?.svg).toContain(title);
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
 
   it("includes every supported empty component instead of omitting blank cards", async () => {
@@ -148,13 +148,13 @@ describe("canvas card export", () => {
         result: "Attachment body",
       },
     });
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     const output = await exportSVG(editor, ["shape:file"]);
     expect(output?.svg).toContain("888.html");
     expect(output?.svg).toContain("5.5 KB");
     expect(output?.svg).not.toContain("DOCTYPE");
     expect(output?.svg).not.toContain("Attachment body");
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
 
   it("embeds an asset-backed image and preserves its title and prompt", async () => {
@@ -205,7 +205,7 @@ describe("canvas card export", () => {
     editor.createShape({ id: "shape:arrow", type: "arrow", x: 400 });
     // Native edits use literal colors instead of palette names.
     editor.updateShape({ id: "shape:arrow", props: { color: "#000000" } });
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     for (const [theme, color] of [
       ["light", "#000000"],
       ["dark", "#e5e5e5"],
@@ -222,6 +222,6 @@ describe("canvas card export", () => {
       );
       expect(output?.svg).not.toContain('stroke-width="2.5"');
     }
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
 });

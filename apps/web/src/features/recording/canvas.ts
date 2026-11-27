@@ -3,7 +3,6 @@ import { t } from "@/i18n";
 import {
   createCanvasStore,
   Editor,
-  getSnapshot,
   createShapeId,
 } from "@/features/canvas/editor";
 import { getDefaultComponentProps } from "@/config/components";
@@ -142,6 +141,6 @@ export function recordingCanvas(
       0,
       120,
     ),
-    document: getSnapshot(store).document,
+    document: store.getDocumentSnapshot(),
   };
 }

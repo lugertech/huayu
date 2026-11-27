@@ -427,14 +427,14 @@ export function ProjectsPage() {
     const original = await api<Project>(`/api/projects/${projectId}`);
     let document = applyDraft(original.document, draft);
     if (!document && original.recipe) {
-      const [{ Editor, createCanvasStore, getSnapshot }, { applyRecipe }] =
+      const [{ Editor, createCanvasStore }, { applyRecipe }] =
         await Promise.all([
           import("@/features/canvas/editor"),
           import("@/features/canvas/recipes"),
         ]);
       const store = createCanvasStore();
       applyRecipe(new Editor(store), original.recipe);
-      document = getSnapshot(store).document;
+      document = store.getDocumentSnapshot();
     }
     const copy = await api<Project>("/api/projects", {
       method: "POST",

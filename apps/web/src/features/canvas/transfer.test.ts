@@ -15,7 +15,6 @@ import {
 import {
   createCanvasStore,
   Editor,
-  getSnapshot,
   loadSnapshot,
   type CanvasRecord,
   type DocumentSnapshot,
@@ -42,7 +41,7 @@ describe("project file transfer limits", () => {
   const created = { id: "imported-project" } as Project;
   function sourceDocument() {
     const editor = new Editor(createCanvasStore());
-    return getSnapshot(editor.store).document;
+    return editor.store.getDocumentSnapshot();
   }
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,6 +96,28 @@ describe("project file transfer limits", () => {
     vi.spyOn(Blob.prototype, "size", "get").mockReturnValue(limit);
     await expect(importProject(file)).resolves.toEqual(created);
     expect(api).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears transient execution flags in the export and preserves the live document", async () => {
+    const editor = new Editor(createCanvasStore());
+    editor.createShape({
+      id: "shape:running",
+      type: "ai-draw",
+      props: { isSubmitting: true, isRunning: true, result: "Saved output" },
+    });
+    const document = editor.store.getDocumentSnapshot();
+    await exportProject("Project", document);
+    const [blob] = vi.mocked(downloadBlob).mock.calls[0];
+    const exported = JSON.parse(await blob.text()).document;
+    expect(exported.store["shape:running"].props).toMatchObject({
+      isSubmitting: false,
+      isRunning: false,
+      result: "Saved output",
+    });
+    expect(editor.getShape("shape:running")?.props.isRunning).toBe(true);
+    expect(document.store["shape:running"]).toMatchObject({
+      props: { isSubmitting: true },
+    });
   });
 
   it("imports the actual file produced by an allowed export", async () => {
@@ -165,7 +186,7 @@ function editorFor(document: CanvasDocument) {
 describe("attachment address changes during project transfer", () => {
   it("keeps fresh results fresh across export/import on every page and preserves timing", async () => {
     const editor = generatedImageBoard();
-    const source = getSnapshot(editor.store).document;
+    const source = editor.store.getDocumentSnapshot();
     const before = structuredClone(source);
     const visited: string[] = [];
     const exported = await rewriteProjectResources(source, async (src) => {
@@ -212,7 +233,7 @@ describe("attachment address changes during project transfer", () => {
       props: { htmlContent: html, result: html },
     });
     editor.createShape({ id: "shape:img", type: "ai-image", props: { src } });
-    const source = getSnapshot(editor.store).document;
+    const source = editor.store.getDocumentSnapshot();
     const toData = vi.fn(async () => "data:image/jpeg;base64,YQ==");
     const portable = await rewriteProjectResources(source, toData);
     expect(toData.mock.calls).toEqual([[src]]);
@@ -248,7 +269,7 @@ describe("attachment address changes during project transfer", () => {
     ]);
     const embed = vi.fn(async (url: string) => embedded.get(url)!);
     const portable = await rewriteProjectResources(
-      getSnapshot(editor.store).document,
+      editor.store.getDocumentSnapshot(),
       embed,
     );
     expect(embed.mock.calls.map(([url]) => url).sort()).toEqual([video, src]);
@@ -267,7 +288,7 @@ describe("attachment address changes during project transfer", () => {
     );
   });
   it("preserves legacy asset records without a source or properties", async () => {
-    const document = getSnapshot(createCanvasStore()).document;
+    const document = createCanvasStore().getDocumentSnapshot();
     const asset = {
       id: "asset:placeholder",
       typeName: "asset",
@@ -288,13 +309,13 @@ describe("attachment address changes during project transfer", () => {
       props: { description: "素材发生变化" },
     });
     const transferred = await rewriteProjectResources(
-      getSnapshot(editor.store).document,
+      editor.store.getDocumentSnapshot(),
       async (src) => `data:image/png,${src}`,
     );
     expect(resultIsStale(editorFor(transferred), "shape:output0")).toBe(true);
   });
   it("keeps the source unchanged if an attachment cannot be read", async () => {
-    const source = getSnapshot(generatedImageBoard().store).document;
+    const source = generatedImageBoard().store.getDocumentSnapshot();
     const before = structuredClone(source);
     await expect(
       rewriteProjectResources(source, async () => {

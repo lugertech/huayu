@@ -1,10 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import {
-  Editor,
-  createCanvasStore,
-  getSnapshot,
-} from "@/features/canvas/editor";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
 import { COMPONENT_CONFIGS } from "@/config/components";
 import { setLanguage } from "@/i18n";
 import { localizeTemplate, templateTag } from "@/i18n/templates";
@@ -130,12 +126,12 @@ describe("ready-to-edit template workflows", () => {
             ).toBe(true);
           }
         }
-        const document = getSnapshot(editor.store).document;
+        const document = editor.store.getDocumentSnapshot();
         expect(JSON.stringify(document)).not.toMatch(
           /"(?:apiKey|baseUrl|model|connections)"\s*:/,
         );
         setLanguage(locale === "en" ? "zh-CN" : "en");
-        expect(getSnapshot(editor.store).document).toEqual(document);
+        expect(editor.store.getDocumentSnapshot()).toEqual(document);
       }
       expect(fetchMock).not.toHaveBeenCalled();
     },
@@ -150,13 +146,13 @@ describe("ready-to-edit template workflows", () => {
       props: { text: "Original material" },
     });
     applyRecipe(editor, "meeting-minutes");
-    const created = getSnapshot(editor.store).document;
+    const created = editor.store.getDocumentSnapshot();
     editor.undo();
     expect(editor.getCurrentPageShapes().map((shape) => shape.id)).toEqual([
       "shape:existing",
     ]);
     editor.redo();
-    expect(getSnapshot(editor.store).document).toEqual(created);
+    expect(editor.store.getDocumentSnapshot()).toEqual(created);
   });
 
   it.each([
@@ -291,11 +287,11 @@ describe("ready-to-edit template workflows", () => {
       const shape = editor
         .getCurrentPageShapes()
         .find((shape) => shape.props.name === name)!;
-      const before = getSnapshot(editor.store).document;
+      const before = editor.store.getDocumentSnapshot();
       await expect(runWorkflow(editor, shape.id)).rejects.toBeInstanceOf(
         ModelConnectionError,
       );
-      expect(getSnapshot(editor.store).document).toEqual(before);
+      expect(editor.store.getDocumentSnapshot()).toEqual(before);
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Editor, createCanvasStore, getSnapshot } from "./editor";
+import { Editor, createCanvasStore } from "./editor";
 import { collectDownloadableFiles } from "./file-collector";
 
 describe("attachment interface language", () => {
@@ -25,7 +25,7 @@ describe("attachment interface language", () => {
       type: "speech",
       props: { src: "data:audio/mp3;base64,YXVkaW8=" },
     });
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     const english = collectDownloadableFiles(editor, "en");
     expect(english.map((file) => file.sourceLabel)).toEqual([
       "File step",
@@ -45,6 +45,6 @@ describe("attachment interface language", () => {
       fileName: "文档.txt",
       sourceLabel: "文件组件",
     });
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
   });
 });

@@ -8,7 +8,7 @@ import {
 } from "vite-plus/test";
 import { APIError, type Project } from "@/api/client";
 import { Editor, createCanvasStore } from "@/features/canvas/editor";
-import { CanvasSync, documentSnapshot, type CanvasPeer } from "./sync";
+import { CanvasSync, type CanvasPeer } from "./sync";
 
 const mocks = vi.hoisted(() => ({ api: vi.fn(), saveDraft: vi.fn() }));
 vi.mock("@/api/client", async (original) => ({
@@ -65,7 +65,7 @@ async function client(token: string | null = null) {
   const project: Project = {
     id: "collaboration-test",
     name: "Collaboration",
-    document: documentSnapshot(source.store),
+    document: source.store.getDocumentSnapshot(),
     cover: null,
     recipe: null,
     revision: 0,
@@ -148,7 +148,7 @@ describe("collaboration scene initialization", () => {
       });
     });
     expect(
-      new Blob([JSON.stringify(documentSnapshot(sync.store))]).size,
+      new Blob([JSON.stringify(sync.store.getDocumentSnapshot())]).size,
     ).toBeGreaterThan(32 * 1024 * 1024);
     socket.receive({ type: "peer_joined", peer: joiningPeer });
     const initializations = socket.send.mock.calls.filter(
@@ -408,7 +408,7 @@ describe("collaboration save ordering and recovery", () => {
     mocks.api.mockReturnValueOnce(ack.promise);
     editor.updateShape({ id: "shape:left", props: { text: "Local" } });
     const saving = sync.flush();
-    const document = structuredClone(documentSnapshot(sync.store));
+    const document = sync.store.getDocumentSnapshot();
     const record = sync.store.get("shape:left")!;
     document.store[record.id] = {
       ...record,

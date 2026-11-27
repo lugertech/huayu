@@ -20,11 +20,7 @@ import {
 } from "./index";
 import { localizeTemplate, templateTag } from "./templates";
 import { modelPrompts } from "@/ai/prompts";
-import {
-  Editor,
-  createCanvasStore,
-  getSnapshot,
-} from "@/features/canvas/editor";
+import { Editor, createCanvasStore } from "@/features/canvas/editor";
 import { applyRecipe } from "@/features/canvas/recipes";
 import { generationFingerprint } from "@/workflow/freshness";
 import { analysisMarkdown } from "@/features/recording/report";
@@ -127,11 +123,11 @@ describe("content and model boundaries", () => {
   it("switches new examples without rewriting existing user content or freshness", () => {
     const editor = new Editor(createCanvasStore());
     applyRecipe(editor, "writing");
-    const before = getSnapshot(editor.store).document;
+    const before = editor.store.getDocumentSnapshot();
     const first = editor.getCurrentPageShapes()[0];
     const fingerprint = generationFingerprint(editor, first.id);
     setLanguage("en");
-    expect(getSnapshot(editor.store).document).toEqual(before);
+    expect(editor.store.getDocumentSnapshot()).toEqual(before);
     expect(generationFingerprint(editor, first.id)).toBe(fingerprint);
     const english = new Editor(createCanvasStore());
     applyRecipe(english, "writing");

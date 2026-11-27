@@ -871,16 +871,10 @@ export class Editor {
     return exportPNG(this, ids, options);
   }
 }
-export function getSnapshot(store: CanvasStore): {
-  document: DocumentSnapshot;
-  session: CanvasSession;
-} {
+export function getSnapshot(store: CanvasStore) {
   return {
-    document: {
-      store: structuredClone(store.serialize()),
-      schema: structuredClone(store.schema.serialize()),
-    },
-    session: structuredClone(store.session),
+    document: store.getDocumentSnapshot(),
+    session: store.getSessionSnapshot(),
   };
 }
 export function loadSnapshot(

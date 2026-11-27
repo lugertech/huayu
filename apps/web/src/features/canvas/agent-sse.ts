@@ -2,7 +2,6 @@ import { LocalizedError } from "@/i18n/errors";
 import {
   createShapeId,
   createBindingId,
-  getSnapshot,
   loadSnapshot,
   type ShapeId,
 } from "@/features/canvas/editor";
@@ -204,7 +203,7 @@ export class AgentEventExecutor {
    * 执行事件列表
    */
   executeEvents(events: AgentEvent[]): void {
-    const before = getSnapshot(this.editor.store).document;
+    const before = this.editor.store.getDocumentSnapshot();
     try {
       this.editor.run(() => {
         for (const event of events) {

@@ -76,7 +76,7 @@ describe("single-canvas legacy projects", () => {
     const target = editor.getPageTransform(editor.getShape("shape:task")!);
     const bindings = store.allRecords().filter((r) => r.typeName === "binding");
     const ids = editor.getCurrentPageShapes().map((shape) => shape.id);
-    const snapshot = getSnapshot(store).document;
+    const snapshot = store.getDocumentSnapshot();
 
     const changes = mergeCanvasPages(store)!;
     expect(changes.remove).toEqual([secondPage]);
@@ -112,10 +112,10 @@ describe("single-canvas legacy projects", () => {
     const another = createCanvasStore();
     loadSnapshot(another, { document: snapshot });
     mergeCanvasPages(another);
-    expect(getSnapshot(another).document).toEqual(getSnapshot(store).document);
-    const merged = getSnapshot(store).document;
+    expect(another.getDocumentSnapshot()).toEqual(store.getDocumentSnapshot());
+    const merged = store.getDocumentSnapshot();
     expect(mergeCanvasPages(store)).toBeUndefined();
-    expect(getSnapshot(store).document).toEqual(merged);
+    expect(store.getDocumentSnapshot()).toEqual(merged);
   });
 
   it("keeps completed visual workflows fresh without clearing genuinely stale results", () => {

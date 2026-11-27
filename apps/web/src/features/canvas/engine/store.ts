@@ -3,6 +3,7 @@ import {
   normalizeRecord,
   SCHEMA,
   type CanvasRecord,
+  type CanvasSession,
   type DocumentSnapshot,
 } from "./model";
 
@@ -39,7 +40,7 @@ export class CanvasStore {
   private historyGroup: "none" | "open" | "recorded" = "none";
   private lastHistoryAt = 0;
   private schemaValue: unknown = SCHEMA;
-  session: any;
+  session?: CanvasSession;
   readonly schema = { serialize: () => this.schemaValue };
   constructor(_options?: unknown) {
     this.records.set("document:document", {
@@ -61,6 +62,15 @@ export class CanvasStore {
     this.records.get(id) as T | undefined;
   allRecords = () => [...this.records.values()];
   serialize = (_scope = "document") => Object.fromEntries(this.records);
+  getDocumentSnapshot(): DocumentSnapshot {
+    return {
+      store: structuredClone(this.serialize()),
+      schema: structuredClone(this.schemaValue),
+    };
+  }
+  getSessionSnapshot() {
+    return structuredClone(this.session);
+  }
   subscribe = (listener: () => void) => {
     this.subscribers.add(listener);
     return () => {

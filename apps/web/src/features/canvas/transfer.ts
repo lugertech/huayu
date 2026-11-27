@@ -4,7 +4,6 @@ import { t } from "@/i18n";
 import { LocalizedError } from "@/i18n/errors";
 import {
   createCanvasStore,
-  getSnapshot,
   loadSnapshot,
   type DocumentSnapshot,
   type CanvasRecord,
@@ -20,7 +19,7 @@ import {
   type Project,
 } from "@/api/client";
 import { blobAsDataURL, blobForSource } from "@/api/resources";
-import { sanitizedRecord } from "./sync";
+import { persistedRecord } from "./engine/model";
 import {
   generationFingerprint,
   generationInfo,
@@ -116,7 +115,7 @@ export async function exportProject(name: string, source: CanvasDocument) {
   document.store = Object.fromEntries(
     Object.entries(document.store).map(([id, record]) => [
       id,
-      sanitizedRecord(record as CanvasRecord),
+      persistedRecord(record as CanvasRecord),
     ]),
   );
   const file: ProjectFile = { format: "huayu", version: 1, name, document };
@@ -181,7 +180,7 @@ export function parseProjectFile(value: unknown): {
         typeof object.name === "string"
           ? limitName(object.name.trim()) || t("canvas.importedCanvas")
           : t("canvas.importedCanvas"),
-      document: getSnapshot(store).document,
+      document: store.getDocumentSnapshot(),
     };
   }
   if (object.format && (object.format !== "huayu" || object.version !== 1))
@@ -219,7 +218,7 @@ export function parseProjectFile(value: unknown): {
     typeof object.name === "string" && object.name.trim()
       ? limitName(object.name.trim())
       : t("canvas.importedProject");
-  return { name, document: getSnapshot(store).document };
+  return { name, document: store.getDocumentSnapshot() };
 }
 
 export async function importProject(file: File): Promise<Project> {

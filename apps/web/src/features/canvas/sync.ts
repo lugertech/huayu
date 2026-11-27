@@ -3,7 +3,6 @@ import { LocalizedError } from "@/i18n/errors";
 import { type MessageKey } from "@/i18n";
 import {
   createCanvasStore,
-  getSnapshot,
   loadSnapshot,
   type CanvasRecord,
   type CanvasStore,
@@ -17,6 +16,7 @@ import {
   saveDraft,
   type RecordPatch,
 } from "./drafts";
+import { persistedRecord } from "./engine/model";
 import { mergeCanvasPages } from "./single-canvas";
 
 export type SaveStatus = "saved" | "saving" | "offline" | "error";
@@ -51,17 +51,6 @@ export interface RoomMembers {
   self?: CanvasPeer;
   members: CanvasPeer[];
   maxCollaborators: number;
-}
-
-export function documentSnapshot(store: CanvasStore): CanvasDocument {
-  return getSnapshot(store).document;
-}
-export function sanitizedRecord(record: CanvasRecord): CanvasRecord {
-  if (record.typeName !== "shape") return record;
-  const props = { ...record.props };
-  if ("isRunning" in props) props["isRunning"] = false;
-  if ("isSubmitting" in props) props["isSubmitting"] = false;
-  return { ...record, props } as CanvasRecord;
 }
 
 /** Keeps durable autosave independent from transient scene and presence broadcasts. */
@@ -262,7 +251,7 @@ export class CanvasSync {
           ...Object.values(entry.changes.added),
           ...Object.values(entry.changes.updated).map(([, record]) => record),
         ]) {
-          const sanitized = sanitizedRecord(record);
+          const sanitized = persistedRecord(record);
           this.remotePreviews.delete(record.id);
           changes.set(record.id, sanitized);
         }
@@ -282,7 +271,7 @@ export class CanvasSync {
     );
     if (!this.project.document) {
       for (const record of Object.values(this.store.serialize("document")))
-        this.pending.set(record.id, sanitizedRecord(record));
+        this.pending.set(record.id, persistedRecord(record));
     }
     if (this.pending.size) {
       if (!this.project.document || this.mergedPages)

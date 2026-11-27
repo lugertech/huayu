@@ -146,6 +146,14 @@ export function defaultProps(type: string): Record<string, any> {
   if (type === "bookmark") return { w: 320, h: 180, url: "", assetId: null };
   return { w: 350, h: 180 };
 }
+/** Local execution flags are cleared in shared records and exported projects. */
+export function persistedRecord(record: CanvasRecord): CanvasRecord {
+  if (record.typeName !== "shape") return record;
+  const props = { ...record.props };
+  if ("isRunning" in props) props.isRunning = false;
+  if ("isSubmitting" in props) props.isSubmitting = false;
+  return { ...record, props };
+}
 export function normalizeRecord(value: unknown, key?: string): CanvasRecord {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new LocalizedError({ key: "canvas.invalidCanvasRecordFormat" });
