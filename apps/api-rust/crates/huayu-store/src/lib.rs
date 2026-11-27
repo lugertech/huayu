@@ -161,10 +161,7 @@ impl Store {
         let mut items = Vec::new();
         for row in projects {
             let project = project_from_row(row)?;
-            for mut item in huayu_core::project_library::project_library_items(&project) {
-                item.content = None;
-                items.push(item);
-            }
+            items.extend(huayu_core::project_library::project_library_items(&project));
         }
         Ok(items)
     }
