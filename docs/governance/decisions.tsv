@@ -1,0 +1,2 @@
+ts	phase	decision	why	evidence	result
+2026-11-27T22:32:29Z	frame	以真实入口和状态所有者划分工作	画布、模型、录制、服务和构建各有独立契约，可单独验证和回滚	c55d275, docs/ARCHITECTURE.md, REVIEW.md	建立隔离工作树，启动基线检查
