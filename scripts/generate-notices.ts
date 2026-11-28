@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,10 +41,22 @@ const projects: { dependencies?: Record<string, Dependency> }[] = JSON.parse(
 const packages = new Map<string, Notice>();
 async function visit(dependencies: Record<string, Dependency> = {}) {
   for (const [name, item] of Object.entries(dependencies)) {
-    if (!item.path || item.version?.startsWith("link:")) continue;
+    if (item.version?.startsWith("link:")) continue;
+    // pnpm also lists optional packages skipped for the current OS.
+    const packagePath =
+      item.path && existsSync(resolve(item.path, "package.json"))
+        ? item.path
+        : resolve(root, "scripts/optional-notices", `${name}@${item.version}`);
     const info: PackageInfo = JSON.parse(
-      await readFile(resolve(item.path, "package.json"), "utf8"),
+      await readFile(resolve(packagePath, "package.json"), "utf8"),
     );
+    if (
+      packagePath !== item.path &&
+      (info.name !== name || info.version !== item.version)
+    )
+      throw new Error(
+        `Retained notice metadata does not match ${name}@${item.version}.`,
+      );
     const key = `${info.name || name}@${info.version}`;
     if (packages.has(key)) continue;
     let license =
@@ -51,9 +64,9 @@ async function visit(dependencies: Record<string, Dependency> = {}) {
     if (!license && info.licenses?.length === 1)
       license = info.licenses[0].type;
     if (!license) {
-      for (const filename of await readdir(item.path)) {
+      for (const filename of await readdir(packagePath)) {
         if (!/^licen[sc]e(?:[._-].*)?$/i.test(filename)) continue;
-        const text = await readFile(resolve(item.path, filename), "utf8");
+        const text = await readFile(resolve(packagePath, filename), "utf8");
         if (/^(?:The )?MIT License(?: \(MIT\))?/i.test(text.trim()))
           license = "MIT";
       }
@@ -62,7 +75,7 @@ async function visit(dependencies: Record<string, Dependency> = {}) {
       name: info.name || name,
       version: info.version,
       license: license || "SEE PACKAGE",
-      path: item.path,
+      path: packagePath,
     });
     await visit(item.dependencies);
   }
