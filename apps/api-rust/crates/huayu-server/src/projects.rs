@@ -12,7 +12,7 @@ use axum::{
     http::StatusCode,
     response::Response,
 };
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{SinkExt, stream::FusedStream};
 use huayu_core::{
     Document, DocumentPatch, MAX_DOCUMENT_RECORDS, Project, Template, valid_record_id,
 };
@@ -444,14 +444,13 @@ async fn room_sender(state: &AppState, id: &str) -> broadcast::Sender<RoomEvent>
 }
 
 async fn stream_events(
-    socket: WebSocket,
+    mut socket: WebSocket,
     state: AppState,
     id: String,
     project: Project,
     mut receiver: broadcast::Receiver<RoomEvent>,
     access: CanvasAccess,
 ) {
-    let (mut sender, mut incoming) = socket.split();
     let mut known_assets = match project_assets(&state, &project).await {
         Ok(assets) => assets,
         Err(_) => return,
@@ -503,8 +502,9 @@ async fn stream_events(
         }
     };
     if let Some(event) = admission {
-        let _ = send_event(&mut sender, &event).await;
-        let _ = sender.send(Message::Close(None)).await;
+        if send_event(&mut socket, &event).await.is_ok() {
+            close_socket(socket).await;
+        }
         return;
     }
     let initial = RoomEvent::Snapshot {
@@ -512,8 +512,8 @@ async fn stream_events(
         revision: project.revision,
     };
     let peers = peer_snapshot(&state, &id, client_id).await;
-    if send_event(&mut sender, &initial).await.is_err()
-        || send_event(&mut sender, &peers).await.is_err()
+    if send_event(&mut socket, &initial).await.is_err()
+        || send_event(&mut socket, &peers).await.is_err()
     {
         leave_room(&state, &id, client_id, &events).await;
         return;
@@ -523,7 +523,7 @@ async fn stream_events(
     let mut last_message = Instant::now();
     loop {
         tokio::select! {
-            message = incoming.next() => {
+            message = socket.recv() => {
                 match message {
                     Some(Ok(Message::Text(text))) => {
                         last_message = Instant::now();
@@ -531,7 +531,7 @@ async fn stream_events(
                             continue;
                         };
                         if !state.rooms.lock().await.get(&id).is_some_and(|room| room.peers.contains_key(&client_id)) {
-                            let _ = send_event(&mut sender, &RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }).await;
+                            let _ = send_event(&mut socket, &RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }).await;
                             break;
                         }
                         let (target, patch) = match message {
@@ -578,7 +578,7 @@ async fn stream_events(
                     }
                     Some(Ok(Message::Ping(value))) => {
                         last_message = Instant::now();
-                        if sender.send(Message::Pong(value)).await.is_err() {
+                        if socket.send(Message::Pong(value)).await.is_err() {
                             break;
                         }
                     }
@@ -598,11 +598,11 @@ async fn stream_events(
                                     let event = if error.code == ErrorCode::CollaboratorRemoved {
                                         RoomEvent::MemberRemoved { member_id: peer.member_id.clone() }
                                     } else { RoomEvent::Collaboration { enabled: false } };
-                                    let _ = send_event(&mut sender, &event).await;
+                                    let _ = send_event(&mut socket, &event).await;
                                     break;
                                 }
                                 let peers = peer_snapshot(&state, &id, client_id).await;
-                                if send_event(&mut sender, &peers).await.is_err() {
+                                if send_event(&mut socket, &peers).await.is_err() {
                                     break;
                                 }
                                 RoomEvent::Snapshot { document: project.document, revision: project.revision }
@@ -620,17 +620,17 @@ async fn stream_events(
                     && access.share_token().is_some()
                     && access.ensure_active(&state).await.is_err()
                 {
-                    let _ = send_event(&mut sender, &RoomEvent::Collaboration { enabled: false }).await;
+                    let _ = send_event(&mut socket, &RoomEvent::Collaboration { enabled: false }).await;
                     break;
                 }
-                if send_event(&mut sender, &event).await.is_err() { break; }
+                if send_event(&mut socket, &event).await.is_err() { break; }
                 if matches!(event, RoomEvent::MemberRemoved { ref member_id } if *member_id == peer.member_id) { break; }
                 if matches!(event, RoomEvent::Deleted) { break; }
                 if access.share_token().is_some() && matches!(event, RoomEvent::Collaboration { enabled: false }) { break; }
             }
             _ = heartbeat.tick() => {
                 if last_message.elapsed() > Duration::from_secs(75)
-                    || sender.send(Message::Ping(Vec::new().into())).await.is_err()
+                    || socket.send(Message::Ping(Vec::new().into())).await.is_err()
                 {
                     break;
                 }
@@ -638,6 +638,25 @@ async fn stream_events(
         }
     }
     leave_room(&state, &id, client_id, &events).await;
+    close_socket(socket).await;
+}
+
+async fn close_socket(mut socket: WebSocket) {
+    if socket.is_terminated() {
+        return;
+    }
+    let _ = tokio::time::timeout(Duration::from_secs(5), async {
+        if socket.close().await.is_err() {
+            return;
+        }
+        // Drain in-flight frames until the peer acknowledges Close, without dispatching them.
+        while let Some(Ok(message)) = socket.recv().await {
+            if matches!(message, Message::Close(_)) {
+                break;
+            }
+        }
+    })
+    .await;
 }
 
 async fn peer_snapshot(state: &AppState, id: &str, client_id: Uuid) -> RoomEvent {
@@ -665,10 +684,7 @@ async fn leave_room(
     let _ = events.send(RoomEvent::PeerLeft { client_id });
 }
 
-async fn send_event(
-    sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
-    event: &RoomEvent,
-) -> Result<(), axum::Error> {
+async fn send_event(socket: &mut WebSocket, event: &RoomEvent) -> Result<(), axum::Error> {
     let content = serde_json::to_string(event).map_err(axum::Error::new)?;
-    sender.send(Message::Text(content.into())).await
+    socket.send(Message::Text(content.into())).await
 }

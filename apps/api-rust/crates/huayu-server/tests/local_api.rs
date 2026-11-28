@@ -1955,6 +1955,20 @@ async fn review_rotating_a_share_token_disconnects_existing_websockets() {
             break;
         }
     }
+    let close = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next())
+        .await
+        .expect("server initiates the close handshake after revocation")
+        .expect("the close frame arrives before EOF")
+        .expect("the server closes the WebSocket cleanly");
+    assert!(matches!(close, Message::Close(_)));
+    socket
+        .flush()
+        .await
+        .expect("client acknowledges the close frame");
+    let end = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next())
+        .await
+        .expect("server ends the connection after the close acknowledgement");
+    assert!(end.is_none());
     server.abort();
 }
 
